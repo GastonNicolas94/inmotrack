@@ -4,6 +4,18 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+## Cómo usar este repo (agentes)
+
+Antes de tocar código, leer en este orden — es el contexto de agente mantenido de este repo, más rápido y más confiable que re-derivar todo leyendo el código de cero:
+
+1. `docs/agent/overview.md` — qué hace el sistema, roles, mapa de capacidades → código
+2. `docs/agent/architecture.md` — capas, layout de carpetas, flujo de request, patrón outbox
+3. `docs/agent/contracts.md` — rutas HTTP, acceso por rol, recursos de plataforma
+4. `docs/agent/runbook.md` — comandos de dev/test/build/migraciones, Definition of Done
+5. `docs/agent/traps.md` — gotchas no obvios ya encontrados — leer antes de asumir que algo raro es un bug nuevo
+
+**Regla de mantenimiento:** quien cambie código (humano o agente) actualiza la guía de `docs/agent/` correspondiente en el mismo cambio — bump de `version` (SHA corto de HEAD) y `validated` (fecha) en el frontmatter — y agrega una entrada a `traps.md` si descubre un comportamiento no obvio. No hay gate de CI que lo fuerce (este repo no tiene CI) — es disciplina manual.
+
 ## Sistema de diseño (rediseño estilo apple.com — ago 2026)
 
 El frontend sigue una dirección visual deliberada inspirada en apple.com. Cualquier UI nueva debe respetarla, no reinventarla.
