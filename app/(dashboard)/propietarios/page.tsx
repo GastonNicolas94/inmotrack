@@ -1,0 +1,15 @@
+import { TablaPropietarios } from "@/components/features/propietarios/TablaPropietarios";
+import { PageHeader } from "@/components/layout/PageHeader";
+
+export default function PropietariosPage() {
+  return (
+    <div>
+      <PageHeader
+        eyebrow="Caja 1 · Terceros"
+        title="Propietarios"
+        description="Datos de cobro y propiedades a cargo de cada propietario."
+      />
+      <TablaPropietarios />
+    </div>
+  );
+}

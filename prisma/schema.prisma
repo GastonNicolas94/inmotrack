@@ -1,0 +1,365 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Entidades de Sistema ────────────────────────────────────────────────────
+
+model Usuario {
+  id             Int          @id @default(autoincrement())
+  email                        String       @unique
+  password_hash                String
+  rol                          RolUsuario
+  puede_aprobar_liquidaciones  Boolean      @default(false)
+  id_propietario               Int?
+  propietario    Propietario? @relation(fields: [id_propietario], references: [id])
+
+  transacciones Transaccion[] @relation("UsuarioCreador")
+
+  @@map("usuarios")
+}
+
+// ─── Entidades de Negocio ────────────────────────────────────────────────────
+
+model Propietario {
+  id     Int    @id @default(autoincrement())
+  nombre String
+  cbu    String @db.VarChar(22)
+
+  propiedades   Propiedad[]
+  usuarios      Usuario[]
+  liquidaciones Liquidacion[]
+  transacciones Transaccion[]
+
+  @@map("propietarios")
+}
+
+model Inquilino {
+  id       Int     @id @default(autoincrement())
+  nombre   String
+  dni_cuit String  @db.VarChar(20)
+  email    String? @unique
+  telefono String? @db.VarChar(20)
+
+  contratos Contrato[]
+
+  @@map("inquilinos")
+}
+
+model Propiedad {
+  id             Int         @id @default(autoincrement())
+  id_propietario Int
+  propietario    Propietario @relation(fields: [id_propietario], references: [id])
+  direccion      String      @db.VarChar(500)
+  es_propia      Boolean     @default(false)
+
+  contratos           Contrato[]
+  gastos              Gasto[]
+  liquidacion_items   LiquidacionItem[]
+
+  @@map("propiedades")
+}
+
+model Contrato {
+  id                   Int                  @id @default(autoincrement())
+  id_propiedad         Int
+  propiedad            Propiedad            @relation(fields: [id_propiedad], references: [id])
+  id_inquilino         Int
+  inquilino            Inquilino            @relation(fields: [id_inquilino], references: [id])
+  fecha_inicio         DateTime             @db.Date
+  fecha_fin            DateTime             @db.Date
+  estado               EstadoContrato       @default(BORRADOR)
+  monto_base           Decimal              @db.Decimal(15, 2)
+  pct_comision         Decimal              @db.Decimal(5, 2)
+  pct_punitorio_diario Decimal              @default(0.1000) @db.Decimal(5, 4)
+  indice_act           IndiceActualizacion?
+  meses_act            Int?
+  fecha_ultimo_ajuste  DateTime?            @db.Date
+  cobra_confeccion     Boolean              @default(false)
+  estrategia_confeccion EstrategiaConfeccion?
+
+  periodos_pago         PeriodoPago[]
+  cargos                Cargo[]
+  gastos                Gasto[]
+  transacciones         Transaccion[]
+  outbox_cierre_periodo OutboxCierrePeriodo[]
+
+  @@map("contratos")
+}
+
+model OutboxCierrePeriodo {
+  id           Int                @id @default(autoincrement())
+  id_contrato  Int
+  contrato     Contrato           @relation(fields: [id_contrato], references: [id])
+  estado       EstadoOutboxCierre @default(PENDIENTE)
+  intentos     Int                @default(0)
+  error        String?
+  creado_en    DateTime           @default(now())
+  procesado_en DateTime?
+
+  @@map("outbox_cierre_periodo")
+}
+
+enum EstadoOutboxCierre {
+  PENDIENTE
+  PROCESANDO
+  COMPLETADO
+  ERROR
+}
+
+// ─── Entidades Contables ─────────────────────────────────────────────────────
+
+model PeriodoPago {
+  id                Int         @id @default(autoincrement())
+  id_contrato       Int
+  contrato          Contrato    @relation(fields: [id_contrato], references: [id])
+  periodo           String      @db.VarChar(7)
+  fecha_vencimiento DateTime    @db.Date
+  estado_ciclo      EstadoCiclo @default(ABIERTO)
+
+  credito_heredado  Decimal  @default(0) @db.Decimal(15, 2)
+  credito_al_cierre Decimal? @db.Decimal(15, 2)
+
+  cargos              Cargo[]
+  liquidacion_items   LiquidacionItem[]
+
+  @@unique([id_contrato, periodo])
+  @@map("periodos_pago")
+}
+
+model Cargo {
+  id          Int         @id @default(autoincrement())
+  id_periodo  Int
+  periodo     PeriodoPago @relation(fields: [id_periodo], references: [id])
+  id_contrato Int
+  contrato    Contrato    @relation(fields: [id_contrato], references: [id])
+  tipo        TipoCargo
+  monto       Decimal     @db.Decimal(15, 2)
+  descripcion String?
+  id_gasto    Int?
+  gasto       Gasto?      @relation(fields: [id_gasto], references: [id])
+  creado_en   DateTime    @default(now())
+
+  // Solo se setean en un Cargo de tipo PUNITORIO: a qué Cargo (ALQUILER/
+  // GASTO/AJUSTE) le calculó interés, y qué rango de días cubre esa
+  // corrida. Un PUNITORIO nunca genera punitorio sobre sí mismo — no
+  // participa como cargo_origen de otra fila.
+  id_cargo_origen       Int?
+  cargo_origen          Cargo?    @relation("PunitorioDeCargo", fields: [id_cargo_origen], references: [id])
+  punitorios            Cargo[]   @relation("PunitorioDeCargo")
+  fecha_punitorio_desde DateTime? @db.Date
+  fecha_punitorio_hasta DateTime? @db.Date
+
+  aplicaciones AplicacionPago[]
+
+  @@unique([id_cargo_origen, fecha_punitorio_desde])
+  @@index([id_contrato])
+  @@map("cargos")
+}
+
+// ─── Entidades Operativas ────────────────────────────────────────────────────
+
+model Gasto {
+  id                  Int         @id @default(autoincrement())
+  id_propiedad        Int?
+  id_contrato         Int?
+  id_liquidacion_item Int?
+  concepto            String
+  categoria_interno   String?
+  monto               Decimal     @db.Decimal(15, 2)
+  tipo                TipoGasto   @default(ARREGLO)
+  cargo_a             CargoA      @default(PROPIETARIO)
+  estado_pago         EstadoGasto @default(PENDIENTE)
+  creado_en           DateTime    @default(now())
+
+  propiedad        Propiedad?       @relation(fields: [id_propiedad], references: [id])
+  contrato         Contrato?        @relation(fields: [id_contrato], references: [id])
+  liquidacion_item LiquidacionItem? @relation(fields: [id_liquidacion_item], references: [id])
+  cargos           Cargo[]
+
+  @@map("gastos")
+}
+
+model Transaccion {
+  id                 Int             @id @default(autoincrement())
+  tipo               TipoTransaccion
+  caja_destino       CajaDestino
+  monto              Decimal         @db.Decimal(15, 2)
+  fecha_transaccion  DateTime        @default(now())
+  id_contrato        Int?
+  contrato           Contrato?       @relation(fields: [id_contrato], references: [id])
+  id_propietario     Int?
+  propietario        Propietario?    @relation(fields: [id_propietario], references: [id])
+  id_usuario_creador Int?
+  usuario_creador    Usuario?        @relation("UsuarioCreador", fields: [id_usuario_creador], references: [id])
+  id_txn_origen      Int?
+  txn_origen         Transaccion?    @relation("ContraAsiento", fields: [id_txn_origen], references: [id])
+  contra_asientos    Transaccion[]   @relation("ContraAsiento")
+  comentario         String?
+  aplicaciones       AplicacionPago[]
+  deducciones        DeduccionAdelanto[]
+
+  @@map("transacciones")
+}
+
+model AplicacionPago {
+  id                  Int              @id @default(autoincrement())
+  id_transaccion      Int
+  transaccion         Transaccion      @relation(fields: [id_transaccion], references: [id])
+  id_cargo            Int
+  cargo               Cargo            @relation(fields: [id_cargo], references: [id])
+  id_liquidacion_item Int?
+  liquidacion_item    LiquidacionItem? @relation(fields: [id_liquidacion_item], references: [id])
+  monto_aplicado      Decimal          @db.Decimal(15, 2)
+
+  @@map("aplicaciones_pago")
+}
+
+model Liquidacion {
+  id                    Int               @id @default(autoincrement())
+  id_propietario        Int
+  propietario           Propietario       @relation(fields: [id_propietario], references: [id])
+  fecha_corrida         DateTime          @default(now())
+  fecha_desde           DateTime          @db.Date
+  fecha_hasta           DateTime          @db.Date
+  monto_bruto           Decimal           @db.Decimal(15, 2)
+  retenciones           Decimal           @db.Decimal(15, 2)
+  adelantos_descontados Decimal           @default(0) @db.Decimal(15, 2)
+  monto_neto            Decimal           @db.Decimal(15, 2)
+  estado                EstadoLiquidacion @default(PENDIENTE)
+
+  items       LiquidacionItem[]
+  deducciones DeduccionAdelanto[]
+
+  @@map("liquidaciones")
+}
+
+model LiquidacionItem {
+  id             Int          @id @default(autoincrement())
+  id_liquidacion Int
+  liquidacion    Liquidacion  @relation(fields: [id_liquidacion], references: [id], onDelete: Cascade)
+
+  id_periodo   Int?
+  periodo      PeriodoPago? @relation(fields: [id_periodo], references: [id])
+  id_propiedad Int
+  propiedad    Propiedad    @relation(fields: [id_propiedad], references: [id])
+
+  monto_bruto Decimal @db.Decimal(15, 2)
+  comision    Decimal @db.Decimal(15, 2)
+  gastos      Decimal @db.Decimal(15, 2)
+  monto_neto  Decimal @db.Decimal(15, 2)
+
+  aplicaciones AplicacionPago[]
+  gastos_item  Gasto[]
+
+  @@map("liquidaciones_items")
+}
+
+model DeduccionAdelanto {
+  id               Int         @id @default(autoincrement())
+  id_transaccion   Int
+  transaccion      Transaccion @relation(fields: [id_transaccion], references: [id])
+  id_liquidacion   Int
+  liquidacion      Liquidacion @relation(fields: [id_liquidacion], references: [id])
+  monto_descontado Decimal     @db.Decimal(15, 2)
+  creado_en        DateTime    @default(now())
+
+  @@map("deducciones_adelanto")
+}
+
+model IdempotencyKey {
+  key             String   @id @db.VarChar(36)
+  created_at      DateTime @default(now())
+  response_status Int
+
+  @@map("idempotency_keys")
+}
+
+// ─── ENUMs ───────────────────────────────────────────────────────────────────
+
+enum RolUsuario {
+  ADMIN
+  EMPLEADO
+  AUDITOR
+}
+
+enum EstadoContrato {
+  BORRADOR
+  ACTIVO
+  MOROSO
+  POR_VENCER
+  VENCIDO
+  RESCINDIDO
+}
+
+enum EstadoCiclo {
+  FUTURO
+  ABIERTO
+  CERRADO
+}
+
+enum TipoCargo {
+  ALQUILER
+  GASTO
+  PUNITORIO
+  AJUSTE
+}
+
+enum IndiceActualizacion {
+  ICL
+  IPC
+  ACUERDO
+}
+
+enum EstrategiaConfeccion {
+  UN_ALQUILER
+  PORCENTAJE_5
+}
+
+enum TipoTransaccion {
+  INGRESO_COBRO
+  INGRESO_COMISION
+  INGRESO_PUNITORIO
+  INGRESO_ALQUILER_PROPIO
+  INGRESO_CONFECCION_CONTRATO
+  EGRESO_LIQUIDACION
+  EGRESO_TERCEROS
+  EGRESO_OPERATIVO
+  EGRESO_ADELANTO
+  CONTRA_ASIENTO
+}
+
+enum CajaDestino {
+  TERCEROS
+  OPERATIVA
+}
+
+enum CargoA {
+  INQUILINO
+  PROPIETARIO
+  INMOBILIARIA
+}
+
+enum TipoGasto {
+  ARREGLO
+  EXPENSA
+  GAS
+  LUZ
+  IMPUESTO
+  CONFECCION_CONTRATO
+  OTRO
+}
+
+enum EstadoGasto {
+  PENDIENTE
+  PAGADO_PROVEEDOR
+}
+
+enum EstadoLiquidacion {
+  PENDIENTE
+  APROBADA
+  PAGADA
+}

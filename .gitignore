@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/app/generated/prisma
+
+# claude code — config local de cada máquina, no de un colaborador
+.claude/settings.local.json
+.claude/scheduled_tasks.lock

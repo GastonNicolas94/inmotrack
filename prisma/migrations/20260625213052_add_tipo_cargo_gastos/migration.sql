@@ -1,0 +1,9 @@
+-- CreateEnum
+CREATE TYPE "TipoGasto" AS ENUM ('ARREGLO', 'EXPENSA', 'GAS', 'LUZ', 'IMPUESTO', 'OTRO');
+
+-- CreateEnum
+CREATE TYPE "CargoA" AS ENUM ('INQUILINO', 'PROPIETARIO');
+
+-- AlterTable
+ALTER TABLE "gastos" ADD COLUMN     "cargo_a" "CargoA" NOT NULL DEFAULT 'PROPIETARIO',
+ADD COLUMN     "tipo" "TipoGasto" NOT NULL DEFAULT 'ARREGLO';

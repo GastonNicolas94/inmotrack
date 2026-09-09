@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/v1/cron/activar-cierre-periodos",
+      "schedule": "0 6 1 * *"
+    }
+  ]
+}
