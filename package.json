@@ -8,7 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx prisma/seed.ts",
-    "test": "find tests -name '*.test.ts' -exec node --import tsx --test --test-concurrency=1 {} +"
+    "test": "INMOTRACK_ALLOW_DESTRUCTIVE_TESTS=1 find tests -name '*.test.ts' -exec node --import tsx --test --test-concurrency=1 {} +",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status",
+    "db:reset:local": "supabase db reset",
+    "test:coverage": "c8 --100 --reporter=text --reporter=lcov --include=lib/database-url.ts --include=lib/seed-password.ts node --import tsx --test tests/lib/database-url.test.ts tests/lib/seed-password.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -43,9 +48,11 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "c8": "12.0.0",
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "supabase": "2.117.0",
     "tailwindcss": "^4",
     "tsx": "^4.22.4",
     "typescript": "^5"

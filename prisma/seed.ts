@@ -5,9 +5,10 @@ import { PagosService } from "@/services/pagos.service";
 import { GastosService } from "@/services/gastos.service";
 import { LiquidacionesService } from "@/services/liquidaciones.service";
 import { calcularVencimientoPeriodo } from "@/lib/fecha";
+import { requireSeedPassword } from "@/lib/seed-password";
 
 async function main() {
-  const passwordHash = await bcrypt.hash("admin123", 12);
+  const passwordHash = await bcrypt.hash(requireSeedPassword(), 12);
 
   const admin = await prisma.usuario.upsert({
     where: { email: "admin@inmotrack.com" },
@@ -35,7 +36,7 @@ async function main() {
     create: { email: "auditor@inmotrack.com", password_hash: passwordHash, rol: "AUDITOR" },
   });
 
-  console.log("✅ Usuarios: admin / empleado1 / empleado2 / auditor @inmotrack.com — contraseña admin123");
+  console.log("✅ Usuarios: admin / empleado1 / empleado2 / auditor @inmotrack.com — contraseña desde INMOTRACK_SEED_PASSWORD");
 
   const contratosExistentes = await prisma.contrato.count();
   if (contratosExistentes > 0) {
@@ -43,46 +44,46 @@ async function main() {
     return;
   }
 
-  const carlos = await prisma.propietario.create({
-    data: { nombre: "Carlos Méndez", cbu: "0170099220000012345678" },
+  const ownerA = await prisma.propietario.create({
+    data: { nombre: "Propietario Demo A", cbu: "0000000000000000000000" },
   });
-  const laura = await prisma.propietario.create({
-    data: { nombre: "Laura Giménez", cbu: "0720123188000098765432" },
+  const ownerB = await prisma.propietario.create({
+    data: { nombre: "Propietario Demo B", cbu: "0000000000000000000000" },
   });
-  const inmobiliaria = await prisma.propietario.create({
-    data: { nombre: "InmoTrack Inmobiliaria", cbu: "0000003100000011112222" },
-  });
-
-  const propA = await prisma.propiedad.create({
-    data: { id_propietario: carlos.id, direccion: "Av. Corrientes 1234, 4°A, CABA", es_propia: false },
-  });
-  const propB = await prisma.propiedad.create({
-    data: { id_propietario: carlos.id, direccion: "Av. Santa Fe 4567, 2°B, CABA", es_propia: false },
-  });
-  const propC = await prisma.propiedad.create({
-    data: { id_propietario: laura.id, direccion: "Av. Rivadavia 8900, PB, CABA", es_propia: false },
-  });
-  const propD = await prisma.propiedad.create({
-    data: { id_propietario: inmobiliaria.id, direccion: "Defensa 350, 1°C, San Telmo, CABA", es_propia: true },
+  const ownerAgency = await prisma.propietario.create({
+    data: { nombre: "Inmobiliaria Demo", cbu: "0000000000000000000000" },
   });
 
-  const juan = await prisma.inquilino.create({
-    data: { nombre: "Juan Pérez", dni_cuit: "20-30111222-3", email: "juan.perez@example.com" },
+  const propertyA = await prisma.propiedad.create({
+    data: { id_propietario: ownerA.id, direccion: "Propiedad demo A - sin dirección real", es_propia: false },
   });
-  const maria = await prisma.inquilino.create({
-    data: { nombre: "María Rodríguez", dni_cuit: "27-28444555-9", email: "maria.rodriguez@example.com" },
+  const propertyB = await prisma.propiedad.create({
+    data: { id_propietario: ownerA.id, direccion: "Propiedad demo B - sin dirección real", es_propia: false },
   });
-  const pedro = await prisma.inquilino.create({
-    data: { nombre: "Pedro Sánchez", dni_cuit: "20-25666777-1", email: "pedro.sanchez@example.com" },
+  const propertyC = await prisma.propiedad.create({
+    data: { id_propietario: ownerB.id, direccion: "Propiedad demo C - sin dirección real", es_propia: false },
   });
-  const ana = await prisma.inquilino.create({
-    data: { nombre: "Ana López", dni_cuit: "27-31888999-4", email: "ana.lopez@example.com" },
+  const propertyD = await prisma.propiedad.create({
+    data: { id_propietario: ownerAgency.id, direccion: "Propiedad demo D - sin dirección real", es_propia: true },
+  });
+
+  const tenantA = await prisma.inquilino.create({
+    data: { nombre: "Inquilino Demo A", dni_cuit: "DEMO-DOC-A", email: "inquilino-a@example.invalid" },
+  });
+  const tenantB = await prisma.inquilino.create({
+    data: { nombre: "Inquilino Demo B", dni_cuit: "DEMO-DOC-B", email: "inquilino-b@example.invalid" },
+  });
+  const tenantC = await prisma.inquilino.create({
+    data: { nombre: "Inquilino Demo C", dni_cuit: "DEMO-DOC-C", email: "inquilino-c@example.invalid" },
+  });
+  const tenantD = await prisma.inquilino.create({
+    data: { nombre: "Inquilino Demo D", dni_cuit: "DEMO-DOC-D", email: "inquilino-d@example.invalid" },
   });
 
   // Contrato 1: BORRADOR
   await ContratosService.crear({
-    id_propiedad: propA.id,
-    id_inquilino: juan.id,
+    id_propiedad: propertyA.id,
+    id_inquilino: tenantA.id,
     fecha_inicio: "2026-09-01",
     fecha_fin: "2027-08-31",
     monto_base: 350000,
@@ -92,8 +93,8 @@ async function main() {
 
   // Contrato 2: ACTIVO — paga de más, el sobrante se arrastra a un período nuevo.
   const contrato2 = await ContratosService.crear({
-    id_propiedad: propB.id,
-    id_inquilino: maria.id,
+    id_propiedad: propertyB.id,
+    id_inquilino: tenantB.id,
     fecha_inicio: "2026-08-01", // activar() genera el período a partir de esta fecha
     fecha_fin: "2028-07-31",
     monto_base: 420000,
@@ -111,8 +112,8 @@ async function main() {
 
   // Contrato 3: MOROSO — deuda de agosto sin pagar, sigue viva en su Cargo.
   const contrato3 = await ContratosService.crear({
-    id_propiedad: propC.id,
-    id_inquilino: pedro.id,
+    id_propiedad: propertyC.id,
+    id_inquilino: tenantC.id,
     fecha_inicio: "2026-08-01", // activar() genera el período a partir de esta fecha
     fecha_fin: "2028-07-31",
     monto_base: 380000,
@@ -133,8 +134,8 @@ async function main() {
 
   // Contrato 4: ACTIVO, propiedad propia — pct_comision 100 para ver INGRESO_ALQUILER_PROPIO.
   const contrato4 = await ContratosService.crear({
-    id_propiedad: propD.id,
-    id_inquilino: ana.id,
+    id_propiedad: propertyD.id,
+    id_inquilino: tenantD.id,
     fecha_inicio: "2026-08-01", // activar() genera el período a partir de esta fecha
     fecha_fin: "2027-07-31",
     monto_base: 300000,
@@ -152,7 +153,7 @@ async function main() {
   console.log("✅ Contratos: 1 BORRADOR, 1 ACTIVO con crédito arrastrado, 1 MOROSO, 1 ACTIVO (propiedad propia)");
 
   await GastosService.crear({
-    id_propiedad: propA.id,
+    id_propiedad: propertyA.id,
     concepto: "Reparación de cañería",
     monto: 45000,
     tipo: "ARREGLO",
@@ -161,7 +162,7 @@ async function main() {
   });
 
   const gastoExpensas = await GastosService.crear({
-    id_propiedad: propB.id,
+    id_propiedad: propertyB.id,
     id_contrato: contrato2.id,
     concepto: "Expensas septiembre 2026",
     monto: 32000,
@@ -182,10 +183,10 @@ async function main() {
 
   console.log("✅ Gastos: 1 pendiente (propietario), 1 pagado (propietario), 1 propio de la inmobiliaria");
 
-  const liquidacion = await LiquidacionesService.generarParaPropietario(carlos.id, new Date());
+  const liquidacion = await LiquidacionesService.generarParaPropietario(ownerA.id, new Date());
   await LiquidacionesService.aprobar(liquidacion.id, admin.id);
 
-  console.log("✅ Liquidación generada y aprobada para Carlos Méndez");
+  console.log("✅ Liquidación generada y aprobada para Propietario Demo A");
   console.log("\n🌱 Seed de demo completo.");
 }
 

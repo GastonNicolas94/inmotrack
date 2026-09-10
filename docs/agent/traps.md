@@ -1,7 +1,7 @@
 ---
 type: Traps
-version: 37d97fb6e
-validated: 2026-09-09
+version: d742966
+validated: 2026-09-10
 update_when: cuando se descubre un gotcha no obvio, agregarlo acá en el mismo cambio
 scope:
   - services
@@ -10,10 +10,26 @@ scope:
   - tests
   - middleware.ts
 ---
-
 # Traps — InmoTrack
 
 Cosas no obvias a partir de una lectura rápida, más desvíos deliberados de lo que uno esperaría. Crece incrementalmente — cada vez que algo sorprende durante una sesión de trabajo, entra acá en el mismo cambio.
+
+---
+
+## Supabase local requiere Docker y usa el puerto 54322
+
+`npm run supabase:start`, `npm run db:reset:local` y el seed DB-backed requieren
+Docker Desktop (o un daemon compatible). La base local esperada es únicamente
+`postgresql://postgres:postgres@127.0.0.1:54322/postgres`; no sustituirla por una
+base remota.
+
+Los tests destructivos requieren explícitamente
+`INMOTRACK_ALLOW_DESTRUCTIVE_TESTS=1` antes de parsear la URL. Después validan la
+URL canónica exacta `postgresql://postgres:postgres@127.0.0.1:54322/postgres`
+(también aceptan el spelling de host `localhost`), el puerto `54322`, la base
+`/postgres` y rechazan parámetros de URL. Si falta la marca, la URL o Docker no
+está iniciado, deben fallar cerrados o quedar bloqueados; nunca relajar el guard
+para que pasen.
 
 ---
 
@@ -146,4 +162,3 @@ Antes de la migración `20260906221549_liquidaciones_adelantos`, ambos apuntaban
 ## To confirm
 
 - ⚠ No hay ningún entorno de staging/preview documentado con datos separados de producción — confirmar antes de asumir que existe.
-- ⚠ `lib/db.ts` loguea cada query de Prisma a stdout sin gate por `NODE_ENV` — confirmar si esto es intencional para producción (volumen de logs) o un descuido antes de un deploy real.

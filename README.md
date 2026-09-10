@@ -20,12 +20,34 @@ Historia de decisiones de diseño de cada feature grande: [`docs/superpowers/spe
 
 ## Quick start
 
+Create `.env.local` (this is a local-only file and is gitignored):
+
+```dotenv
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+DIRECT_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+DATABASE_POOL_MAX=5
+```
+
+Next loads `.env.local` for `npm run dev` and builds. Plain `node`/`tsx` commands
+and `dotenv/config` do not automatically load `.env.local`, so export it in the
+shell before seed, tests, or Prisma commands:
+
 ```bash
+set -a; . ./.env.local; set +a
 npm install
-npm run seed      # datos de demo (4 usuarios, propietarios, contratos, una liquidación real)
+npm run supabase:start
+npm run db:reset:local
+read -rsp "Seed password: " seed_password; echo
+export INMOTRACK_SEED_PASSWORD="$seed_password"
+npm run seed
+unset INMOTRACK_SEED_PASSWORD seed_password # use this same chosen value for the demo login
 npm run dev       # http://localhost:3000
 ```
 
-Login de demo: `admin@inmotrack.com` / `admin123` (ADMIN), `empleado1@inmotrack.com` / `admin123` (EMPLEADO), `auditor@inmotrack.com` / `admin123` (AUDITOR).
+El desarrollo local requiere Docker Desktop (o un daemon compatible) para ejecutar
+Supabase. La base queda en `127.0.0.1:54322`; si Docker no está disponible, los
+comandos de Supabase y las pruebas que necesitan base quedan bloqueados.
 
-Ver [`docs/agent/runbook.md`](docs/agent/runbook.md) para variables de entorno, tests y el flujo de migraciones (manual, nunca `prisma migrate dev`).
+Login de demo: `admin@inmotrack.com`, `empleado1@inmotrack.com` o `auditor@inmotrack.com`, con el valor que elegiste para `INMOTRACK_SEED_PASSWORD` durante el seed.
+
+Ver [`docs/agent/runbook.md`](docs/agent/runbook.md) para variables de entorno, tests y el flujo de migraciones (Supabase + Prisma diff, nunca `prisma migrate dev`).

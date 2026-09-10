@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { assertLocalTestDatabase, requireDatabaseUrl } from "@/lib/database-url";
 
 /**
  * Trunca todas las tablas del dominio de negocio y financiero, en cascada,
@@ -6,6 +7,7 @@ import { prisma } from "@/lib/db";
  * nunca importar este archivo desde código de producción.
  */
 export async function cleanDatabase() {
+  assertLocalTestDatabase(requireDatabaseUrl());
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
       deducciones_adelanto,

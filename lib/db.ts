@@ -1,15 +1,19 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
-
-const DATABASE_URL =
-  process.env.DATABASE_URL ||
-  "postgresql://gfrancone@localhost:5432/inmotrack";
+import { requireDatabaseUrl } from "@/lib/database-url";
 
 function createPrismaClient() {
-  const pool = new Pool({ connectionString: DATABASE_URL });
+  const pool = new Pool({
+    connectionString: requireDatabaseUrl(),
+    max: Number(process.env.DATABASE_POOL_MAX ?? "5"),
+    connectionTimeoutMillis: 10_000,
+    idleTimeoutMillis: 30_000,
+  });
   const adapter = new PrismaPg(pool);
-  return new PrismaClient({ adapter, log: ["query"] });
+  const log: ("query" | "error" | "warn")[] =
+    process.env.NODE_ENV === "production" ? ["error"] : ["error", "warn"];
+  return new PrismaClient({ adapter, log });
 }
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
