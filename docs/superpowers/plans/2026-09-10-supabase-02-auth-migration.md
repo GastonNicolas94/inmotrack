@@ -19,6 +19,7 @@
 - Resolve `rol` and `puede_aprobar_liquidaciones` from `public.usuarios` on the server.
 - Keep `SUPABASE_SECRET_KEY` server-only and never prefix it with `NEXT_PUBLIC_`.
 - Preserve the exact existing ADMIN/EMPLEADO/AUDITOR behavior and cron bypass.
+- Require 100% line, function and branch coverage for every new or semantically modified Auth/authorization module.
 - Commit steps require explicit user authorization.
 
 ---
@@ -410,15 +411,18 @@ Expected: the search has no application-code matches. Delete the four obsolete f
 
 - [ ] **Step 6: Full Auth verification**
 
+Extend the `test:coverage` script's explicit include list with `lib/supabase/env.ts`, `lib/auth-context.ts`, `lib/http-error.ts`, `services/usuarios.service.ts` and any other module containing new Auth decisions. Include the focused test files from Tasks 1–5. Do not exclude error branches.
+
 ```bash
 npm run db:reset:local
 npm run seed
 npm run lint
 npx next build
 npm test
+npm run test:coverage
 ```
 
-Expected: all PASS against local Supabase.
+Expected: all PASS against local Supabase and the coverage command reports 100% lines, functions and branches for its declared Auth scope.
 
 - [ ] **Step 7: Update agent docs and commit if authorized**
 
