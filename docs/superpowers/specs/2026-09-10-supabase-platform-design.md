@@ -345,10 +345,10 @@ Los tests destructivos exigen una marca explícita de entorno local/test y verif
 4. Aplicar baseline y migraciones.
 5. Ejecutar el bootstrap del primer ADMIN.
 6. Configurar variables en Vercel.
-7. Desplegar una preview conectada a un entorno remoto descartable o mantenerla sin operaciones destructivas.
-8. Ejecutar smoke tests.
-9. Promover a producción.
-10. Verificar login, una operación de escritura, Realtime y cron.
+7. Desplegar una preview sin credenciales de la base de producción y validar allí build, assets y navegación no autenticada.
+8. Ejecutar localmente los smoke tests autenticados contra Supabase local.
+9. Promover a producción con las variables remotas configuradas.
+10. Verificar en producción login, una operación de escritura controlada, Realtime y cron.
 11. Retirar NEXTAUTH_SECRET y dependencias NextAuth una vez confirmado el corte.
 
 No se migra gradualmente entre dos fuentes de identidad porque no existen usuarios reales que preservar. El corte es directo desde los usuarios demo de NextAuth hacia identidades nuevas de Supabase Auth.
