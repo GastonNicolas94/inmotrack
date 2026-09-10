@@ -299,6 +299,12 @@ La clave publishable puede estar en el navegador. La clave secret nunca.
 
 ## 13. Pruebas
 
+### Gate de coverage
+
+La lógica TypeScript nueva o semánticamente modificada por esta iniciativa debe alcanzar 100% de líneas, funciones y branches. Si se modifica un archivo existente, el comportamiento nuevo se extrae a un módulo enfocado o el módulo completo entra al gate; no se acepta excluir una rama nueva por estar dentro de un archivo antiguo.
+
+Se excluyen del porcentaje únicamente código generado, migraciones SQL, archivos declarativos de configuración, declaraciones de tipos y JSX puramente presentacional. Cada exclusión debe quedar explícita en la configuración de coverage. Estas exclusiones siguen requiriendo validación mediante migraciones locales, pruebas RLS, build, inspección visual o E2E según corresponda. Coverage mide ejecución, no reemplaza las pruebas de comportamiento.
+
 ### Unitarias
 
 - mapeo de rutas afectadas por cada app event;
@@ -329,6 +335,7 @@ Los tests destructivos exigen una marca explícita de entorno local/test y verif
 - npm run lint;
 - npx next build;
 - suite local secuencial;
+- npm run test:coverage con 100% de líneas, funciones y branches para el alcance definido;
 - Supabase Security Advisor sin hallazgos críticos;
 - Supabase Performance Advisor revisado;
 - revisión de publicación Realtime;
