@@ -18,6 +18,7 @@
 - Event messages contain no amount, email, DNI/CUIT, CBU, phone or arbitrary payload.
 - Only payments, contra-asientos and liquidation lifecycle changes create persistent notifications.
 - The application must remain usable when Realtime is disconnected.
+- Require 100% line, function and branch coverage for new or semantically modified event, notification and Realtime logic.
 - Vercel Cron stays unchanged except for environment and region configuration.
 - Creating a paid Supabase project or changing Vercel production requires explicit user confirmation at execution time.
 - Commit steps require explicit user authorization.
@@ -362,13 +363,16 @@ Run `npm run bootstrap:admin` once with the chosen admin email. Deploy preview w
 
 - [ ] **Step 7: Run the final verification sequence**
 
+Extend `test:coverage` to include `lib/app-events.ts`, `services/eventos.service.ts`, `services/notificaciones.service.ts`, `components/features/notificaciones/realtime-routing.ts` and every additional module containing new non-presentational logic. Keep presentational JSX, generated Prisma code, SQL migrations and declarative config explicitly excluded; their integration/E2E checks remain mandatory.
+
 ```bash
 npm run lint
 npx next build
 npm test
+npm run test:coverage
 ```
 
-Also verify the remote `transacciones` trigger by attempting a rollbacked update inside a transaction and confirming the expected exception. Confirm no secret appears in client bundles or HTTP payloads.
+Expected: coverage is 100% for lines, functions and branches in the declared Supabase implementation scope. Also verify the remote `transacciones` trigger by attempting a rollbacked update inside a transaction and confirming the expected exception. Confirm no secret appears in client bundles or HTTP payloads.
 
 - [ ] **Step 8: Update maintained documentation**
 
