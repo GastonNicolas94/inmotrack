@@ -332,6 +332,10 @@ ALTER TABLE "deducciones_adelanto" ADD CONSTRAINT "deducciones_adelanto_id_trans
 -- AddForeignKey
 ALTER TABLE "deducciones_adelanto" ADD CONSTRAINT "deducciones_adelanto_id_liquidacion_fkey" FOREIGN KEY ("id_liquidacion") REFERENCES "liquidaciones"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
+ALTER TABLE public.gastos
+  ADD CONSTRAINT chk_gasto_propio_inmobiliaria
+  CHECK (id_propiedad IS NOT NULL OR cargo_a = 'INMOBILIARIA');
+
 CREATE OR REPLACE FUNCTION public.rechazar_mutacion_transacciones()
 RETURNS trigger
 LANGUAGE plpgsql

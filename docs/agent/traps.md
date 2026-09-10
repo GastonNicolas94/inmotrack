@@ -1,6 +1,6 @@
 ---
 type: Traps
-version: d742966
+version: 60f8805
 validated: 2026-09-10
 update_when: cuando se descubre un gotcha no obvio, agregarlo acá en el mismo cambio
 scope:
@@ -30,6 +30,17 @@ URL canónica exacta `postgresql://postgres:postgres@127.0.0.1:54322/postgres`
 `/postgres` y rechazan parámetros de URL. Si falta la marca, la URL o Docker no
 está iniciado, deben fallar cerrados o quedar bloqueados; nunca relajar el guard
 para que pasen.
+
+---
+
+## Los CHECK y triggers manuales no sobreviven un Prisma diff
+
+`prisma/schema.prisma` y `prisma migrate diff` no representan ni preservan los
+`CHECK` constraints ni los triggers manuales de PostgreSQL. Al consolidar un
+baseline, auditar las migraciones SQL históricas y volver a agregar solamente el
+DDL manual que siga siendo válido para el esquema actual; después verificarlo con
+tests de integración contra la base. No asumir que el SQL generado por Prisma
+incluye esas reglas.
 
 ---
 
