@@ -18,6 +18,7 @@
 - Do not create or reuse a remote Supabase project in this phase; this phase must pass entirely against Supabase local.
 - Keep Prisma and `services/` as the only application path to financial tables.
 - Preserve the PostgreSQL trigger that rejects `UPDATE` and `DELETE` on `transacciones`.
+- Require 100% line, function and branch coverage for new or semantically modified testable TypeScript.
 - Never run a DB-backed test until the local-only guard introduced in Task 2 passes.
 - Commit steps require the user's explicit authorization under this repository's `AGENTS.md`.
 
@@ -52,7 +53,7 @@ Expected: every command exits 0 and documents the flags used below.
 Run:
 
 ```bash
-npm install --save-dev --save-exact supabase
+npm install --save-dev --save-exact supabase c8
 ```
 
 Expected: `package.json` contains an exact `supabase` version and `package-lock.json` changes.
@@ -83,7 +84,8 @@ Add to `scripts` in `package.json`:
 "supabase:start": "supabase start",
 "supabase:stop": "supabase stop",
 "supabase:status": "supabase status",
-"db:reset:local": "supabase db reset"
+"db:reset:local": "supabase db reset",
+"test:coverage": "c8 --100 --reporter=text --reporter=lcov --include=lib/database-url.ts node --import tsx --test tests/lib/database-url.test.ts"
 ```
 
 - [ ] **Step 5: Start the stack and capture local connection values**
@@ -162,6 +164,7 @@ Run:
 
 ```bash
 node --import tsx --test tests/lib/database-url.test.ts
+npm run test:coverage
 ```
 
 Expected: FAIL because `lib/database-url.ts` does not exist.
@@ -234,7 +237,7 @@ Run:
 node --import tsx --test tests/lib/database-url.test.ts
 ```
 
-Expected: 4 tests PASS.
+Expected: 4 tests PASS and coverage reports 100% for lines, functions and branches.
 
 - [ ] **Step 7: Commit if authorized**
 
@@ -368,6 +371,7 @@ Run:
 npm run lint
 npx next build
 npm test
+npm run test:coverage
 ```
 
 Expected: all commands PASS. If a failure predates this phase, record the exact command and output; do not weaken the DB guard.
@@ -395,4 +399,3 @@ git commit -m "docs: document Supabase local database workflow"
 - [ ] **Step 5: Phase gate**
 
 Stop here and verify manually that the existing NextAuth login and one payment flow work against Supabase local. Begin Plan 02 only after this gate passes.
-
