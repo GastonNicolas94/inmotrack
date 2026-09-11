@@ -1,7 +1,7 @@
 ---
 type: Runbook
-version: 2c63145
-validated: 2026-09-10
+version: 8629635
+validated: 2026-09-12
 update_when: Cambian los scripts de package.json, el flujo de migraciones, o el proceso de deploy
 scope:
   - package.json
@@ -210,7 +210,11 @@ base no identificada. `supabase/migrations/` es la única historia ejecutable;
 
 El workflow `.github/workflows/supabase-local.yml` ejecuta el gate de la fase de base de datos contra un stack Supabase local efímero en Docker. Corre en cada push a `feat/supabase-integration`, en pull requests y mediante dispatch manual. Usa Node.js 22, levanta Supabase, exporta las claves reales del stack efímero desde `supabase status -o env`, resetea las migraciones, valida y genera Prisma, ejecuta el seed, la suite de tests, el gate de cobertura y el build de Next.js; siempre intenta detener Supabase al terminar. No incluye lint porque los cuatro errores existentes de lint no están relacionados con esta fase.
 
-- [ ] `npx next build` sin errores de TypeScript
+`npm run build` ejecuta `prisma generate` antes de `next build`. Esto es obligatorio en
+Vercel porque una instalación limpia no garantiza que el lifecycle script transitivo de
+`@prisma/client` genere el cliente antes del type-check de Next.js.
+
+- [ ] `npm run build` sin errores de TypeScript
 - [ ] `npm test` — decidir conscientemente si hace falta correr la suite completa (trunca la base real) o alcanza con el/los archivo(s) tocado(s)
 - [ ] Si el cambio toca `prisma/schema.prisma`: migración aplicada siguiendo el flujo manual de arriba, no `migrate dev`
 - [ ] Si el cambio agrega/cambia una ruta: actualizar [contracts.md](contracts.md)
