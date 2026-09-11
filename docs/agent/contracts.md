@@ -1,7 +1,7 @@
 ---
 type: Contracts
-version: 37d97fb6e
-validated: 2026-09-09
+version: d742966
+validated: 2026-09-10
 update_when: Rutas HTTP agregadas/cambiadas/eliminadas, o cambia el criterio de acceso por rol en middleware.ts
 scope:
   - app/api
@@ -78,15 +78,18 @@ Todo pasa primero por `middleware.ts` (ver [architecture.md](architecture.md)):
 
 ## Dependencias externas
 
-Ninguna. No hay APIs de terceros, no hay colas de mensajería, no hay caché externo (Redis/KVS). Toda la persistencia es un único Postgres.
+Supabase provee PostgreSQL como dependencia externa. No hay otras APIs de terceros,
+colas de mensajería ni caché externo (Redis/KVS).
 
 ## Recursos de plataforma
 
 | Tipo | Recurso | Para qué | Fallo |
 |------|---------|----------|-------|
-| PostgreSQL | `DATABASE_URL` (fallback hardcodeado a `postgresql://gfrancone@localhost:5432/inmotrack` en `lib/db.ts` y `prisma.config.ts` si la env var no está) | Única fuente de persistencia | Sin retry — Prisma tira, la ruta responde 500 vía `handleServiceError` |
+| PostgreSQL/Supabase | `DATABASE_URL` (obligatoria) | Conexión de runtime; única fuente de persistencia | Sin retry — Prisma tira, la ruta responde 500 vía `handleServiceError` |
+| PostgreSQL/Supabase | `DIRECT_URL` (obligatoria) | Conexión directa de Prisma CLI para validar/generar y operaciones de esquema | El comando Prisma falla sin ejecutarse |
 | Vercel Cron | `vercel.json` → `/api/v1/cron/activar-cierre-periodos` | Dispara el cierre mensual de períodos | Sin retry automático — el próximo cron mensual vuelve a encontrar lo que quedó sin procesar |
 
 ## Telemetría emitida
 
-Ninguna. No hay métricas custom, no hay tracing/OTel, no hay dashboards. `lib/db.ts` loguea cada query de Prisma a stdout (`log: ["query"]`, sin gate por `NODE_ENV` — ver traps.md) — es el único "observability" del repo hoy.
+Ninguna. No hay métricas custom, no hay tracing/OTel, no hay dashboards. En producción,
+`lib/db.ts` configura Prisma con logging de errores solamente.

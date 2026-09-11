@@ -45,3 +45,7 @@ next-env.d.ts
 # claude code — config local de cada máquina, no de un colaborador
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
+
+# supabase local development
+/supabase/.branches
+/supabase/.temp

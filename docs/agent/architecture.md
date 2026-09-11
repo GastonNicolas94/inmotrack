@@ -1,7 +1,7 @@
 ---
 type: Architecture
-version: 37d97fb6e
-validated: 2026-09-09
+version: d742966
+validated: 2026-09-10
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
   - app
@@ -57,8 +57,11 @@ tests/
   lib/, services/, db/, helpers/     → node:test — ver runbook.md
 prisma/
   schema.prisma                      → Modelo de datos completo (fuente de verdad)
-  migrations/                        → Migraciones aplicadas a mano (nunca `prisma migrate dev` — ver runbook.md)
   seed.ts                            → Datos de demo
+supabase/
+  config.toml                        → Configuración de Supabase local (Postgres en 54322)
+  migrations/                         → Única historia ejecutable; aplicada por `npx supabase db reset`/push
+docs/archive/prisma-migrations/       → Historia Prisma heredada, solo referencia no ejecutable
 middleware.ts                        → Auth de sesión + control de acceso por rol, corre en TODAS las rutas salvo /login, /api/auth, /api/v1/cron/*
 auth.config.ts / lib/auth.ts         → Split Edge/Node de NextAuth — ver traps.md
 ```
@@ -85,6 +88,12 @@ services/*.ts
 Prisma Client (adapter-pg) → PostgreSQL
 ```
 
+En local, PostgreSQL lo provee Supabase en `127.0.0.1:54322/postgres` y requiere
+Docker Desktop (o un daemon compatible). La aplicación usa `DATABASE_URL`; Prisma
+CLI usa `DIRECT_URL` desde `prisma.config.ts`. En una instalación remota pueden ser
+endpoints distintos (pooler para runtime y conexión directa para migraciones), pero
+ningún test destructivo debe apuntar allí.
+
 Para las páginas del dashboard (no-API), el flujo es más corto: el Server Component (`TablaXxx.tsx`) llama al `service` directamente (sin pasar por HTTP), y los componentes cliente (`ModalXxx.tsx`) hacen `fetch()` a las mismas rutas `/api/v1/*` que usaría un cliente externo.
 
 ## Outbox pattern (cierre de períodos)
@@ -106,5 +115,6 @@ No hay un worker/cola real — el "consumidor" es el propio cron de Vercel llama
 |------|--------|------|
 | `.superpowers/sdd/` | Notas de trabajo del flujo superpowers | Autoexcluido por su propio `.gitignore` (`*`) — nunca se commitea |
 | `.superpowers/*.md` | Reportes de tareas de subagentes | Historial de construcción, no documentación de producto |
-| `prisma/migrations/` | SQL generado por `prisma migrate diff` + ediciones manuales | No editar una migración ya aplicada — ver runbook.md |
+| `supabase/migrations/` | Historia ejecutable de migraciones SQL | No editar una migración ya aplicada — ver runbook.md |
+| `docs/archive/prisma-migrations/` | Historia Prisma heredada | Solo referencia; nunca la ejecute Prisma o Supabase |
 | `components/ui/` | Componentes shadcn generados por el CLI | Ajustar tema/variantes ahí está bien; no meter lógica de dominio |
