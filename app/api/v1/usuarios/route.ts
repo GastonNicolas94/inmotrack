@@ -1,19 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { auth } from "@/lib/auth";
 import { errorResponse } from "@/lib/errors";
+import { handleServiceError } from "@/lib/api-error-handler";
+import { requireAdmin, requireAuthenticatedUser } from "@/lib/auth-context";
+import { UsuariosService } from "@/services/usuarios.service";
+import { invitarUsuarioSchema } from "@/schemas/usuario.schema";
 import { z } from "zod";
 
 export async function GET() {
   try {
-    const usuarios = await prisma.usuario.findMany({
-      select: { id: true, email: true, rol: true, puede_aprobar_liquidaciones: true },
-      orderBy: { email: "asc" },
-    });
+    const actor = await requireAuthenticatedUser();
+    const usuarios = await UsuariosService.listar(actor);
     return NextResponse.json(usuarios);
   } catch (e) {
-    console.error("[GET /api/v1/usuarios]", e);
-    return errorResponse("SERVER_ERROR", String(e), 500);
+    return handleServiceError(e);
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const actor = await requireAdmin();
+    const body = await req.json();
+    const parsed = invitarUsuarioSchema.safeParse(body);
+    if (!parsed.success) {
+      return errorResponse("VALIDATION_ERROR", "Datos inválidos.", 400);
+    }
+
+    const usuario = await UsuariosService.invitar(parsed.data, actor);
+    return NextResponse.json(usuario, { status: 201 });
+  } catch (e) {
+    return handleServiceError(e);
   }
 }
 
@@ -24,11 +40,7 @@ const delegacionSchema = z.object({
 
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await auth();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((session?.user as any)?.rol !== "ADMIN") {
-      return errorResponse("FORBIDDEN", "Solo el Administrador puede delegar permisos.", 403);
-    }
+    await requireAdmin();
 
     const body = await req.json();
     const parsed = delegacionSchema.safeParse(body);
@@ -57,7 +69,6 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json(actualizado);
   } catch (e) {
-    console.error("[PATCH /api/v1/usuarios]", e);
-    return errorResponse("SERVER_ERROR", String(e), 500);
+    return handleServiceError(e);
   }
 }

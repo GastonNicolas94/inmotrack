@@ -15,7 +15,7 @@ describe("AdelantosService.registrar", () => {
       data: { nombre: "Propietario 1", cbu: "0000000000000000000000" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "admin1@test.com", password_hash: "x", rol: "ADMIN" },
+    data: { email: "admin1@test.com", auth_user_id: "00000000-0000-4000-8000-000000000801", rol: "ADMIN" },
     });
 
     const adelanto = await AdelantosService.registrar({
@@ -35,7 +35,7 @@ describe("AdelantosService.registrar", () => {
       data: { nombre: "Propietario 2", cbu: "0000000000000000000000" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "admin2@test.com", password_hash: "x", rol: "ADMIN" },
+    data: { email: "admin2@test.com", auth_user_id: "00000000-0000-4000-8000-000000000802", rol: "ADMIN" },
     });
 
     await assert.rejects(
@@ -77,7 +77,7 @@ describe("AdelantosService.obtenerPendiente", () => {
       data: { nombre: "Propietario 4", cbu: "0000000000000000000000" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "admin4@test.com", password_hash: "x", rol: "ADMIN" },
+    data: { email: "admin4@test.com", auth_user_id: "00000000-0000-4000-8000-000000000803", rol: "ADMIN" },
     });
 
     const adelanto = await AdelantosService.registrar({
@@ -99,7 +99,7 @@ describe("AdelantosService.obtenerPendiente", () => {
       data: { nombre: "Propietario 5", cbu: "0000000000000000000000" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "admin5@test.com", password_hash: "x", rol: "ADMIN" },
+    data: { email: "admin5@test.com", auth_user_id: "00000000-0000-4000-8000-000000000804", rol: "ADMIN" },
     });
 
     const adelanto = await AdelantosService.registrar({
@@ -141,7 +141,7 @@ describe("AdelantosService.obtenerPendiente", () => {
       data: { nombre: "Propietario 6", cbu: "0000000000000000000000" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "admin6@test.com", password_hash: "x", rol: "ADMIN" },
+    data: { email: "admin6@test.com", auth_user_id: "00000000-0000-4000-8000-000000000805", rol: "ADMIN" },
     });
 
     // Crear primer adelanto (viejo)

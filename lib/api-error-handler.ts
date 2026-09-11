@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { IdempotencyConflictError } from "@/lib/idempotency";
 import { errorResponse } from "@/lib/errors";
+import { HttpError } from "@/lib/http-error";
 
 /**
  * Traduce un error lanzado por la capa de servicio a una respuesta HTTP.
@@ -11,6 +12,9 @@ import { errorResponse } from "@/lib/errors";
  * 404. Idempotencia a 409. Cualquier otra cosa (bug real) a 500.
  */
 export function handleServiceError(e: unknown): NextResponse {
+  if (e instanceof HttpError) {
+    return errorResponse(e.code, e.message, e.status);
+  }
   if (e instanceof IdempotencyConflictError) {
     return errorResponse("IDEMPOTENCY_CONFLICT", e.message, 409);
   }

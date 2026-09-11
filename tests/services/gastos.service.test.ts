@@ -99,7 +99,7 @@ describe("GastosService.crear", () => {
   it("un gasto a cargo del inquilino consume crédito disponible al nacer, sin esperar al cierre del período", async () => {
     const { PagosService } = await import("@/services/pagos.service");
     const usuario = await prisma.usuario.create({
-      data: { email: "credito1@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "credito1@test.com", auth_user_id: "00000000-0000-4000-8000-000000000101", rol: "ADMIN" },
     });
     const propietario = await prisma.propietario.create({
       data: { nombre: "Dueño Crédito", cbu: "0000000000000000000000" },
@@ -162,7 +162,7 @@ describe("GastosService.crear", () => {
   it("un gasto a cargo del PROPIETARIO no consume el crédito disponible del inquilino", async () => {
     const { PagosService } = await import("@/services/pagos.service");
     const usuario = await prisma.usuario.create({
-      data: { email: "credito2@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "credito2@test.com", auth_user_id: "00000000-0000-4000-8000-000000000102", rol: "ADMIN" },
     });
     const propietario = await prisma.propietario.create({
       data: { nombre: "Dueño Crédito Propietario", cbu: "0000000000000000000000" },
@@ -222,7 +222,7 @@ describe("GastosService.marcarPagado", () => {
       data: { id_propietario: propietario.id, direccion: "Calle 1", es_propia: false },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "admin2@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "admin2@test.com", auth_user_id: "00000000-0000-4000-8000-000000000103", rol: "ADMIN" },
     });
     const gasto = await GastosService.crear({
       id_propiedad: propiedad.id,
@@ -244,7 +244,7 @@ describe("GastosService.marcarPagado", () => {
 
   it("genera EGRESO_OPERATIVO al pagar un gasto propio de la inmobiliaria", async () => {
     const usuario = await prisma.usuario.create({
-      data: { email: "admin3@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "admin3@test.com", auth_user_id: "00000000-0000-4000-8000-000000000104", rol: "ADMIN" },
     });
     const gasto = await GastosService.crear({
       concepto: "Alquiler de oficina",
@@ -262,7 +262,7 @@ describe("GastosService.marcarPagado", () => {
 
   it("rechaza marcar como pagado un gasto que ya fue pagado", async () => {
     const usuario = await prisma.usuario.create({
-      data: { email: "admin4@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "admin4@test.com", auth_user_id: "00000000-0000-4000-8000-000000000105", rol: "ADMIN" },
     });
     const gasto = await GastosService.crear({
       concepto: "Alquiler de oficina",

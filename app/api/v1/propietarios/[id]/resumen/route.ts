@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { errorResponse } from "@/lib/errors";
 import { calcularPendiente } from "@/lib/saldos";
+import { handleServiceError } from "@/lib/api-error-handler";
+import { requireAuthenticatedUser } from "@/lib/auth-context";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  try {
+    await requireAuthenticatedUser();
+    const { id } = await params;
 
   const propietario = await prisma.propietario.findUnique({
     where: { id: Number(id) },
@@ -45,10 +49,13 @@ export async function GET(
     .flatMap((c) => c.cargos)
     .reduce((acc, c) => acc + calcularPendiente(c.monto, c.aplicaciones).toNumber(), 0);
 
-  return NextResponse.json({
+    return NextResponse.json({
     id: propietario.id,
     nombre: propietario.nombre,
     contratos_activos: contratosActivos.length,
     deuda_inquilinos: deudaTotal,
-  });
+    });
+  } catch (e) {
+    return handleServiceError(e);
+  }
 }

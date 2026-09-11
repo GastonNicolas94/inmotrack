@@ -1,4 +1,4 @@
-import bcrypt from "bcryptjs";
+import { createClient } from "@supabase/supabase-js";
 import { prisma } from "@/lib/db";
 import { ContratosService } from "@/services/contratos.service";
 import { PagosService } from "@/services/pagos.service";
@@ -6,35 +6,27 @@ import { GastosService } from "@/services/gastos.service";
 import { LiquidacionesService } from "@/services/liquidaciones.service";
 import { calcularVencimientoPeriodo } from "@/lib/fecha";
 import { requireSeedPassword } from "@/lib/seed-password";
+import { requireDatabaseUrl } from "@/lib/database-url";
+import { assertLocalSupabaseUrl } from "@/lib/local-supabase-url";
+import { readSupabasePublicEnv, readSupabaseSecret } from "@/lib/supabase/env";
+import {
+  seedDemoUsers,
+} from "@/lib/seed-auth";
 
 async function main() {
-  const passwordHash = await bcrypt.hash(requireSeedPassword(), 12);
-
-  const admin = await prisma.usuario.upsert({
-    where: { email: "admin@inmotrack.com" },
-    update: {},
-    create: { email: "admin@inmotrack.com", password_hash: passwordHash, rol: "ADMIN" },
+  const databaseUrl = requireDatabaseUrl();
+  const seedPassword = requireSeedPassword();
+  const { url } = readSupabasePublicEnv();
+  assertLocalSupabaseUrl(url);
+  const adminAuth = createClient(url, readSupabaseSecret(), {
+    auth: { autoRefreshToken: false, persistSession: false },
+  }).auth.admin;
+  const perfiles = await seedDemoUsers(adminAuth, prisma, {
+    databaseUrl,
+    supabaseUrl: url,
+    seedPassword,
   });
-  await prisma.usuario.upsert({
-    where: { email: "empleado1@inmotrack.com" },
-    update: {},
-    create: {
-      email: "empleado1@inmotrack.com",
-      password_hash: passwordHash,
-      rol: "EMPLEADO",
-      puede_aprobar_liquidaciones: true,
-    },
-  });
-  await prisma.usuario.upsert({
-    where: { email: "empleado2@inmotrack.com" },
-    update: {},
-    create: { email: "empleado2@inmotrack.com", password_hash: passwordHash, rol: "EMPLEADO" },
-  });
-  await prisma.usuario.upsert({
-    where: { email: "auditor@inmotrack.com" },
-    update: {},
-    create: { email: "auditor@inmotrack.com", password_hash: passwordHash, rol: "AUDITOR" },
-  });
+  const admin = perfiles["admin@inmotrack.com"];
 
   console.log("✅ Usuarios: admin / empleado1 / empleado2 / auditor @inmotrack.com — contraseña desde INMOTRACK_SEED_PASSWORD");
 

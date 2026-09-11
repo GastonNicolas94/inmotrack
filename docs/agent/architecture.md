@@ -1,6 +1,6 @@
 ---
 type: Architecture
-version: d742966
+version: 2c63145
 validated: 2026-09-10
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
@@ -9,7 +9,7 @@ scope:
   - services
   - lib
   - schemas
-  - middleware.ts
+  - proxy.ts
   - prisma
 ---
 
@@ -24,7 +24,7 @@ Next.js App Router monolito, con una separación de capas informal pero consiste
 | Rutas (entrypoint HTTP) | `app/api/v1/**/route.ts` | Solo parsea `req`, valida con zod, llama UN método de un `services/*.ts`, traduce el resultado/error a `NextResponse`. Nunca lógica de negocio ni Prisma directo. |
 | Validación | `schemas/*.schema.ts` | Zod schemas, uno por recurso. Los usan tanto las rutas API como los forms de React Hook Form del lado cliente. |
 | Servicios (lógica de negocio) | `services/*.ts` | Toda regla de negocio y toda llamada a Prisma vive acá. Exporta un objeto `XxxService` con métodos async. Operaciones multi-tabla van dentro de `prisma.$transaction`. |
-| Helpers puros | `lib/*.ts` | Funciones sin I/O (cálculos de fecha, saldos, prelación, punitorios) o wrappers finos sobre un recurso externo (`lib/db.ts`, `lib/auth.ts`). Se testean sin base de datos. |
+| Helpers puros | `lib/*.ts` | Funciones sin I/O (cálculos de fecha, saldos, prelación, punitorios) o wrappers finos sobre un recurso externo (`lib/db.ts`, `lib/auth-context.ts`, `lib/supabase/*`). Se testean sin base de datos. |
 | UI | `components/**`, `app/(dashboard)/**`, `app/(auth)/**` | Server Components para listar (`TablaXxx.tsx`, fetch directo al service), Client Components (`"use client"`) para todo lo que tiene estado/submit (`ModalXxx.tsx`, `DialogXxx.tsx`, `WizardXxx.tsx`). |
 
 ## Folder layout
@@ -36,7 +36,8 @@ app/
     contratos/, gastos/, inquilinos/, liquidaciones/, pagos/, propiedades/, propietarios/, transacciones/
     contratos/[id]/movimientos/      → Detalle de movimientos de un contrato puntual
   api/
-    auth/[...nextauth]/              → Handler de NextAuth
+    auth/confirm/                    → Valida la invitación y establece cookies
+    auth/confirm/password/           → Pantalla autenticada para fijar contraseña
     v1/                              → API REST — ver contracts.md para la lista completa de rutas
       contratos/, gastos/, inquilinos/, liquidaciones/, pagos/, propiedades/, propietarios/, transacciones/, usuarios/
       cron/                          → Endpoints invocados por Vercel Cron (auth propia, no de sesión — ver traps.md)
@@ -62,8 +63,9 @@ supabase/
   config.toml                        → Configuración de Supabase local (Postgres en 54322)
   migrations/                         → Única historia ejecutable; aplicada por `npx supabase db reset`/push
 docs/archive/prisma-migrations/       → Historia Prisma heredada, solo referencia no ejecutable
-middleware.ts                        → Auth de sesión + control de acceso por rol, corre en TODAS las rutas salvo /login, /api/auth, /api/v1/cron/*
-auth.config.ts / lib/auth.ts         → Split Edge/Node de NextAuth — ver traps.md
+proxy.ts                             → Renueva cookies Supabase y bloquea identidad ausente; deja `/login`, el callback exacto `/auth/confirm` y `/api/v1/cron/*` públicos
+lib/auth-context.ts                  → Resuelve identidad Supabase + perfil `usuarios` y autoriza por rol en el servidor
+services/usuarios.service.ts         → Invitaciones Admin, creación de perfil y compensación de identidades Auth
 ```
 
 ## Request / data flow
@@ -71,13 +73,12 @@ auth.config.ts / lib/auth.ts         → Split Edge/Node de NextAuth — ver tra
 ```
 Request del browser
          ↓
-middleware.ts (Edge runtime)
-  — sin sesión → 401/redirect a /login
-  — ruta en SOLO_ADMIN (method-aware) y rol ≠ ADMIN → 403
-  — rol AUDITOR y método ≠ GET → 403
+proxy.ts (runtime compatible con el proxy de Next.js)
+  — sin identidad → 401/redirect a /login
+  — renueva cookies con `getClaims`; no decide roles
          ↓
 app/api/v1/**/route.ts
-  — parsea body/params, valida con schemas/*.schema.ts (zod)
+  — resuelve `requireAuthenticatedUser`/`requireAdmin`, parsea body/params, valida con schemas/*.schema.ts (zod)
          ↓
 services/*.ts
   — lógica de negocio; para operaciones multi-tabla, todo dentro de prisma.$transaction
@@ -105,9 +106,11 @@ Para las páginas del dashboard (no-API), el flujo es más corto: el Server Comp
 
 No hay un worker/cola real — el "consumidor" es el propio cron de Vercel llamando al endpoint repetidamente.
 
-## Autenticación — por qué está partida en dos archivos
+## Autenticación y perfiles
 
-`auth.config.ts` (sin imports de Node — usable en Edge) define los callbacks JWT/session (qué va en el token). `lib/auth.ts` (Node completo — bcrypt, Prisma) agrega el provider `Credentials` real. `middleware.ts` importa `auth.config.ts` porque corre en el Edge runtime; las rutas API y Server Components importan `lib/auth.ts`. No fusionar los dos — romper el import de Node en `middleware.ts` tira el build entero.
+Supabase Auth es la única autoridad de credenciales y sesiones. `lib/supabase/server.ts` usa el adaptador SSR para leer/escribir cookies; `proxy.ts` renueva la sesión sin autorizar roles. `lib/auth-context.ts` valida la identidad con `getClaims` y consulta `public.usuarios` por `auth_user_id` en cada entrypoint protegido. `public.usuarios` no guarda contraseñas.
+
+El flujo de invitación es server-only: `POST /api/v1/usuarios` exige ADMIN, llama a `inviteUserByEmail` con `${APP_URL}/auth/confirm` y crea el perfil. Si Prisma falla, elimina la identidad recién creada. `/auth/confirm` valida `token_hash` con `verifyOtp({ type: "invite" })`, persiste cookies y redirige a `/auth/confirm/password`; esa pantalla ejecuta `updateUser({ password })` y entra al dashboard.
 
 ## Low-signal / generated areas
 

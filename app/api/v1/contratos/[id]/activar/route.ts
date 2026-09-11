@@ -1,20 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ContratosService } from "@/services/contratos.service";
 import { errorResponse } from "@/lib/errors";
-import { auth } from "@/lib/auth";
+import { handleServiceError } from "@/lib/api-error-handler";
+import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
+import { HttpError } from "@/lib/http-error";
 
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const session = await auth();
-  const idUsuario = session?.user?.id ? Number(session.user.id) : null;
-
   try {
-    const contrato = await ContratosService.activar(Number(id), idUsuario);
+    const user = await requireAuthenticatedUser();
+    assertCanWrite(user);
+    const { id } = await params;
+    const contrato = await ContratosService.activar(Number(id), user.id);
     return NextResponse.json(contrato);
   } catch (e) {
+    if (e instanceof HttpError) return handleServiceError(e);
     return errorResponse("CONTRATO_ERROR", String(e), 400);
   }
 }

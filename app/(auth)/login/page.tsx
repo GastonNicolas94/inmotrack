@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { loginAndRedirect } from "@/lib/supabase/login";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,17 +17,24 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     const form = new FormData(e.currentTarget);
-    const result = await signIn("credentials", {
-      email: form.get("email"),
-      password: form.get("password"),
-      redirect: false,
-    });
-    if (result?.error) {
-      setError("Email o contraseña incorrectos.");
-    } else {
-      router.push("/contratos");
+    const email = form.get("email");
+    const password = form.get("password");
+    if (typeof email !== "string" || typeof password !== "string") {
+      setError("Ingresá tu email y contraseña.");
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    try {
+      const loggedIn = await loginAndRedirect(email, password, router);
+      if (!loggedIn) {
+        setError("Email o contraseña incorrectos.");
+      }
+    } catch {
+      setError("No se pudo iniciar sesión. Intentá nuevamente.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

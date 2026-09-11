@@ -2,6 +2,10 @@ import { describe, it, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { prisma } from "@/lib/db";
 import { cleanDatabase } from "../helpers/db";
+import { createClient } from "@supabase/supabase-js";
+import { readSupabasePublicEnv, readSupabaseSecret } from "@/lib/supabase/env";
+import { requireSeedPassword } from "@/lib/seed-password";
+import { assertLocalSupabaseUrl } from "@/lib/local-supabase-url";
 
 describe("Constraints de integridad financiera", () => {
   beforeEach(async () => {
@@ -44,5 +48,41 @@ describe("Constraints de integridad financiera", () => {
         },
       })
     );
+  });
+
+  it("vincula un usuario de dominio a Auth y rechaza auth_user_id duplicado", async () => {
+    const { url } = readSupabasePublicEnv();
+    assertLocalSupabaseUrl(url);
+    const admin = createClient(url, readSupabaseSecret(), {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const email = `auth-constraint-${crypto.randomUUID()}@example.invalid`;
+    const { data, error } = await admin.auth.admin.createUser({
+      email,
+      password: requireSeedPassword(),
+      email_confirm: true,
+    });
+    if (error) throw error;
+    assert.ok(data.user);
+
+    try {
+      await prisma.usuario.create({
+        data: { email, auth_user_id: data.user.id, rol: "ADMIN" },
+      });
+
+      await assert.rejects(
+        prisma.usuario.create({
+          data: {
+            email: `auth-constraint-duplicate-${crypto.randomUUID()}@example.invalid`,
+            auth_user_id: data.user.id,
+            rol: "EMPLEADO",
+          },
+        })
+      );
+    } finally {
+      await prisma.usuario.deleteMany({ where: { email } });
+      const { error: deleteError } = await admin.auth.admin.deleteUser(data.user.id);
+      if (deleteError) throw deleteError;
+    }
   });
 });

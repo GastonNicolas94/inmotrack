@@ -3,10 +3,12 @@ import { LiquidacionesService } from "@/services/liquidaciones.service";
 import { generarLiquidacionSchema } from "@/schemas/liquidacion.schema";
 import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
+import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
 
 export async function GET(req: NextRequest) {
-  const idPropietario = req.nextUrl.searchParams.get("id_propietario");
   try {
+    await requireAuthenticatedUser();
+    const idPropietario = req.nextUrl.searchParams.get("id_propietario");
     const liquidaciones = await LiquidacionesService.listar(
       idPropietario ? Number(idPropietario) : undefined
     );
@@ -17,15 +19,17 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const parsed = generarLiquidacionSchema.safeParse(body);
-  if (!parsed.success) {
-    return errorResponse("VALIDATION_ERROR", "Datos inválidos.", 400, {
-      issues: parsed.error.flatten().fieldErrors,
-    });
-  }
-
   try {
+    const user = await requireAuthenticatedUser();
+    assertCanWrite(user);
+    const body = await req.json();
+    const parsed = generarLiquidacionSchema.safeParse(body);
+    if (!parsed.success) {
+      return errorResponse("VALIDATION_ERROR", "Datos inválidos.", 400, {
+        issues: parsed.error.flatten().fieldErrors,
+      });
+    }
+
     const liquidacion = await LiquidacionesService.generarParaPropietario(
       parsed.data.id_propietario,
       parsed.data.hasta,

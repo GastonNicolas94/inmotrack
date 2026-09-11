@@ -1,7 +1,7 @@
 ---
 type: Overview
-version: 37d97fb6e
-validated: 2026-09-09
+version: 2c63145
+validated: 2026-09-10
 update_when: Purpose changes, new roles/actors added, or capability scope shifts
 scope:
   - app
@@ -31,7 +31,7 @@ Cuatro responsabilidades principales:
 | Framework | Next.js 16 (App Router, Turbopack) |
 | ORM | Prisma 7 (`@prisma/adapter-pg`, driver `pg`) |
 | Base de datos | PostgreSQL (local: `postgresql://gfrancone@localhost:5432/inmotrack`) |
-| Auth | NextAuth v5 (beta), provider Credentials + bcrypt, JWT |
+| Auth | Supabase Auth (email/password e invitaciones); `public.usuarios.auth_user_id` UUID vincula identidad y perfil |
 | UI | shadcn/ui ("base-nova") + Tailwind v4, estilo editorial tipo apple.com |
 | Hosting objetivo | Vercel (cron jobs vía `vercel.json`) |
 | Arquetipo | Monolito Next.js — rutas API finas, lógica de negocio en `services/` |
@@ -39,7 +39,7 @@ Cuatro responsabilidades principales:
 
 ## Roles
 
-No hay multi-sitio ni multi-tenant — un solo despliegue, tres roles fijos, aplicados centralizadamente en `middleware.ts` (no hay chequeo de auth repetido en cada handler más que casos puntuales que necesitan lógica extra, ej. `aprobar` liquidación).
+No hay multi-sitio ni multi-tenant — un solo despliegue, tres roles fijos. `proxy.ts` renueva cookies y aplica el gate grueso de identidad; cada route handler resuelve el perfil fresco con `lib/auth-context.ts` y aplica su permiso antes de leer o escribir.
 
 | Rol | Puede escribir | Restricciones extra |
 |-----|---------------|---------------------|
@@ -61,7 +61,7 @@ No hay multi-sitio ni multi-tenant — un solo despliegue, tres roles fijos, apl
 | Liquidación a propietarios (selección por rango, grano dual) | `services/liquidaciones.service.ts` |
 | Adelantos a propietarios (registrar, descontar con prelación por antigüedad) | `services/adelantos.service.ts` |
 | Estado de cobranza / liquidación de un Cargo (derivado, nunca cacheado) | `lib/estado-cobranza.ts`, `lib/saldos.ts` |
-| Auth y control de acceso por rol | `auth.config.ts`, `lib/auth.ts`, `middleware.ts` |
+| Auth y control de acceso por rol | `lib/supabase/{client,server,admin,proxy}.ts`, `lib/auth-context.ts`, `proxy.ts`, `services/usuarios.service.ts` |
 
 ## Specs
 

@@ -232,7 +232,7 @@ describe("ContratosService.avanzarPeriodo", () => {
       data: { nombre: "Inquilino", dni_cuit: "20111111111" },
     });
     usuario = await prisma.usuario.create({
-      data: { email: "admin@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "admin@test.com", auth_user_id: "00000000-0000-4000-8000-000000000201", rol: "ADMIN" },
     });
   });
 

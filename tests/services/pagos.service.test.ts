@@ -17,7 +17,7 @@ async function crearEscenarioBasico({ conPunitorio = true }: { conPunitorio?: bo
     data: { nombre: "Inquilino Test", dni_cuit: "20111111111" },
   });
   const usuario = await prisma.usuario.create({
-    data: { email: "admin@test.com", password_hash: "x", rol: "ADMIN" },
+    data: { email: "admin@test.com", auth_user_id: "00000000-0000-4000-8000-000000000301", rol: "ADMIN" },
   });
   const contrato = await prisma.contrato.create({
     data: {
@@ -216,7 +216,7 @@ describe("PagosService.registrar", () => {
       data: { nombre: "Inquilino Moroso", dni_cuit: "20555555555" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "moroso@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "moroso@test.com", auth_user_id: "00000000-0000-4000-8000-000000000302", rol: "ADMIN" },
     });
     const contrato = await prisma.contrato.create({
       data: {
@@ -283,7 +283,7 @@ describe("PagosService.registrar", () => {
       data: { nombre: "Inquilino Sobrante", dni_cuit: "20666666666" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "sobrante@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "sobrante@test.com", auth_user_id: "00000000-0000-4000-8000-000000000303", rol: "ADMIN" },
     });
 
     const contrato = await ContratosService.crear({
@@ -327,7 +327,7 @@ describe("PagosService.registrar", () => {
       data: { nombre: "Inquilino Viejo", dni_cuit: "20777777777" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "viejo@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "viejo@test.com", auth_user_id: "00000000-0000-4000-8000-000000000304", rol: "ADMIN" },
     });
 
     const contrato = await ContratosService.crear({
@@ -385,7 +385,7 @@ describe("PagosService.registrar", () => {
       data: { nombre: "Inquilino Confección Pago", dni_cuit: "20444444440" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "confeccion-pago@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "confeccion-pago@test.com", auth_user_id: "00000000-0000-4000-8000-000000000305", rol: "ADMIN" },
     });
 
     const contrato = await ContratosService.crear({

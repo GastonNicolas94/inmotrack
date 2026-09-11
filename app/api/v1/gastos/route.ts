@@ -3,9 +3,11 @@ import { GastosService } from "@/services/gastos.service";
 import { gastoSchema } from "@/schemas/gasto.schema";
 import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
+import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
 
 export async function GET() {
   try {
+    await requireAuthenticatedUser();
     const gastos = await GastosService.listar();
     return NextResponse.json(gastos);
   } catch (e) {
@@ -14,15 +16,17 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const parsed = gastoSchema.safeParse(body);
-  if (!parsed.success) {
-    return errorResponse("VALIDATION_ERROR", "Datos inválidos.", 400, {
-      issues: parsed.error.flatten().fieldErrors,
-    });
-  }
-
   try {
+    const user = await requireAuthenticatedUser();
+    assertCanWrite(user);
+    const body = await req.json();
+    const parsed = gastoSchema.safeParse(body);
+    if (!parsed.success) {
+      return errorResponse("VALIDATION_ERROR", "Datos inválidos.", 400, {
+        issues: parsed.error.flatten().fieldErrors,
+      });
+    }
+
     const gasto = await GastosService.crear(parsed.data);
     return NextResponse.json(gasto, { status: 201 });
   } catch (e) {

@@ -14,7 +14,7 @@ describe("TransaccionesService.crearContraAsiento", () => {
 
   it("crea una transacción con monto invertido y la enlaza a la original", async () => {
     const usuario = await prisma.usuario.create({
-      data: { email: "admin8@test.com", password_hash: "x", rol: "ADMIN" },
+    data: { email: "admin8@test.com", auth_user_id: "00000000-0000-4000-8000-000000000401", rol: "ADMIN" },
     });
     const original = await prisma.transaccion.create({
       data: { tipo: "INGRESO_PUNITORIO", caja_destino: "OPERATIVA", monto: 5000 },
@@ -34,7 +34,7 @@ describe("TransaccionesService.crearContraAsiento", () => {
 
   it("reversa la AplicacionPago asociada a la transacción original contra el mismo Cargo, cuando el período sigue ABIERTO", async () => {
     const usuario = await prisma.usuario.create({
-      data: { email: "admin9@test.com", password_hash: "x", rol: "ADMIN" },
+    data: { email: "admin9@test.com", auth_user_id: "00000000-0000-4000-8000-000000000402", rol: "ADMIN" },
     });
     const propietario = await prisma.propietario.create({
       data: { nombre: "Dueño 5", cbu: "0000000000000000000000" },
@@ -88,7 +88,7 @@ describe("TransaccionesService.crearContraAsiento", () => {
 
   it("rechaza un contra-asiento sin comentario", async () => {
     const usuario = await prisma.usuario.create({
-      data: { email: "admin10@test.com", password_hash: "x", rol: "ADMIN" },
+    data: { email: "admin10@test.com", auth_user_id: "00000000-0000-4000-8000-000000000403", rol: "ADMIN" },
     });
     const original = await prisma.transaccion.create({
       data: { tipo: "INGRESO_COBRO", caja_destino: "TERCEROS", monto: 100 },
@@ -105,7 +105,7 @@ describe("TransaccionesService.crearContraAsiento", () => {
 
   it("contra-asiento sobre un Cargo de un período ABIERTO revierte directo contra el mismo Cargo", async () => {
     const usuario = await prisma.usuario.create({
-      data: { email: "abierto@test.com", password_hash: "x", rol: "ADMIN" },
+    data: { email: "abierto@test.com", auth_user_id: "00000000-0000-4000-8000-000000000404", rol: "ADMIN" },
     });
     const propietario = await prisma.propietario.create({
       data: { nombre: "Dueño Abierto", cbu: "0000000000000000000000" },
@@ -152,7 +152,7 @@ describe("TransaccionesService.crearContraAsiento", () => {
 
   it("contra-asiento sobre un Cargo de un período CERRADO genera un Cargo AJUSTE en el período abierto actual, sin tocar el viejo", async () => {
     const usuario = await prisma.usuario.create({
-      data: { email: "cerrado@test.com", password_hash: "x", rol: "ADMIN" },
+    data: { email: "cerrado@test.com", auth_user_id: "00000000-0000-4000-8000-000000000405", rol: "ADMIN" },
     });
     const propietario = await prisma.propietario.create({
       data: { nombre: "Dueño Cerrado", cbu: "0000000000000000000000" },
@@ -207,7 +207,7 @@ describe("TransaccionesService.crearContraAsiento", () => {
 
   it("al anular un cobro, revierte en cascada la comisión que ese cobro generó", async () => {
     const usuario = await prisma.usuario.create({
-      data: { email: "cascada1@test.com", password_hash: "x", rol: "ADMIN" },
+    data: { email: "cascada1@test.com", auth_user_id: "00000000-0000-4000-8000-000000000406", rol: "ADMIN" },
     });
     const propietario = await prisma.propietario.create({
       data: { nombre: "Dueño Cascada 1", cbu: "0000000000000000000000" },
@@ -261,7 +261,7 @@ describe("TransaccionesService.crearContraAsiento", () => {
 
   it("al anular un cobro que generó crédito heredado, revierte en cascada la comisión que se cobró al abrir el período siguiente", async () => {
     const usuario = await prisma.usuario.create({
-      data: { email: "cascada2@test.com", password_hash: "x", rol: "ADMIN" },
+    data: { email: "cascada2@test.com", auth_user_id: "00000000-0000-4000-8000-000000000407", rol: "ADMIN" },
     });
     const propietario = await prisma.propietario.create({
       data: { nombre: "Dueño Cascada 2", cbu: "0000000000000000000000" },
@@ -327,7 +327,7 @@ describe("TransaccionesService.crearContraAsiento", () => {
 
   it("rechaza anular dos veces la misma transacción", async () => {
     const usuario = await prisma.usuario.create({
-      data: { email: "doble@test.com", password_hash: "x", rol: "ADMIN" },
+    data: { email: "doble@test.com", auth_user_id: "00000000-0000-4000-8000-000000000408", rol: "ADMIN" },
     });
     const original = await prisma.transaccion.create({
       data: { tipo: "EGRESO_OPERATIVO", caja_destino: "OPERATIVA", monto: -850000 },
@@ -356,7 +356,7 @@ describe("TransaccionesService.crearContraAsiento", () => {
 
   it("rechaza anular dos veces una comisión que ya fue revertida en cascada", async () => {
     const usuario = await prisma.usuario.create({
-      data: { email: "doble-cascada@test.com", password_hash: "x", rol: "ADMIN" },
+    data: { email: "doble-cascada@test.com", auth_user_id: "00000000-0000-4000-8000-000000000409", rol: "ADMIN" },
     });
     const propietario = await prisma.propietario.create({
       data: { nombre: "Dueño Doble Cascada", cbu: "0000000000000000000000" },

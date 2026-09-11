@@ -37,7 +37,7 @@ async function crearEscenarioBasico(opts?: { pct_comision?: number; nombre_propi
     data: { nombre: "Inquilino Test", dni_cuit: "20111111111" },
   });
   const usuario = await prisma.usuario.create({
-    data: { email: `test-${propietario.id}@test.com`, password_hash: "x", rol: "ADMIN" },
+    data: { email: `test-${propietario.id}@test.com`, auth_user_id: "00000000-0000-4000-8000-000000000601", rol: "ADMIN" },
   });
 
   const contrato = await ContratosService.crear({
@@ -534,7 +534,7 @@ describe("LiquidacionesService.aprobar / confirmarPago", () => {
       data: { nombre: "Propietario Prueba", cbu: "0000000000000000000000" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "prueba@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "prueba@test.com", auth_user_id: "00000000-0000-4000-8000-000000000602", rol: "ADMIN" },
     });
 
     const liquidacion = await prisma.liquidacion.create({
@@ -568,7 +568,7 @@ describe("LiquidacionesService.aprobar / confirmarPago", () => {
       data: { nombre: "Propietario Neto Negativo", cbu: "0000000000000000000000" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "neto-negativo@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "neto-negativo@test.com", auth_user_id: "00000000-0000-4000-8000-000000000603", rol: "ADMIN" },
     });
 
     const liquidacion = await prisma.liquidacion.create({
@@ -600,7 +600,7 @@ describe("LiquidacionesService.aprobar / confirmarPago", () => {
       data: { nombre: "Propietario Prueba 2", cbu: "0000000000000000000000" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "prueba2@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "prueba2@test.com", auth_user_id: "00000000-0000-4000-8000-000000000604", rol: "ADMIN" },
     });
 
     const liquidacion = await prisma.liquidacion.create({

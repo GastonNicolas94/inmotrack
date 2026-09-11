@@ -11,7 +11,7 @@ datasource db {
 model Usuario {
   id             Int          @id @default(autoincrement())
   email                        String       @unique
-  password_hash                String
+  auth_user_id                 String       @unique @db.Uuid
   rol                          RolUsuario
   puede_aprobar_liquidaciones  Boolean      @default(false)
   id_propietario               Int?

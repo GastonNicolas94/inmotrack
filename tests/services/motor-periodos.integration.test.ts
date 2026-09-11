@@ -25,7 +25,7 @@ describe("Motor de períodos — integración de extremo a extremo", () => {
       data: { nombre: "María", dni_cuit: "20-12345678-9" },
     });
     usuario = await prisma.usuario.create({
-      data: { email: "test@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "test@test.com", auth_user_id: "00000000-0000-4000-8000-000000000701", rol: "ADMIN" },
     });
   });
 
