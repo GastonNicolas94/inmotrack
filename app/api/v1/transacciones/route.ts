@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { TransaccionesService } from "@/services/transacciones.service";
 import { handleServiceError } from "@/lib/api-error-handler";
+import { requireAuthenticatedUser } from "@/lib/auth-context";
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = req.nextUrl;
   try {
+    await requireAuthenticatedUser();
+    const { searchParams } = req.nextUrl;
     const transacciones = await TransaccionesService.listar({
       tipo: searchParams.get("tipo") ?? undefined,
       caja_destino: searchParams.get("caja") ?? undefined,

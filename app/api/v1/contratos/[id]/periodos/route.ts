@@ -3,6 +3,8 @@ import { Decimal } from "@prisma/client/runtime/client";
 import { prisma } from "@/lib/db";
 import { calcularPendiente } from "@/lib/saldos";
 import { calcularEstadoCobranza } from "@/lib/estado-cobranza";
+import { handleServiceError } from "@/lib/api-error-handler";
+import { requireAuthenticatedUser } from "@/lib/auth-context";
 
 // Resumen por período (una fila por período, no por Cargo) — usado por el
 // modal de "Períodos" del contrato. El libro mayor completo (todos los
@@ -13,8 +15,10 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const periodos = await prisma.periodoPago.findMany({
+  try {
+    await requireAuthenticatedUser();
+    const { id } = await params;
+    const periodos = await prisma.periodoPago.findMany({
     where: { id_contrato: Number(id) },
     include: { cargos: { include: { aplicaciones: true } } },
     orderBy: { periodo: "desc" },
@@ -44,5 +48,8 @@ export async function GET(
     };
   });
 
-  return NextResponse.json(respuesta);
+    return NextResponse.json(respuesta);
+  } catch (e) {
+    return handleServiceError(e);
+  }
 }

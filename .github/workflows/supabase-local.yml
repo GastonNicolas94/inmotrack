@@ -23,8 +23,7 @@ jobs:
       DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
       DATABASE_POOL_MAX: 5
       INMOTRACK_ALLOW_DESTRUCTIVE_TESTS: 1
-      NEXTAUTH_SECRET: inmotrack-ci-only-secret-not-for-production
-      NEXTAUTH_URL: http://127.0.0.1:3000
+      APP_URL: http://127.0.0.1:3000
       CHECKPOINT_DISABLE: 1
       PRISMA_HIDE_UPDATE_MESSAGE: 1
     steps:
@@ -34,7 +33,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -45,6 +44,16 @@ jobs:
 
       - name: Show local Supabase status
         run: npx --no-install supabase status
+
+      - name: Export local Supabase Auth configuration
+        shell: bash
+        run: |
+          eval "$(npx --no-install supabase status -o env)"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$PUBLISHABLE_KEY"
+            echo "SUPABASE_SECRET_KEY=$SECRET_KEY"
+          } >> "$GITHUB_ENV"
 
       - name: Reset local database
         run: npm run db:reset:local

@@ -1,11 +1,11 @@
 ---
 type: Contracts
-version: d742966
+version: 2c63145
 validated: 2026-09-10
-update_when: Rutas HTTP agregadas/cambiadas/eliminadas, o cambia el criterio de acceso por rol en middleware.ts
+update_when: Rutas HTTP agregadas/cambiadas/eliminadas, o cambia el criterio de acceso por rol en proxy.ts/handlers
 scope:
   - app/api
-  - middleware.ts
+  - proxy.ts
   - schemas
 ---
 
@@ -13,11 +13,11 @@ scope:
 
 ## Auth — cómo leer la columna "Acceso" de abajo
 
-Todo pasa primero por `middleware.ts` (ver [architecture.md](architecture.md)):
+El `proxy.ts` renueva cookies y aplica solo el gate grueso de identidad (ver [architecture.md](architecture.md)); cada handler vuelve a resolver el perfil del servidor:
 
 - **Sesión requerida** en todo `/api/v1/*` excepto `/api/v1/cron/*` (esas usan `CRON_SECRET`, no sesión).
-- **`AUDITOR`** solo puede `GET` en cualquier ruta — cualquier otro método le da 403, sin necesidad de que la ruta esté en `SOLO_ADMIN`.
-- **`SOLO_ADMIN`** (array method-aware en `middleware.ts`) exige rol `ADMIN` en rutas puntuales de alto impacto (mueven plata real e inmutable): confirmar pago de liquidación, contra-asiento, registrar adelanto (solo el `POST`, el `GET` de esa misma ruta queda abierto).
+- **`AUDITOR`** solo puede `GET` en cualquier ruta — el chequeo vive en cada handler mediante `assertCanWrite`.
+- **ADMIN** se exige en rutas de alto impacto y en la invitación de usuarios; la verificación no depende de metadata del cliente.
 - Todo lo demás: cualquier sesión válida no-AUDITOR puede escribir (`ADMIN` o `EMPLEADO`).
 
 | Acceso | Significado |
@@ -61,6 +61,7 @@ Todo pasa primero por `middleware.ts` (ver [architecture.md](architecture.md)):
 | `GET` | `/transacciones` | Libro diario (filtros `tipo`, `caja`, `desde`, `hasta`) | Sesión | ✅ |
 | `POST` | `/transacciones/contra-asiento` | Reversar una transacción con una fila espejo | **ADMIN** | ❌ |
 | `GET` | `/usuarios` | Listar usuarios | Sesión | ✅ |
+| `POST` | `/usuarios` | Invitar usuario y crear su perfil | **ADMIN** | ❌ |
 | `PATCH` | `/usuarios` | Delegar `puede_aprobar_liquidaciones` a un EMPLEADO | **ADMIN** (chequeo propio en el handler, no en `SOLO_ADMIN`) | ✅ |
 
 ### Cron (`/api/v1/cron/*` — sin auth de sesión, `Authorization: Bearer $CRON_SECRET`)
@@ -70,11 +71,11 @@ Todo pasa primero por `middleware.ts` (ver [architecture.md](architecture.md)):
 | `GET` | `/cron/activar-cierre-periodos` | Encola contratos vencidos, marca `POR_VENCER`, dispara la cola vía `after()` | Vercel Cron, `0 6 1 * *` (`vercel.json`) |
 | `POST` | `/cron/procesar-cola-cierre` | Procesa UNA fila de `outbox_cierre_periodo`; si queda trabajo, se re-dispara a sí mismo vía `after()` | Encadenado desde el cron de arriba, o manualmente |
 
-`/cron/*` está explícitamente exceptuado del auth de sesión en `middleware.ts` (`pathname.startsWith("/api/v1/cron/")`) — la única protección es `CRON_SECRET`.
+`/cron/*` está explícitamente exceptuado del auth de sesión en `proxy.ts` (`pathname.startsWith("/api/v1/cron/")`) — la única protección es `CRON_SECRET`.
 
-## Auth de NextAuth
+## Auth Supabase
 
-`GET`/`POST` en `/api/auth/[...nextauth]` — manejado enteramente por NextAuth (login, logout, sesión). Provider `Credentials` (email+password, bcrypt) definido en `lib/auth.ts`.
+El login y logout usan los clientes SSR de Supabase. `/auth/confirm` acepta solamente `token_hash` con `type=invite`, establece cookies mediante `verifyOtp` y redirige a la pantalla para crear contraseña. Las credenciales viven en Auth; `public.usuarios` solo guarda el perfil y `auth_user_id`.
 
 ## Dependencias externas
 

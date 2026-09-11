@@ -1,5 +1,5 @@
 import { TransaccionesService } from "@/services/transacciones.service";
-import { auth } from "@/lib/auth";
+import { requireAuthenticatedUser } from "@/lib/auth-context";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -18,18 +18,14 @@ export async function TablaLibroDiario({
 }: {
   filtros: { tipo?: string; caja?: string; desde?: string; hasta?: string };
 }) {
-  const [transacciones, session] = await Promise.all([
-    TransaccionesService.listar({
-      tipo: filtros.tipo,
-      caja_destino: filtros.caja,
-      desde: filtros.desde ? new Date(filtros.desde) : undefined,
-      hasta: filtros.hasta ? new Date(filtros.hasta) : undefined,
-    }),
-    auth(),
-  ]);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const esAdmin = ((session?.user as any)?.rol as string | undefined) === "ADMIN";
+  const user = await requireAuthenticatedUser();
+  const transacciones = await TransaccionesService.listar({
+    tipo: filtros.tipo,
+    caja_destino: filtros.caja,
+    desde: filtros.desde ? new Date(filtros.desde) : undefined,
+    hasta: filtros.hasta ? new Date(filtros.hasta) : undefined,
+  });
+  const esAdmin = user.rol === "ADMIN";
 
   return (
     <TableCard>

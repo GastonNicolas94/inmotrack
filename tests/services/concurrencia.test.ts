@@ -22,7 +22,7 @@ describe("Concurrencia y casos multi-entidad", () => {
       data: { nombre: "Inquilino", dni_cuit: "20111111111" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "concurrencia1@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "concurrencia1@test.com", auth_user_id: "00000000-0000-4000-8000-000000000501", rol: "ADMIN" },
     });
     const contrato = await prisma.contrato.create({
       data: {
@@ -86,7 +86,7 @@ describe("Concurrencia y casos multi-entidad", () => {
       data: { nombre: "Inquilino 2", dni_cuit: "20222222222" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "concurrencia2@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "concurrencia2@test.com", auth_user_id: "00000000-0000-4000-8000-000000000502", rol: "ADMIN" },
     });
     const contrato = await prisma.contrato.create({
       data: {
@@ -154,7 +154,7 @@ describe("Concurrencia y casos multi-entidad", () => {
       data: { nombre: "Inquilino B", dni_cuit: "20444444444" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "concurrencia3@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "concurrencia3@test.com", auth_user_id: "00000000-0000-4000-8000-000000000503", rol: "ADMIN" },
     });
     const contratoA = await prisma.contrato.create({
       data: {
@@ -245,7 +245,7 @@ describe("Concurrencia y casos multi-entidad", () => {
       data: { nombre: "Inquilino 4", dni_cuit: "20555555555" },
     });
     const usuario = await prisma.usuario.create({
-      data: { email: "concurrencia4@test.com", password_hash: "x", rol: "ADMIN" },
+      data: { email: "concurrencia4@test.com", auth_user_id: "00000000-0000-4000-8000-000000000504", rol: "ADMIN" },
     });
     const contrato = await prisma.contrato.create({
       data: {

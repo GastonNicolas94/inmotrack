@@ -2,7 +2,7 @@
 
 Sistema de gestión para una inmobiliaria/estudio contable (Macchieraldo Villarruel): contratos de alquiler, cobranza a inquilinos, punitorios por mora, gastos, libro diario inmutable y liquidación a propietarios (con adelantos a cuenta).
 
-Next.js 16 (App Router) + Prisma 7 + PostgreSQL + NextAuth v5.
+Next.js 16 (App Router) + Prisma 7 + PostgreSQL + Supabase Auth.
 
 ## Para agentes de IA
 

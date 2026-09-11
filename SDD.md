@@ -1,7 +1,7 @@
 # SDD — InmoTrack: Sistema de Gestión Inmobiliaria
-**Versión:** 1.0 (Final)
-**Fecha:** 2026-06-25
-**Stack:** Next.js 14+ · TypeScript · PostgreSQL · Prisma ORM · Auth.js
+**Versión:** 2.0
+**Fecha:** 2026-09-10
+**Stack:** Next.js 16 · TypeScript · Supabase (PostgreSQL + Auth + Realtime) · Prisma ORM
 
 ---
 
@@ -266,7 +266,7 @@ Entidad de acceso desacoplada del modelo de negocio. No confundir con `propietar
 |---|---|---|---|
 | `id` | INT | PK, AUTO_INCREMENT | |
 | `email` | VARCHAR(255) | UNIQUE, NOT NULL | |
-| `password_hash` | VARCHAR(255) | NOT NULL | bcrypt con salt ≥ 12 rounds |
+| `auth_user_id` | UUID | UNIQUE, NOT NULL | Identidad administrada por Supabase Auth |
 | `rol` | ENUM('ADMIN', 'EMPLEADO', 'AUDITOR') | NOT NULL | |
 | `id_propietario` | INT | FK → propietarios.id, NULLABLE | Solo si el usuario del sistema también es propietario |
 
@@ -488,7 +488,7 @@ El enmascaramiento se aplica **en la capa de serialización de la API** (Route H
 | `inquilinos.email` | `"ga****@gmail.com"` |
 | `inquilinos.telefono` | `"+54 9 11 ****-5678"` |
 | `propietarios.cbu` | `"072****8901"` (primeros 3 y últimos 4) |
-| `usuarios.password_hash` | Nunca expuesto en ningún rol |
+| `usuarios.auth_user_id` | Nunca expuesto; sólo vincula el perfil con Supabase Auth |
 
 ---
 
@@ -584,7 +584,7 @@ Interés Diario = (monto_cargo − monto_cobrado) × (pct_punitorio_diario / 100
 | Lenguaje | TypeScript | Tipado estricto crítico para lógica financiera |
 | Base de datos | PostgreSQL | ACID compliance, `SELECT FOR UPDATE` para locking, robustez financiera |
 | ORM | Prisma ORM | Migraciones versionadas, tipado end-to-end, transacciones seguras |
-| Autenticación | Auth.js (custom credentials) | Sin adapter de DB — ver sección 9 |
+| Autenticación | Supabase Auth + `@supabase/ssr` | Sesiones por cookies y perfil/rol fresco en Prisma — ver sección 9 |
 
 ### 8.1 Estructura de Carpetas (App Router)
 
@@ -607,7 +607,7 @@ Interés Diario = (monto_cargo − monto_cobrado) × (pct_punitorio_diario / 100
     /reportes
 /lib
   /db         → Cliente Prisma
-  /auth       → Configuración Auth.js
+  /supabase   → Clientes browser/server/admin y renovación de sesión
   /services   → Lógica de negocio (pagos, liquidaciones, etc.)
   /utils      → Helpers (masking, cálculos)
 /prisma
@@ -619,25 +619,20 @@ Interés Diario = (monto_cargo − monto_cobrado) × (pct_punitorio_diario / 100
 
 ## 9. Autenticación y Autorización
 
-### 9.1 Estrategia: Custom Credentials sin Adapter
+### 9.1 Estrategia: Supabase Auth y perfiles de dominio
 
-Se implementa **Auth.js con custom credentials provider** sin Prisma adapter, preservando el esquema de base de datos bajo control total del proyecto y evitando conflictos de tablas.
+Supabase Auth administra credenciales y sesiones. `public.usuarios.auth_user_id` vincula cada
+identidad con su perfil de dominio, que conserva el rol y los permisos vigentes. El login usa
+el cliente de navegador; Server Components y route handlers validan la identidad con el cliente
+SSR y consultan el perfil fresco en Prisma. El proxy solo renueva cookies y bloquea identidad
+ausente. Las invitaciones ADMIN usan `inviteUserByEmail` y el flujo `/auth/confirm` verifica el
+token de invitación antes de permitir fijar la contraseña.
 
-**Flujo de autenticación:**
-1. El usuario ingresa email y contraseña en el formulario de login.
-2. El callback `authorize` de Auth.js consulta manualmente la tabla `usuarios` via Prisma.
-3. Se valida el `password_hash` con `bcrypt.compare()`.
-4. Si válido, Auth.js emite un JWT firmado con `NEXTAUTH_SECRET`.
-5. El JWT incluye: `{ id, email, rol, id_propietario }`.
+### 9.2 Autorización por route handler
 
-### 9.2 Middleware de Autorización
-
-Un Next.js Middleware global intercepta todas las rutas `/api/v1/*`:
-1. Extrae y valida el JWT del header `Authorization` o cookie de sesión.
-2. Decodifica el `rol` del payload.
-3. Verifica que el rol tenga permisos para el endpoint solicitado (matriz RBAC).
-4. Bloquea con HTTP 403 Forbidden si el rol no tiene acceso.
-5. Inyecta los datos del usuario en el contexto del request para que los handlers los consuman sin re-consultar la DB.
+Cada endpoint protegido llama `requireAuthenticatedUser`, `requireAdmin` o el helper de permiso
+correspondiente antes de cualquier lectura o efecto. Cron conserva su autenticación independiente
+con `CRON_SECRET`. Nunca se autoriza desde metadata editable del usuario ni desde el body.
 
 ---
 
@@ -648,8 +643,8 @@ Un Next.js Middleware global intercepta todas las rutas `/api/v1/*`:
 | Componente | Servicio |
 |---|---|
 | Frontend + API | Vercel |
-| Base de datos | Neon (PostgreSQL serverless) o AWS RDS |
-| Cron jobs | Vercel Cron (requiere plan Pro) o contenedor externo |
+| Base de datos + Auth + Realtime | Supabase |
+| Cron jobs | Vercel Cron |
 
 ### 10.2 Migraciones en CI/CD
 
@@ -668,8 +663,10 @@ Variables de entorno requeridas:
 | Variable | Descripción |
 |---|---|
 | `DATABASE_URL` | Connection string de PostgreSQL |
-| `NEXTAUTH_SECRET` | Clave de firma de JWT (mínimo 32 caracteres aleatorios) |
-| `NEXTAUTH_URL` | URL base de la aplicación |
+| `APP_URL` | Origen HTTP/HTTPS de la aplicación para enlaces de invitación |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL pública del proyecto Supabase |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key para clientes del navegador |
+| `SUPABASE_SECRET_KEY` | Secret key server-only para operaciones Admin |
 | `CRON_SECRET` | API key para autenticar las llamadas del cron job |
 
 En Vercel: administradas desde el panel de Environment Variables.

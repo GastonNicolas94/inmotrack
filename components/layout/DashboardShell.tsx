@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DashboardNav } from "@/components/layout/DashboardNav";
 import { cn } from "@/lib/utils";
+import type { AuthenticatedUser } from "@/lib/auth-context";
 
 const STORAGE_KEY = "inmotrack:sidebar-collapsed";
 
@@ -22,8 +23,8 @@ export function DashboardShell({
   children,
 }: {
   email: string;
-  rol?: string;
-  onLogout: () => void;
+  rol: AuthenticatedUser["rol"];
+  onLogout: (formData: FormData) => void | Promise<void>;
   children: ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -31,6 +32,8 @@ export function DashboardShell({
 
   // Restaurar preferencia de colapso (desktop) — después del mount, para no romper el HTML del servidor.
   useEffect(() => {
+    // Intencional: leer localStorage sólo después de hidratar evita mismatch SSR.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (localStorage.getItem(STORAGE_KEY) === "1") setCollapsed(true);
   }, []);
 

@@ -3,14 +3,15 @@ import { AdelantosService } from "@/services/adelantos.service";
 import { registrarAdelantoSchema } from "@/schemas/adelanto.schema";
 import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
-import { auth } from "@/lib/auth";
+import { requireAdmin, requireAuthenticatedUser } from "@/lib/auth-context";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
   try {
+    await requireAuthenticatedUser();
+    const { id } = await params;
     const pendiente = await AdelantosService.obtenerPendiente(Number(id));
     return NextResponse.json({
       total: pendiente.total.toString(),
@@ -29,25 +30,21 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return errorResponse("UNAUTHORIZED", "No autenticado.", 401);
-  }
-
-  const { id } = await params;
-  const body = await req.json();
-  const parsed = registrarAdelantoSchema.safeParse(body);
-  if (!parsed.success) {
-    return errorResponse("VALIDATION_ERROR", "Datos inválidos.", 400, {
-      issues: parsed.error.flatten().fieldErrors,
-    });
-  }
-
   try {
+    const user = await requireAdmin();
+    const { id } = await params;
+    const body = await req.json();
+    const parsed = registrarAdelantoSchema.safeParse(body);
+    if (!parsed.success) {
+      return errorResponse("VALIDATION_ERROR", "Datos inválidos.", 400, {
+        issues: parsed.error.flatten().fieldErrors,
+      });
+    }
+
     const adelanto = await AdelantosService.registrar({
       id_propietario: Number(id),
       monto: parsed.data.monto,
-      id_usuario_creador: Number(session.user.id),
+      id_usuario_creador: user.id,
     });
     return NextResponse.json(adelanto, { status: 201 });
   } catch (e) {

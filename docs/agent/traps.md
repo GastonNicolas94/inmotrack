@@ -1,6 +1,6 @@
 ---
 type: Traps
-version: 60f8805
+version: 2c63145
 validated: 2026-09-10
 update_when: cuando se descubre un gotcha no obvio, agregarlo acá en el mismo cambio
 scope:
@@ -8,7 +8,7 @@ scope:
   - lib
   - prisma
   - tests
-  - middleware.ts
+  - proxy.ts
 ---
 # Traps — InmoTrack
 
@@ -76,7 +76,7 @@ Bloqueado en producción a propósito: si `NODE_ENV === "production"` y `FECHA_S
 
 ## `npx tsc --noEmit` da falsos negativos masivos en este repo
 
-Invocado suelto (sin la resolución de paths/config que usa `next build` internamente), reporta cientos de errores de módulos no encontrados (`react`, `next-auth/react`, namespace `React`) que no son reales — es un problema de cómo `npx` resuelve el compilador contra este `tsconfig.json`, no del código. El type-check real y confiable del proyecto es el que corre dentro de `npx next build` (paso "Running TypeScript"). No usar `tsc --noEmit` como señal de verificación de tipos acá.
+Invocado suelto (sin la resolución de paths/config que usa `next build` internamente), reporta cientos de errores de módulos no encontrados (`react`, namespace `React`) que no son reales — es un problema de cómo `npx` resuelve el compilador contra este `tsconfig.json`, no del código. El type-check real y confiable del proyecto es el que corre dentro de `npx next build` (paso "Running TypeScript"). No usar `tsc --noEmit` como señal de verificación de tipos acá.
 
 ---
 
@@ -128,7 +128,7 @@ El componente (`components/features/gastos/ModalCargarGasto.tsx`) expone un sele
 
 ---
 
-## `SOLO_ADMIN` en `middleware.ts` es method-aware — no alcanza con matchear el path
+## `SOLO_ADMIN` por handler es method-aware — no alcanza con matchear el path
 
 `SOLO_ADMIN` es un array de `{ pattern: RegExp; methods?: string[] }`. Si `methods` está ausente, aplica a cualquier método (así son las entradas viejas, `confirmar-pago` y `contra-asiento`, que son rutas POST-únicas). La entrada de adelantos sí especifica `methods: ["POST"]` porque esa ruta tiene GET (abierto) y POST (ADMIN-only) en el mismo path. Al agregar una entrada nueva a `SOLO_ADMIN` para un path con más de un método, hay que decidir explícitamente si el gate aplica a todos o solo a alguno — el default (`methods` ausente) es "todos".
 
@@ -173,3 +173,18 @@ Antes de la migración `20260906221549_liquidaciones_adelantos`, ambos apuntaban
 ## To confirm
 
 - ⚠ No hay ningún entorno de staging/preview documentado con datos separados de producción — confirmar antes de asumir que existe.
+
+## El callback de invitación es público, la fijación de contraseña no
+
+`/auth/confirm` debe poder recibir el `token_hash` sin sesión y es la única ruta pública de
+confirmación en `proxy.ts`. `/auth/confirm/password` queda protegido por el gate de identidad:
+`verifyOtp({ token_hash, type: "invite" })` establece las cookies y recién entonces se muestra
+la pantalla que llama `updateUser({ password })`. No ampliar el bypass al subtree completo ni
+registrar el token en logs o URLs posteriores.
+
+## APP_URL y templates de invitación
+
+`APP_URL` se valida como un origen HTTP/HTTPS sin credenciales, ruta, query ni hash. El service
+construye `${APP_URL}/auth/confirm`; la allowlist de Supabase debe contener esa URL exacta. La
+plantilla local vive en `supabase/templates/invite.html` y usa `TokenHash`/`RedirectTo`; en un
+proyecto hosted se debe copiar esa plantilla al editor de Email Templates antes de invitar.

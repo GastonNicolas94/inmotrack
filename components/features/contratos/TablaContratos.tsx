@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { ContratosService } from "@/services/contratos.service";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -14,13 +14,9 @@ function formatMonto(n: number | string) {
 }
 
 export async function TablaContratos() {
-  const [contratos, session] = await Promise.all([
-    ContratosService.listar(),
-    auth(),
-  ]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rol = (session?.user as any)?.rol as string | undefined;
-  const mostrarAcciones = rol !== "AUDITOR";
+  const user = await requireAuthenticatedUser();
+  const contratos = await ContratosService.listar();
+  const mostrarAcciones = user.rol !== "AUDITOR";
 
   return (
     <TableCard>

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { Decimal } from "@prisma/client/runtime/client";
 import { prisma } from "@/lib/db";
 import { calcularPendiente } from "@/lib/saldos";
+import { handleServiceError } from "@/lib/api-error-handler";
+import { requireAuthenticatedUser } from "@/lib/auth-context";
 
 // Cargos pendientes de UN contrato puntual, en el orden real de prelación
 // (creado_en asc), más el saldo a favor disponible — usado por
@@ -14,8 +16,10 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const id_contrato = Number(id);
+  try {
+    await requireAuthenticatedUser();
+    const { id } = await params;
+    const id_contrato = Number(id);
 
   const [cargos, cobros] = await Promise.all([
     prisma.cargo.findMany({
@@ -48,5 +52,8 @@ export async function GET(
     new Decimal(0)
   );
 
-  return NextResponse.json({ cargos: pendientes, saldo_a_favor: saldoAFavor });
+    return NextResponse.json({ cargos: pendientes, saldo_a_favor: saldoAFavor });
+  } catch (e) {
+    return handleServiceError(e);
+  }
 }

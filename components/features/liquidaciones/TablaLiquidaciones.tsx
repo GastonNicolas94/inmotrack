@@ -1,7 +1,6 @@
 import { LiquidacionesService } from "@/services/liquidaciones.service";
 import { PropietariosService } from "@/services/propietarios.service";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { requireAuthenticatedUser } from "@/lib/auth-context";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -17,21 +16,14 @@ function formatMonto(n: number | string) {
 }
 
 export async function TablaLiquidaciones() {
-  const [liquidaciones, propietarios, session] = await Promise.all([
+  const user = await requireAuthenticatedUser();
+  const [liquidaciones, propietarios] = await Promise.all([
     LiquidacionesService.listar(),
     PropietariosService.listar(),
-    auth(),
   ]);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rol = (session?.user as any)?.rol as string | undefined;
-  const esAdmin = rol === "ADMIN";
-  let puedeAprobar = esAdmin;
-  if (!esAdmin && rol === "EMPLEADO" && session?.user?.id) {
-    const usuario = await prisma.usuario.findUnique({ where: { id: Number(session.user.id) } });
-    puedeAprobar = usuario?.puede_aprobar_liquidaciones ?? false;
-  }
-  const mostrarAcciones = rol !== "AUDITOR";
+  const esAdmin = user.rol === "ADMIN";
+  const puedeAprobar = user.rol === "ADMIN" || user.puedeAprobarLiquidaciones;
+  const mostrarAcciones = user.rol !== "AUDITOR";
 
   return (
     <TableCard action={mostrarAcciones ? <ModalGenerarLiquidacion propietarios={propietarios} /> : undefined}>
