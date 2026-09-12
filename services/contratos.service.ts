@@ -66,10 +66,21 @@ export const ContratosService = {
           ? { propiedad: { id_propietario: filters.id_propietario } }
           : {}),
       },
-      include: {
-        propiedad: { include: { propietario: true } },
-        inquilino: true,
-        _count: { select: { periodos_pago: true } },
+      select: {
+        id: true,
+        id_propiedad: true,
+        id_inquilino: true,
+        fecha_inicio: true,
+        fecha_fin: true,
+        estado: true,
+        monto_base: true,
+        propiedad: {
+          select: {
+            direccion: true,
+            propietario: { select: { nombre: true } },
+          },
+        },
+        inquilino: { select: { nombre: true } },
       },
       orderBy: { fecha_inicio: "desc" },
     });

@@ -89,9 +89,14 @@ export const GastosService = {
 
   async listar() {
     return prisma.gasto.findMany({
-      include: {
-        propiedad: { select: { id: true, direccion: true } },
-        contrato: { select: { id: true, inquilino: { select: { nombre: true } } } },
+      select: {
+        id: true,
+        concepto: true,
+        categoria_interno: true,
+        monto: true,
+        cargo_a: true,
+        estado_pago: true,
+        propiedad: { select: { direccion: true } },
       },
       orderBy: { id: "desc" },
     });

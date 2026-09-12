@@ -1,6 +1,6 @@
 ---
 type: Architecture
-version: fe2c885
+version: 59481bb
 validated: 2026-09-12
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
@@ -111,6 +111,11 @@ tabla conserva su superficie, borde y seis filas de estado de carga. La página 
 mantiene además un límite independiente en la acción del header: `ContratosWizardData` resuelve
 las propiedades e inquilinos disponibles y recién entonces renderiza `WizardContrato`, sin
 cambiar sus props ni sus permisos.
+
+Los métodos de listado que alimentan estas tablas usan `select` explícito y relaciones anidadas
+mínimas. El shape de cada consulta se mantiene alineado con los campos leídos por su `Tabla*`;
+las relaciones de `TransaccionesService.listar` que necesita la UI (`contra_asientos` y
+`usuario_creador.email`) se conservan explícitamente.
 
 ## Outbox pattern (cierre de períodos)
 
