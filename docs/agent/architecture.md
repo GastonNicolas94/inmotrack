@@ -1,6 +1,6 @@
 ---
 type: Architecture
-version: 5c89f15
+version: 3fd104a
 validated: 2026-09-12
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
@@ -50,7 +50,7 @@ components/
   features/<dominio>/                → Un dominio por carpeta (contratos, gastos, inquilinos, liquidaciones, pagos, propiedades, propietarios, transacciones)
   features/shared/                   → Compartido entre 2+ dominios (BadgeEstadoPeriodo, PeriodoResumenRow, FiltroRangoFecha, EstadoAsyncModal)
 
-services/                            → Un archivo por agregado de negocio (ver overview.md → Capability map)
+services/                            → Un archivo por agregado de negocio (ver overview.md → Capability map), más `dashboard.service.ts` para snapshots agregados server-only
 lib/                                 → fecha.ts, saldos.ts, prelacion.ts, punitorios.ts, masking.ts, serialize.ts,
                                         estado-cobranza.ts, confeccion-contrato.ts, idempotency.ts, cron-auth.ts, db.ts, auth.ts, errors.ts, api-error-handler.ts
   dashboard/                         → public DTO contracts (`types.ts`), URL filters/date ranges (`filters.ts`),
