@@ -1,7 +1,7 @@
 ---
 type: Traps
-version: 2c63145
-validated: 2026-09-10
+version: 8629635
+validated: 2026-09-12
 update_when: cuando se descubre un gotcha no obvio, agregarlo acá en el mismo cambio
 scope:
   - services
@@ -13,6 +13,15 @@ scope:
 # Traps — InmoTrack
 
 Cosas no obvias a partir de una lectura rápida, más desvíos deliberados de lo que uno esperaría. Crece incrementalmente — cada vez que algo sorprende durante una sesión de trabajo, entra acá en el mismo cambio.
+
+---
+
+## El build productivo debe generar Prisma Client explícitamente
+
+Vercel puede instalar las dependencias sin ejecutar los lifecycle scripts transitivos de
+Prisma. En ese caso Next.js compila el código, pero el type-check pierde los tipos generados y
+reporta parámetros `any` en consumidores de resultados Prisma. El script `build` debe mantener
+el orden `prisma generate && next build`; no reemplazarlo por `next build` solo.
 
 ---
 
