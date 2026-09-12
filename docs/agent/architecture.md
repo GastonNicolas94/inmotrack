@@ -1,6 +1,6 @@
 ---
 type: Architecture
-version: 59481bb
+version: 5c89f15
 validated: 2026-09-12
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
@@ -53,6 +53,8 @@ components/
 services/                            → Un archivo por agregado de negocio (ver overview.md → Capability map)
 lib/                                 → fecha.ts, saldos.ts, prelacion.ts, punitorios.ts, masking.ts, serialize.ts,
                                         estado-cobranza.ts, confeccion-contrato.ts, idempotency.ts, cron-auth.ts, db.ts, auth.ts, errors.ts, api-error-handler.ts
+  dashboard/                         → public DTO contracts (`types.ts`), URL filters/date ranges (`filters.ts`),
+                                        decimal-safe financial calculations and chart view models (`metrics.ts`)
 schemas/                             → Un *.schema.ts por recurso (zod)
 tests/
   lib/, services/, db/, helpers/     → node:test — ver runbook.md
