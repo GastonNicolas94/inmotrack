@@ -209,12 +209,23 @@ export const PagosService = {
   async listarRecientes(limit = 50) {
     const aplicaciones = await prisma.aplicacionPago.findMany({
       where: { cargo: { tipo: "ALQUILER" } },
-      include: {
-        transaccion: true,
+      select: {
+        id: true,
+        monto_aplicado: true,
+        transaccion: { select: { fecha_transaccion: true } },
         cargo: {
-          include: {
+          select: {
             periodo: {
-              include: { contrato: { include: { inquilino: true, propiedad: true } } },
+              select: {
+                id_contrato: true,
+                periodo: true,
+                contrato: {
+                  select: {
+                    inquilino: { select: { nombre: true } },
+                    propiedad: { select: { direccion: true } },
+                  },
+                },
+              },
             },
           },
         },

@@ -7,7 +7,16 @@ export const LiquidacionesService = {
   async listar(id_propietario?: number) {
     return prisma.liquidacion.findMany({
       where: id_propietario ? { id_propietario } : undefined,
-      include: { items: true, propietario: { select: { id: true, nombre: true } } },
+      select: {
+        id: true,
+        id_propietario: true,
+        fecha_corrida: true,
+        monto_bruto: true,
+        retenciones: true,
+        monto_neto: true,
+        estado: true,
+        propietario: { select: { nombre: true } },
+      },
       orderBy: { fecha_corrida: "desc" },
     });
   },
