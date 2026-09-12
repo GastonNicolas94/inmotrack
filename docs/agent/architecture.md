@@ -1,7 +1,7 @@
 ---
 type: Architecture
-version: 2c63145
-validated: 2026-09-10
+version: fe2c885
+validated: 2026-09-12
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
   - app
@@ -96,6 +96,21 @@ endpoints distintos (pooler para runtime y conexión directa para migraciones), 
 ningún test destructivo debe apuntar allí.
 
 Para las páginas del dashboard (no-API), el flujo es más corto: el Server Component (`TablaXxx.tsx`) llama al `service` directamente (sin pasar por HTTP), y los componentes cliente (`ModalXxx.tsx`) hacen `fetch()` a las mismas rutas `/api/v1/*` que usaría un cliente externo.
+
+El segmento `app/(dashboard)/` define `loading.tsx` como fallback de navegación. Next.js lo
+anida dentro de `DashboardShell`, por lo que el sidebar y el header compartidos permanecen
+montados mientras el Server Component de la página resuelve sus datos. El fallback vive en
+`components/layout/DashboardLoadingSkeleton.tsx`: es un Server Component accesible (`role="status"`)
+con un header y seis filas, y usa exclusivamente los tokens de `globals.css` para su superficie,
+borde y animación.
+
+Cada listado del dashboard coloca su `Tabla*` dentro de un límite `Suspense` propio, con
+`components/layout/TableLoadingSkeleton.tsx` como fallback compartido. Así el `PageHeader` y
+los filtros se pueden enviar antes de que termine la consulta Prisma, mientras la tarjeta de
+tabla conserva su superficie, borde y seis filas de estado de carga. La página de contratos
+mantiene además un límite independiente en la acción del header: `ContratosWizardData` resuelve
+las propiedades e inquilinos disponibles y recién entonces renderiza `WizardContrato`, sin
+cambiar sus props ni sus permisos.
 
 ## Outbox pattern (cierre de períodos)
 

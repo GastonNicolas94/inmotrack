@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { TablaPropietarios } from "@/components/features/propietarios/TablaPropietarios";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { TableLoadingSkeleton } from "@/components/layout/TableLoadingSkeleton";
 
 export default function PropietariosPage() {
   return (
@@ -9,7 +11,9 @@ export default function PropietariosPage() {
         title="Propietarios"
         description="Datos de cobro y propiedades a cargo de cada propietario."
       />
-      <TablaPropietarios />
+      <Suspense fallback={<TableLoadingSkeleton />}>
+        <TablaPropietarios />
+      </Suspense>
     </div>
   );
 }

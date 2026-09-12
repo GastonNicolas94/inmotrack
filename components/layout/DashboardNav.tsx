@@ -7,6 +7,7 @@ import {
   Wallet, Receipt, HandCoins, BookText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NavLinkPendingIndicator } from "@/components/layout/NavLinkPendingIndicator";
 
 const NAV_ITEMS = [
   { href: "/contratos", label: "Contratos", icon: FileText },
@@ -44,6 +45,7 @@ export function DashboardNav({ onNavigate }: { onNavigate?: () => void }) {
             <span className="md:group-data-[collapsed=true]/aside:hidden">
               {item.label}
             </span>
+            <NavLinkPendingIndicator />
           </Link>
         );
       })}

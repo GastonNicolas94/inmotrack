@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FiltrosLibroDiario } from "@/components/features/transacciones/FiltrosLibroDiario";
 import { TablaLibroDiario } from "@/components/features/transacciones/TablaLibroDiario";
+import { TableLoadingSkeleton } from "@/components/layout/TableLoadingSkeleton";
 
 export default async function TransaccionesPage({
   searchParams,
@@ -16,7 +18,9 @@ export default async function TransaccionesPage({
         description="Registro inmutable de todos los movimientos de caja."
       />
       <FiltrosLibroDiario />
-      <TablaLibroDiario filtros={filtros} />
+      <Suspense fallback={<TableLoadingSkeleton />}>
+        <TablaLibroDiario filtros={filtros} />
+      </Suspense>
     </div>
   );
 }
