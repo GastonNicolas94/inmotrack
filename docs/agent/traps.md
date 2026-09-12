@@ -1,6 +1,6 @@
 ---
 type: Traps
-version: 8629635
+version: 14b0d63
 validated: 2026-09-12
 update_when: cuando se descubre un gotcha no obvio, agregarlo acá en el mismo cambio
 scope:
@@ -13,6 +13,15 @@ scope:
 # Traps — InmoTrack
 
 Cosas no obvias a partir de una lectura rápida, más desvíos deliberados de lo que uno esperaría. Crece incrementalmente — cada vez que algo sorprende durante una sesión de trabajo, entra acá en el mismo cambio.
+
+---
+
+## Next.js solo publica variables del navegador referenciadas estáticamente
+
+El cliente browser de Supabase debe leer `process.env.NEXT_PUBLIC_SUPABASE_URL` y
+`process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` de forma explícita en el módulo cliente.
+Delegar la lectura completa a una función con `process.env` como argumento por defecto funciona
+en Node.js, pero impide que Next.js detecte e incruste esas variables en el bundle del navegador.
 
 ---
 
