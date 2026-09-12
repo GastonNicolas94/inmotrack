@@ -133,8 +133,13 @@ export const TransaccionesService = {
             }
           : {}),
       },
-      include: {
-        usuario_creador: { select: { id: true, email: true } },
+      select: {
+        id: true,
+        tipo: true,
+        caja_destino: true,
+        monto: true,
+        fecha_transaccion: true,
+        usuario_creador: { select: { email: true } },
         contra_asientos: { select: { id: true, tipo: true } },
       },
       orderBy: { fecha_transaccion: "desc" },

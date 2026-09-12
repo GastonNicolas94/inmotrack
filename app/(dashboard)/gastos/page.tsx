@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { TablaGastos } from "@/components/features/gastos/TablaGastos";
+import { TableLoadingSkeleton } from "@/components/layout/TableLoadingSkeleton";
 
 export default function GastosPage() {
   return (
@@ -9,7 +11,9 @@ export default function GastosPage() {
         title="Gastos"
         description="Arreglos, expensas y gastos propios de la inmobiliaria."
       />
-      <TablaGastos />
+      <Suspense fallback={<TableLoadingSkeleton />}>
+        <TablaGastos />
+      </Suspense>
     </div>
   );
 }

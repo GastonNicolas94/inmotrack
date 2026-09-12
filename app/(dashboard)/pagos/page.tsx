@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { TablaPagos } from "@/components/features/pagos/TablaPagos";
+import { TableLoadingSkeleton } from "@/components/layout/TableLoadingSkeleton";
 
 export default function PagosPage() {
   return (
@@ -9,7 +11,9 @@ export default function PagosPage() {
         title="Pagos"
         description="Actividad de cobros reciente de toda la cartera."
       />
-      <TablaPagos />
+      <Suspense fallback={<TableLoadingSkeleton />}>
+        <TablaPagos />
+      </Suspense>
     </div>
   );
 }

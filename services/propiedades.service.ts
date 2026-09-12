@@ -5,7 +5,10 @@ export const PropiedadesService = {
   async listar(id_propietario?: number) {
     return prisma.propiedad.findMany({
       where: id_propietario ? { id_propietario } : undefined,
-      include: {
+      select: {
+        id: true,
+        direccion: true,
+        es_propia: true,
         propietario: { select: { nombre: true } },
         _count: { select: { contratos: true } },
       },
@@ -25,7 +28,9 @@ export const PropiedadesService = {
       where: {
         contratos: { none: { estado: { in: ["ACTIVO", "MOROSO", "POR_VENCER"] } } },
       },
-      include: {
+      select: {
+        id: true,
+        direccion: true,
         propietario: { select: { nombre: true } },
       },
       orderBy: { direccion: "asc" },

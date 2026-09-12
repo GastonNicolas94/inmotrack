@@ -1,15 +1,10 @@
-import { PropiedadesService } from "@/services/propiedades.service";
-import { InquilinosService } from "@/services/inquilinos.service";
+import { Suspense } from "react";
 import { TablaContratos } from "@/components/features/contratos/TablaContratos";
-import { WizardContrato } from "@/components/features/contratos/WizardContrato";
+import { ContratosWizardData } from "@/components/features/contratos/ContratosWizardData";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { TableLoadingSkeleton } from "@/components/layout/TableLoadingSkeleton";
 
-export default async function ContratosPage() {
-  const [propiedades, inquilinos] = await Promise.all([
-    PropiedadesService.listarDisponibles(),
-    InquilinosService.listar(),
-  ]);
-
+export default function ContratosPage() {
   return (
     <div>
       <PageHeader
@@ -17,17 +12,14 @@ export default async function ContratosPage() {
         title="Contratos"
         description="Alta, vigencia y estado de cada contrato de alquiler."
         action={
-          <WizardContrato
-            propiedades={propiedades.map((p) => ({
-              id: p.id,
-              direccion: p.direccion,
-              propietario: { nombre: p.propietario.nombre },
-            }))}
-            inquilinos={inquilinos.map((i) => ({ id: i.id, nombre: i.nombre }))}
-          />
+          <Suspense fallback={null}>
+            <ContratosWizardData />
+          </Suspense>
         }
       />
-      <TablaContratos />
+      <Suspense fallback={<TableLoadingSkeleton />}>
+        <TablaContratos />
+      </Suspense>
     </div>
   );
 }
