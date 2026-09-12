@@ -4,7 +4,10 @@ import type { PropietarioInput } from "@/schemas/propietario.schema";
 export const PropietariosService = {
   async listar() {
     return prisma.propietario.findMany({
-      include: {
+      select: {
+        id: true,
+        nombre: true,
+        cbu: true,
         _count: { select: { propiedades: true } },
       },
       orderBy: { nombre: "asc" },

@@ -5,7 +5,13 @@ import type { InquilinoInput } from "@/schemas/inquilino.schema";
 export const InquilinosService = {
   async listar() {
     return prisma.inquilino.findMany({
-      include: { _count: { select: { contratos: true } } },
+      select: {
+        id: true,
+        nombre: true,
+        dni_cuit: true,
+        email: true,
+        _count: { select: { contratos: true } },
+      },
       orderBy: { nombre: "asc" },
     });
   },
