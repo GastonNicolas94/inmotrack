@@ -104,7 +104,7 @@ async function fixture() {
     data: { id_propiedad: own.id, concepto: "Pintura", categoria_interno: "Mantenimiento", monto: 12000, tipo: "ARREGLO", cargo_a: "PROPIETARIO", creado_en: new Date("2026-09-02T12:00:00Z") },
   });
   const contractOnlyExpense = await prisma.gasto.create({
-    data: { id_contrato: ownContract.id, concepto: "Expensas contrato", monto: 8000, tipo: "EXPENSA", cargo_a: "PROPIETARIO", creado_en: new Date("2026-09-03T12:00:00Z") },
+    data: { id_propiedad: own.id, id_contrato: ownContract.id, concepto: "Expensas contrato", monto: 8000, tipo: "EXPENSA", cargo_a: "PROPIETARIO", creado_en: new Date("2026-09-03T12:00:00Z") },
   });
   const agencyExpense = await prisma.gasto.create({
     data: { concepto: "Sueldos", categoria_interno: "Sueldos", monto: 30000, tipo: "OTRO", cargo_a: "INMOBILIARIA", creado_en: new Date("2026-09-04T12:00:00Z") },
