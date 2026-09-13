@@ -1,7 +1,7 @@
 ---
 type: Architecture
-version: 3fd104a
-validated: 2026-09-12
+version: d284efe
+validated: 2026-09-13
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
   - app
