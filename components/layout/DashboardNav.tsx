@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   FileText, Building2, UserRound, Users,
-  Wallet, Receipt, HandCoins, BookText,
+  Wallet, Receipt, HandCoins, BookText, LayoutDashboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NavLinkPendingIndicator } from "@/components/layout/NavLinkPendingIndicator";
 
 const NAV_ITEMS = [
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/contratos", label: "Contratos", icon: FileText },
   { href: "/propietarios", label: "Propietarios", icon: Users },
   { href: "/propiedades", label: "Propiedades", icon: Building2 },
@@ -26,7 +27,7 @@ export function DashboardNav({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav className="flex-1 space-y-0.5 p-3">
       {NAV_ITEMS.map((item) => {
-        const active = pathname?.startsWith(item.href);
+        const active = item.href === "/" ? pathname === "/" : pathname?.startsWith(item.href);
         const Icon = item.icon;
         return (
           <Link

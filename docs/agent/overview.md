@@ -1,7 +1,7 @@
 ---
 type: Overview
-version: 2c63145
-validated: 2026-09-10
+version: 2916483
+validated: 2026-09-12
 update_when: Purpose changes, new roles/actors added, or capability scope shifts
 scope:
   - app
@@ -60,6 +60,7 @@ No hay multi-sitio ni multi-tenant — un solo despliegue, tres roles fijos. `pr
 | Libro diario / transacciones / contra-asientos | `services/transacciones.service.ts` |
 | Liquidación a propietarios (selección por rango, grano dual) | `services/liquidaciones.service.ts` |
 | Adelantos a propietarios (registrar, descontar con prelación por antigüedad) | `services/adelantos.service.ts` |
+| Snapshot agregado del dashboard operativo/financiero | `services/dashboard.service.ts`, `lib/dashboard/{filters,metrics,types}.ts` |
 | Estado de cobranza / liquidación de un Cargo (derivado, nunca cacheado) | `lib/estado-cobranza.ts`, `lib/saldos.ts` |
 | Auth y control de acceso por rol | `lib/supabase/{client,server,admin,proxy}.ts`, `lib/auth-context.ts`, `proxy.ts`, `services/usuarios.service.ts` |
 
