@@ -46,13 +46,17 @@ Contexto: al agregar `services/creditos.service.ts` (función compartida `aplica
 
 `components/ui/select.tsx` (`SelectContent`) fuerza `w-(--anchor-width)` (el ancho del desplegable queda pegado al ancho del trigger cerrado) + `overflow-x-hidden`, y `SelectItem`/`ItemText` usan `whitespace-nowrap`. Cualquier `Select` cuyos items tengan texto más largo que el trigger (ej. "dirección — propietario") corta el texto sin wrap ni ellipsis visible. Se corrigió puntualmente en el combo de Propiedad de `WizardContrato.tsx` (`<SelectContent className="w-max max-w-sm">`, ancho al contenido en vez de al trigger). **No se tocó el componente base ni ningún otro `Select` del proyecto** — el de Propietario en `DialogNuevaPropiedad` probablemente tenga el mismo problema si el nombre es largo. Decidir si conviene arreglarlo en la base (`select.tsx`) para que no se repita el parche manual cada vez.
 
-## 8. `Gasto.estado_pago` y "Marcar pagado" no tienen sentido para `cargo_a: INQUILINO` (ej. confección de contrato)
+## 8. Resuelto: confección de contrato no es un Gasto
 
-`estado_pago` + `GastosService.marcarPagado` + el botón "Marcar pagado" en `TablaGastos.tsx` fueron pensados para el flujo "la inmobiliaria le paga a un tercero" (`cargo_a: PROPIETARIO`/`INMOBILIARIA`, genera `EGRESO_TERCEROS`/`EGRESO_OPERATIVO` — plata que sale). Para un gasto `cargo_a: INQUILINO` (como la confección de contrato) es exactamente lo opuesto: es el inquilino el que le debe a la inmobiliaria, y ya se cobra solo por su propio mecanismo (`Cargo` + `PagosService.registrar`, funcionando bien). Hoy la tabla de gastos:
-- Muestra "PENDIENTE" para estos gastos para siempre, aunque el inquilino ya los haya pagado — porque mira `Gasto.estado_pago`, no el `Cargo` asociado.
-- Ofrece el botón "Marcar pagado" en la fila, que si se clickea genera un `EGRESO_TERCEROS` **falso** (plata que nunca salió) — riesgo real de integridad contable, no solo un detalle visual.
+Decisión cerrada el 2026-09-14 en el issue #26: la confección no representa una
+erogación ni un pago a proveedor, por lo que se modela únicamente como
+`Cargo CONFECCION_CONTRATO`. Un gasto real trasladado al inquilino sí mantiene
+`Gasto + Cargo GASTO`: `Gasto.estado_pago` registra el pago al proveedor y
+`AplicacionPago` registra el cobro al inquilino, sin sincronizar ambos estados.
 
-Sin decidir todavía cuál es el fix correcto (el usuario pidió pensarlo más — no cierra del todo la solución obvia de "ocultar el botón y mostrar el estado del Cargo en su lugar", puede haber más matices con otros tipos de gasto `cargo_a: INQUILINO` que no sean confección). Anotado el 2026-08-25, sin implementar nada.
+El nuevo Cargo conserva la prelación existente, puede generar punitorios, produce
+`INGRESO_CONFECCION_CONTRATO` al cobrarse y queda excluido de la liquidación del
+propietario.
 
 ## 9. Sin observabilidad en los reintentos de `CierrePeriodosService.procesarUnaFilaDeCola`
 

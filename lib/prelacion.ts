@@ -1,8 +1,9 @@
 import { Decimal } from "@prisma/client/runtime/client";
+import type { TipoCargoCodigo } from "@/lib/cargos";
 
 export interface CargoPendienteSimulacion {
   id: number;
-  tipo: "ALQUILER" | "GASTO" | "PUNITORIO" | "AJUSTE";
+  tipo: TipoCargoCodigo;
   pendiente: Decimal | string | number;
 }
 
@@ -14,7 +15,7 @@ export interface AplicacionSimulada {
 /**
  * Simula, sin tocar la base, qué le pasaría a un monto si se registrara
  * como pago ahora — misma prelación que `PagosService.registrar`: 1)
- * punitorios, 2) alquiler/ajuste, 3) gastos, siempre más viejo primero
+ * punitorios, 2) alquiler/ajuste, 3) gastos/confección, siempre más viejo primero
  * dentro de cada paso. `cargosPendientes` tiene que venir YA ordenado por
  * antigüedad real (creado_en asc) y ya filtrado a solo lo que el
  * inquilino puede deber (un GASTO a cargo del propietario no entra acá).
@@ -40,7 +41,7 @@ export function simularPrelacion(
 
   aplicarPaso((c) => c.tipo === "PUNITORIO");
   aplicarPaso((c) => c.tipo === "ALQUILER" || c.tipo === "AJUSTE");
-  aplicarPaso((c) => c.tipo === "GASTO");
+  aplicarPaso((c) => c.tipo === "GASTO" || c.tipo === "CONFECCION_CONTRATO");
 
   return aplicaciones;
 }

@@ -89,7 +89,7 @@ describe("ContratosService.activar", () => {
     assert.equal(calcularPendiente(periodo!.cargos[0].monto, periodo!.cargos[0].aplicaciones).toNumber(), 500000);
   });
 
-  it("con cobra_confeccion y estrategia UN_ALQUILER, genera un Cargo GASTO por el valor de un alquiler", async () => {
+  it("con cobra_confeccion y estrategia UN_ALQUILER, genera solo un Cargo CONFECCION_CONTRATO", async () => {
     const propietario = await prisma.propietario.create({
       data: { nombre: "Dueño Confección 1", cbu: "0000000000000000000000" },
     });
@@ -115,16 +115,18 @@ describe("ContratosService.activar", () => {
     await ContratosService.activar(contrato.id);
 
     const cargoConfeccion = await prisma.cargo.findFirst({
-      where: { id_contrato: contrato.id, tipo: "GASTO" },
-      include: { aplicaciones: true, gasto: true },
+      where: { id_contrato: contrato.id, tipo: "CONFECCION_CONTRATO" },
+      include: { aplicaciones: true },
     });
-    assert.ok(cargoConfeccion, "debe existir un Cargo GASTO de confección");
-    assert.equal(cargoConfeccion!.gasto?.tipo, "CONFECCION_CONTRATO");
-    assert.equal(cargoConfeccion!.gasto?.cargo_a, "INQUILINO");
+    assert.ok(cargoConfeccion, "debe existir el Cargo de confección");
+    assert.equal(cargoConfeccion!.id_gasto, null);
     assert.equal(calcularPendiente(cargoConfeccion!.monto, cargoConfeccion!.aplicaciones).toNumber(), 380000);
+
+    const gastosDelContrato = await prisma.gasto.count({ where: { id_contrato: contrato.id } });
+    assert.equal(gastosDelContrato, 0, "la confección no debe crear un Gasto");
   });
 
-  it("con cobra_confeccion y estrategia PORCENTAJE_5, genera un Cargo GASTO por el 5% del contrato total", async () => {
+  it("con cobra_confeccion y estrategia PORCENTAJE_5, genera un Cargo CONFECCION_CONTRATO por el 5% del contrato", async () => {
     const propietario = await prisma.propietario.create({
       data: { nombre: "Dueño Confección 2", cbu: "0000000000000000000000" },
     });
@@ -150,14 +152,14 @@ describe("ContratosService.activar", () => {
     await ContratosService.activar(contrato.id);
 
     const cargoConfeccion = await prisma.cargo.findFirst({
-      where: { id_contrato: contrato.id, tipo: "GASTO" },
+      where: { id_contrato: contrato.id, tipo: "CONFECCION_CONTRATO" },
       include: { aplicaciones: true },
     });
     // 380000 * 24 meses * 0.05 = 456000
     assert.equal(calcularPendiente(cargoConfeccion!.monto, cargoConfeccion!.aplicaciones).toNumber(), 456000);
   });
 
-  it("sin cobra_confeccion, no genera ningún Cargo GASTO", async () => {
+  it("sin cobra_confeccion, no genera ningún Cargo CONFECCION_CONTRATO", async () => {
     const propietario = await prisma.propietario.create({
       data: { nombre: "Dueño Confección 3", cbu: "0000000000000000000000" },
     });
@@ -181,7 +183,7 @@ describe("ContratosService.activar", () => {
     await ContratosService.activar(contrato.id);
 
     const cargoConfeccion = await prisma.cargo.findFirst({
-      where: { id_contrato: contrato.id, tipo: "GASTO" },
+      where: { id_contrato: contrato.id, tipo: "CONFECCION_CONTRATO" },
     });
     assert.equal(cargoConfeccion, null);
   });

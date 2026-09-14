@@ -267,24 +267,12 @@ export const ContratosService = {
           fecha_fin: contrato.fecha_fin,
         });
 
-        const gastoConfeccion = await tx.gasto.create({
-          data: {
-            id_propiedad: contrato.id_propiedad,
-            id_contrato: id,
-            concepto: "Confección de contrato",
-            monto: montoConfeccion,
-            tipo: "CONFECCION_CONTRATO",
-            cargo_a: "INQUILINO",
-          },
-        });
-
         await tx.cargo.create({
           data: {
             id_periodo: periodoPago.id,
             id_contrato: id,
-            tipo: "GASTO",
+            tipo: "CONFECCION_CONTRATO",
             monto: montoConfeccion,
-            id_gasto: gastoConfeccion.id,
             descripcion: "Confección de contrato",
           },
         });

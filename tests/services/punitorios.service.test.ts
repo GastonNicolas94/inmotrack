@@ -226,6 +226,34 @@ describe("PunitoriosService.calcularIntereses", () => {
     assert.equal(Number(punitorio.monto), 12000);
   });
 
+  it("una confección de contrato pendiente genera punitorios", async () => {
+    const periodo = periodoHaceMeses(1);
+    const { contrato, periodoPago } = await crearEscenario(periodo);
+    const cargoConfeccion = await prisma.cargo.create({
+      data: {
+        id_periodo: periodoPago.id,
+        id_contrato: contrato.id,
+        tipo: "CONFECCION_CONTRATO",
+        monto: 100000,
+        descripcion: "Confección de contrato",
+      },
+    });
+
+    const resultado = await PunitoriosService.calcularIntereses(
+      contrato.id,
+      [cargoConfeccion.id],
+      1
+    );
+
+    assert.equal(resultado.generados, 1);
+    const punitorio = await prisma.cargo.findFirst({
+      where: { id_cargo_origen: cargoConfeccion.id },
+    });
+    assert.ok(punitorio);
+    assert.equal(punitorio!.tipo, "PUNITORIO");
+    assert.ok(Number(punitorio!.monto) > 0);
+  });
+
   it("dos llamados concurrentes sobre el mismo Cargo no duplican el rango (el lock serializa, uno de los dos no-opea)", async () => {
     const periodo = periodoHaceMeses(1);
     const { contrato, cargo } = await crearEscenario(periodo);

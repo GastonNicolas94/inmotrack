@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { fmt } from "@/components/features/shared/PeriodoResumenRow";
 import { EstadoAsyncModal } from "@/components/features/shared/EstadoAsyncModal";
 import { simularPrelacion } from "@/lib/prelacion";
+import { etiquetaTipoCargo, type TipoCargoCodigo } from "@/lib/cargos";
 
 interface Props {
   contrato: {
@@ -27,18 +28,12 @@ interface Props {
 
 interface CargoPendiente {
   id: number;
-  tipo: "ALQUILER" | "GASTO" | "PUNITORIO" | "AJUSTE";
+  tipo: TipoCargoCodigo;
   periodo: string;
   monto: number | string;
   pendiente: number | string;
 }
 
-const ETIQUETA_TIPO: Record<string, string> = {
-  ALQUILER: "Alquiler",
-  GASTO: "Gasto",
-  PUNITORIO: "Punitorio",
-  AJUSTE: "Ajuste",
-};
 
 function nuevoIdempotencyKey() {
   return crypto.randomUUID();
@@ -154,7 +149,7 @@ export function ModalRegistrarPago({ contrato }: Props) {
                           <div className="flex items-center gap-2">
                             <span className="font-mono font-medium">{c.periodo}</span>
                             <span className="text-xs text-muted-foreground">
-                              {ETIQUETA_TIPO[c.tipo] ?? c.tipo}
+                              {etiquetaTipoCargo(c.tipo)}
                             </span>
                           </div>
                           <div className="font-semibold text-status-danger">

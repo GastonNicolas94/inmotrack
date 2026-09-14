@@ -25,9 +25,11 @@ export async function GET(
     deuda_alquiler: saldo.deuda_alquiler ?? 0,
     punitorios: saldo.punitorios ?? 0,
     deuda_gastos: saldo.deuda_gastos ?? 0,
+    deuda_confeccion: saldo.deuda_confeccion ?? 0,
     total: saldo.total ?? 0,
     detalle_periodos: saldo.detalle_periodos ?? [],
     detalle_gastos: saldo.detalle_gastos ?? [],
+    detalle_confeccion: saldo.detalle_confeccion ?? [],
     });
   } catch (e) {
     return handleServiceError(e);

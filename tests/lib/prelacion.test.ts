@@ -45,6 +45,22 @@ describe("simularPrelacion", () => {
     assert.equal(resultado[1].monto_aplicado.toString(), "10000");
   });
 
+  test("confección mantiene el tercer nivel junto con los gastos", () => {
+    const resultado = simularPrelacion(
+      [
+        { id: 1, tipo: "CONFECCION_CONTRATO", pendiente: 30000 },
+        { id: 2, tipo: "ALQUILER", pendiente: 100000 },
+        { id: 3, tipo: "GASTO", pendiente: 20000 },
+      ],
+      140000
+    );
+    assert.deepEqual(
+      resultado.map((a) => a.id_cargo),
+      [2, 1, 3]
+    );
+    assert.equal(resultado[2].monto_aplicado.toString(), "10000");
+  });
+
   test("más viejo primero dentro del mismo tipo", () => {
     const resultado = simularPrelacion(
       [

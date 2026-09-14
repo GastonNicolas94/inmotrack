@@ -11,7 +11,7 @@ describe("InquilinosService.obtenerSaldo", () => {
     await cleanDatabase();
   });
 
-  it("incluye deuda de alquiler, punitorios pendientes y gastos a cargo del inquilino", async () => {
+  it("separa confección de alquiler, punitorios y gastos sin alterar el total", async () => {
     const propietario = await prisma.propietario.create({
       data: { nombre: "Dueño", cbu: "0000000000000000000000" },
     });
@@ -30,6 +30,8 @@ describe("InquilinosService.obtenerSaldo", () => {
       fecha_fin: "2026-12-31",
       monto_base: new Decimal(100000),
       pct_comision: new Decimal(10),
+      cobra_confeccion: true,
+      estrategia_confeccion: "UN_ALQUILER",
     });
     await ContratosService.activar(contrato.id);
 
@@ -107,7 +109,10 @@ describe("InquilinosService.obtenerSaldo", () => {
     assert.equal(saldo.deuda_alquiler, 60000);
     assert.equal(saldo.punitorios, 3000);
     assert.equal(saldo.deuda_gastos, 5000);
-    assert.equal(saldo.total, 68000);
+    assert.equal(saldo.deuda_confeccion, 100000);
+    assert.equal(saldo.total, 168000);
+    assert.equal(saldo.detalle_confeccion.length, 1);
+    assert.equal(saldo.detalle_confeccion[0].concepto, "Confección de contrato");
   });
 
   it("no incluye en detalle_periodos los cargos ya completamente cubiertos", async () => {

@@ -130,10 +130,12 @@ export const PagosService = {
           aplicadoCapital = aplicadoCapital.plus(abono);
         }
 
-        // ── Paso 3: gastos a cargo del inquilino, más antiguos primero ──
+        // ── Paso 3: gastos del inquilino y confección, más antiguos primero ──
         if (saldo.greaterThan(0)) {
           for (const cargo of todosCargos.filter(
-            (c) => c.tipo === "GASTO" && c.gasto?.cargo_a === "INQUILINO"
+            (c) =>
+              c.tipo === "CONFECCION_CONTRATO" ||
+              (c.tipo === "GASTO" && c.gasto?.cargo_a === "INQUILINO")
           )) {
             if (saldo.lessThanOrEqualTo(0)) break;
             const deuda = calcularPendiente(cargo.monto, cargo.aplicaciones);
@@ -149,7 +151,7 @@ export const PagosService = {
             // ingreso de la inmobiliaria al 100% desde el momento en que
             // se cobra. Se reconoce ahora mismo, no espera a ninguna
             // liquidación.
-            if (cargo.gasto?.tipo === "CONFECCION_CONTRATO") {
+            if (cargo.tipo === "CONFECCION_CONTRATO") {
               await tx.transaccion.create({
                 data: {
                   tipo: "INGRESO_CONFECCION_CONTRATO",

@@ -1,7 +1,7 @@
 ---
 type: Architecture
-version: d284efe
-validated: 2026-09-13
+version: 4957633
+validated: 2026-09-14
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
   - app
@@ -51,7 +51,7 @@ components/
   features/shared/                   → Compartido entre 2+ dominios (BadgeEstadoPeriodo, PeriodoResumenRow, FiltroRangoFecha, EstadoAsyncModal)
 
 services/                            → Un archivo por agregado de negocio (ver overview.md → Capability map), más `dashboard.service.ts` para snapshots agregados server-only
-lib/                                 → fecha.ts, saldos.ts, prelacion.ts, punitorios.ts, masking.ts, serialize.ts,
+lib/                                 → fecha.ts, saldos.ts, cargos.ts, prelacion.ts, punitorios.ts, masking.ts, serialize.ts,
                                         estado-cobranza.ts, confeccion-contrato.ts, idempotency.ts, cron-auth.ts, db.ts, auth.ts, errors.ts, api-error-handler.ts
   dashboard/                         → public DTO contracts (`types.ts`), URL filters/date ranges (`filters.ts`),
                                         decimal-safe financial calculations and chart view models (`metrics.ts`)

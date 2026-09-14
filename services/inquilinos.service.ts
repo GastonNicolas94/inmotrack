@@ -56,16 +56,19 @@ export const InquilinosService = {
     const cargosAlquiler = cargosConPendiente.filter((c) => c.tipo === "ALQUILER" || c.tipo === "AJUSTE");
     const cargosPunitorio = cargosConPendiente.filter((c) => c.tipo === "PUNITORIO");
     const cargosGasto = cargosConPendiente.filter((c) => c.tipo === "GASTO");
+    const cargosConfeccion = cargosConPendiente.filter((c) => c.tipo === "CONFECCION_CONTRATO");
 
     const deudaAlquiler = cargosAlquiler.reduce((acc, c) => acc + c.pendiente.toNumber(), 0);
     const punitorios = cargosPunitorio.reduce((acc, c) => acc + c.pendiente.toNumber(), 0);
     const deudaGastos = cargosGasto.reduce((acc, c) => acc + c.pendiente.toNumber(), 0);
+    const deudaConfeccion = cargosConfeccion.reduce((acc, c) => acc + c.pendiente.toNumber(), 0);
 
     return {
       deuda_alquiler: deudaAlquiler,
       punitorios,
       deuda_gastos: deudaGastos,
-      total: deudaAlquiler + punitorios + deudaGastos,
+      deuda_confeccion: deudaConfeccion,
+      total: deudaAlquiler + punitorios + deudaGastos + deudaConfeccion,
       detalle_periodos: [...cargosAlquiler, ...cargosPunitorio].map((c) => ({
         id: c.id,
         periodo: c.periodo.periodo,
@@ -77,6 +80,12 @@ export const InquilinosService = {
       detalle_gastos: cargosGasto.map((c) => ({
         id: c.id,
         concepto: c.descripcion ?? "",
+        monto: c.pendiente.toNumber(),
+        direccion: c.contrato.propiedad.direccion,
+      })),
+      detalle_confeccion: cargosConfeccion.map((c) => ({
+        id: c.id,
+        concepto: c.descripcion ?? "Confección de contrato",
         monto: c.pendiente.toNumber(),
         direccion: c.contrato.propiedad.direccion,
       })),

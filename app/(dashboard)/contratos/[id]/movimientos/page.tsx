@@ -11,13 +11,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { BadgeTipoTransaccion } from "@/components/features/transacciones/BadgeTipoTransaccion";
 import { FiltroRangoFecha } from "@/components/features/shared/FiltroRangoFecha";
 import { fmt } from "@/components/features/shared/PeriodoResumenRow";
+import { etiquetaTipoCargo } from "@/lib/cargos";
 
-const ETIQUETA_TIPO: Record<string, string> = {
-  ALQUILER: "Alquiler",
-  GASTO: "Gasto",
-  PUNITORIO: "Punitorio",
-  AJUSTE: "Ajuste",
-};
 
 export default async function MovimientosContratoPage({
   params,
@@ -83,7 +78,7 @@ export default async function MovimientosContratoPage({
                   <TableCell>
                     {m.esCargo ? (
                       <span className="font-medium">
-                        {ETIQUETA_TIPO[m.tipo] ?? m.tipo}
+                        {etiquetaTipoCargo(m.tipo)}
                         {m.descripcion ? ` — ${m.descripcion}` : ""}
                       </span>
                     ) : (

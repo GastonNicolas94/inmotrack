@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { fmt } from "@/components/features/shared/PeriodoResumenRow";
 import { EstadoAsyncModal } from "@/components/features/shared/EstadoAsyncModal";
+import { etiquetaTipoCargo, type TipoCargoCodigo } from "@/lib/cargos";
 
 interface Props {
   contrato: {
@@ -19,17 +20,12 @@ interface Props {
 
 interface CargoPendiente {
   id: number;
-  tipo: "ALQUILER" | "GASTO" | "PUNITORIO" | "AJUSTE";
+  tipo: TipoCargoCodigo;
   periodo: string;
   monto: number | string;
   pendiente: number | string;
 }
 
-const ETIQUETA_TIPO: Record<string, string> = {
-  ALQUILER: "Alquiler",
-  GASTO: "Gasto",
-  AJUSTE: "Ajuste",
-};
 
 export function ModalCalcularIntereses({ contrato }: Props) {
   const [open, setOpen] = useState(false);
@@ -129,7 +125,7 @@ export function ModalCalcularIntereses({ contrato }: Props) {
                       <div>
                         <span className="font-mono font-medium">{c.periodo}</span>{" "}
                         <span className="text-xs text-muted-foreground">
-                          {ETIQUETA_TIPO[c.tipo] ?? c.tipo}
+                          {etiquetaTipoCargo(c.tipo)}
                         </span>
                       </div>
                     </div>

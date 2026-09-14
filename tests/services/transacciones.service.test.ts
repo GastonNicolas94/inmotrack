@@ -259,6 +259,79 @@ describe("TransaccionesService.crearContraAsiento", () => {
     assert.equal(Number(contraAsientoComision!.monto), -60000);
   });
 
+  it("al anular un cobro, revierte en cascada el ingreso por confección y restaura su deuda", async () => {
+    const usuario = await prisma.usuario.create({
+      data: {
+        email: "contra-confeccion@test.com",
+        auth_user_id: "00000000-0000-4000-8000-000000000408",
+        rol: "ADMIN",
+      },
+    });
+    const propietario = await prisma.propietario.create({
+      data: { nombre: "Dueño Contra Confección", cbu: "0000000000000000000000" },
+    });
+    const propiedad = await prisma.propiedad.create({
+      data: {
+        id_propietario: propietario.id,
+        direccion: "Calle Contra Confección",
+        es_propia: false,
+      },
+    });
+    const inquilino = await prisma.inquilino.create({
+      data: { nombre: "Inquilino Contra Confección", dni_cuit: "20444444448" },
+    });
+    const contrato = await ContratosService.crear({
+      id_propiedad: propiedad.id,
+      id_inquilino: inquilino.id,
+      fecha_inicio: "2026-08-01",
+      fecha_fin: "2027-07-31",
+      monto_base: 100000,
+      pct_comision: 10,
+      pct_punitorio_diario: 0.1,
+      cobra_confeccion: true,
+      estrategia_confeccion: "UN_ALQUILER",
+    });
+    await ContratosService.activar(contrato.id, usuario.id);
+    await PagosService.registrar({
+      id_contrato: contrato.id,
+      monto_pagado: 200000,
+      idempotency_key: crypto.randomUUID(),
+      id_usuario_creador: usuario.id,
+    });
+
+    const txnCobro = await prisma.transaccion.findFirstOrThrow({
+      where: { id_contrato: contrato.id, tipo: "INGRESO_COBRO" },
+    });
+    const ingresoConfeccion = await prisma.transaccion.findFirstOrThrow({
+      where: { id_contrato: contrato.id, tipo: "INGRESO_CONFECCION_CONTRATO" },
+    });
+
+    await TransaccionesService.crearContraAsiento({
+      id_txn_origen: txnCobro.id,
+      comentario: "cobro rechazado",
+      id_usuario_creador: usuario.id,
+    });
+
+    const contraIngresoConfeccion = await prisma.transaccion.findFirst({
+      where: {
+        id_contrato: contrato.id,
+        tipo: "CONTRA_ASIENTO",
+        id_txn_origen: ingresoConfeccion.id,
+      },
+    });
+    assert.ok(contraIngresoConfeccion);
+    assert.equal(Number(contraIngresoConfeccion!.monto), -100000);
+
+    const cargoConfeccion = await prisma.cargo.findFirstOrThrow({
+      where: { id_contrato: contrato.id, tipo: "CONFECCION_CONTRATO" },
+      include: { aplicaciones: true },
+    });
+    assert.equal(
+      calcularPendiente(cargoConfeccion.monto, cargoConfeccion.aplicaciones).toNumber(),
+      100000
+    );
+  });
+
   it("al anular un cobro que generó crédito heredado, revierte en cascada la comisión que se cobró al abrir el período siguiente", async () => {
     const usuario = await prisma.usuario.create({
     data: { email: "cascada2@test.com", auth_user_id: "00000000-0000-4000-8000-000000000407", rol: "ADMIN" },

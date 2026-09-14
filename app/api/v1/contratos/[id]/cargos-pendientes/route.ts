@@ -9,8 +9,8 @@ import { requireAuthenticatedUser } from "@/lib/auth-context";
 // (creado_en asc), más el saldo a favor disponible — usado por
 // ModalRegistrarPago para mostrar el desglose de deuda, avisar si ya hay
 // crédito flotando sin aplicar, y simular en el cliente qué se cubriría
-// con el monto ingresado (lib/prelacion.ts). Un GASTO a cargo del
-// propietario/inmobiliaria nunca es deuda del inquilino, así que se
+// con el monto ingresado (lib/prelacion.ts). CONFECCION_CONTRATO siempre
+// es deuda del inquilino. Un GASTO a cargo del propietario/inmobiliaria se
 // excluye de los cargos — nunca lo cubre un pago.
 export async function GET(
   _req: NextRequest,

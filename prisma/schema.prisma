@@ -144,7 +144,7 @@ model Cargo {
   creado_en   DateTime    @default(now())
 
   // Solo se setean en un Cargo de tipo PUNITORIO: a qué Cargo (ALQUILER/
-  // GASTO/AJUSTE) le calculó interés, y qué rango de días cubre esa
+  // GASTO/CONFECCION_CONTRATO/AJUSTE) le calculó interés, y qué rango de días cubre esa
   // corrida. Un PUNITORIO nunca genera punitorio sobre sí mismo — no
   // participa como cargo_origen de otra fila.
   id_cargo_origen       Int?
@@ -304,6 +304,7 @@ enum EstadoCiclo {
 enum TipoCargo {
   ALQUILER
   GASTO
+  CONFECCION_CONTRATO
   PUNITORIO
   AJUSTE
 }
@@ -349,6 +350,7 @@ enum TipoGasto {
   GAS
   LUZ
   IMPUESTO
+  // Valor legado del enum. La aplicación modela la confección como Cargo.
   CONFECCION_CONTRATO
   OTRO
 }

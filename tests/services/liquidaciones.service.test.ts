@@ -26,7 +26,11 @@ function diasDesdeAhora(offsetDias: number): Date {
  * Helper: crea un propietario, propiedad, inquilino, usuario y contrato activado
  * listos para usar. Retorna todas las entidades creadas.
  */
-async function crearEscenarioBasico(opts?: { pct_comision?: number; nombre_propietario?: string }) {
+async function crearEscenarioBasico(opts?: {
+  pct_comision?: number;
+  nombre_propietario?: string;
+  cobra_confeccion?: boolean;
+}) {
   const propietario = await prisma.propietario.create({
     data: { nombre: opts?.nombre_propietario ?? "Propietario Test", cbu: "0000000000000000000000" },
   });
@@ -48,6 +52,8 @@ async function crearEscenarioBasico(opts?: { pct_comision?: number; nombre_propi
     monto_base: 100000,
     pct_comision: opts?.pct_comision ?? 10,
     pct_punitorio_diario: 0.1,
+    cobra_confeccion: opts?.cobra_confeccion ?? false,
+    estrategia_confeccion: opts?.cobra_confeccion ? "UN_ALQUILER" : undefined,
   });
 
   await ContratosService.activar(contrato.id, usuario.id);
@@ -92,6 +98,37 @@ describe("LiquidacionesService.generarParaPropietario", () => {
     });
     assert.ok(aplicacionSellada.id_liquidacion_item !== null, "AplicacionPago debe estar sellada");
     assert.equal(aplicacionSellada.id_liquidacion_item, item.id, "debe apuntar al LiquidacionItem correcto");
+  });
+
+  it("el cobro de una confección no aumenta la liquidación del propietario", async () => {
+    const { propietario, contrato, usuario } = await crearEscenarioBasico({
+      cobra_confeccion: true,
+    });
+
+    await PagosService.registrar({
+      id_contrato: contrato.id,
+      monto_pagado: 200000,
+      idempotency_key: crypto.randomUUID(),
+      id_usuario_creador: usuario.id,
+    });
+
+    const liquidacion = await LiquidacionesService.generarParaPropietario(
+      propietario.id,
+      diasDesdeAhora(1)
+    );
+
+    assert.equal(Number(liquidacion.monto_bruto), 100000);
+    assert.equal(Number(liquidacion.retenciones), 10000);
+    assert.equal(Number(liquidacion.monto_neto), 90000);
+
+    const aplicacionConfeccion = await prisma.aplicacionPago.findFirstOrThrow({
+      where: { cargo: { tipo: "CONFECCION_CONTRATO" } },
+    });
+    assert.equal(
+      aplicacionConfeccion.id_liquidacion_item,
+      null,
+      "la confección cobrada no debe quedar sellada por una liquidación"
+    );
   });
 
   it("pago fuera del rango (antes de desde) NO entra en la liquidación", async () => {
