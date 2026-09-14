@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { calcularPendiente } from "@/lib/saldos";
 import { calcularInteresAcumulado } from "@/lib/punitorios";
 import { hoyEnArgentina, formatFechaLocal } from "@/lib/fecha";
+import { admitePunitorio } from "@/lib/cargos";
 
 export const PunitoriosService = {
   /**
@@ -44,7 +45,7 @@ export const PunitoriosService = {
           },
         });
 
-        if (!cargo || cargo.id_contrato !== id_contrato || cargo.tipo === "PUNITORIO") {
+        if (!cargo || cargo.id_contrato !== id_contrato || !admitePunitorio(cargo.tipo)) {
           return null;
         }
 

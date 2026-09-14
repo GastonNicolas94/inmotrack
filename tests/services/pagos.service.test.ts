@@ -374,7 +374,7 @@ describe("PagosService.registrar", () => {
     assert.equal(calcularPendiente(cargoSeptiembre!.monto, cargoSeptiembre!.aplicaciones).toNumber(), 500000); // 600000 - 100000 (lo que sobró de los 300000)
   });
 
-  it("al cobrar la confección de contrato, reconoce el 100% como ingreso de la inmobiliaria (no comisión)", async () => {
+  it("al cobrar parcialmente la confección, reconoce como ingreso el 100% de lo aplicado", async () => {
     const propietario = await prisma.propietario.create({
       data: { nombre: "Dueño Confección Pago", cbu: "0000000000000000000000" },
     });
@@ -401,19 +401,19 @@ describe("PagosService.registrar", () => {
     });
     await ContratosService.activar(contrato.id, usuario.id);
 
-    // Paga justo el alquiler + la confección — punitorio no hay.
+    // Paga todo el alquiler y la mitad de la confección — punitorio no hay.
     await PagosService.registrar({
       id_contrato: contrato.id,
-      monto_pagado: 760000, // 380.000 alquiler + 380.000 confección
+      monto_pagado: 570000, // 380.000 alquiler + 190.000 confección
       idempotency_key: crypto.randomUUID(),
       id_usuario_creador: usuario.id,
     });
 
     const cargoConfeccion = await prisma.cargo.findFirstOrThrow({
-      where: { id_contrato: contrato.id, tipo: "GASTO" },
+      where: { id_contrato: contrato.id, tipo: "CONFECCION_CONTRATO" },
       include: { aplicaciones: true },
     });
-    assert.equal(calcularPendiente(cargoConfeccion.monto, cargoConfeccion.aplicaciones).toNumber(), 0);
+    assert.equal(calcularPendiente(cargoConfeccion.monto, cargoConfeccion.aplicaciones).toNumber(), 190000);
 
     const txnCobro = await prisma.transaccion.findFirstOrThrow({
       where: { id_contrato: contrato.id, tipo: "INGRESO_COBRO" },
@@ -423,7 +423,7 @@ describe("PagosService.registrar", () => {
       where: { id_contrato: contrato.id, tipo: "INGRESO_CONFECCION_CONTRATO" },
     });
     assert.ok(ingresoConfeccion, "debe reconocer el ingreso de confección al cobrarse");
-    assert.equal(Number(ingresoConfeccion!.monto), 380000); // el 100%, no una comisión parcial
+    assert.equal(Number(ingresoConfeccion!.monto), 190000); // el 100% de lo aplicado, no una comisión
     assert.equal(ingresoConfeccion!.caja_destino, "OPERATIVA");
     assert.equal(ingresoConfeccion!.id_txn_origen, txnCobro.id);
 

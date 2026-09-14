@@ -1,7 +1,7 @@
 ---
 type: Traps
-version: 14b0d63
-validated: 2026-09-12
+version: 4957633
+validated: 2026-09-14
 update_when: cuando se descubre un gotcha no obvio, agregarlo acá en el mismo cambio
 scope:
   - services
@@ -187,6 +187,21 @@ Antes de la migración `20260906221549_liquidaciones_adelantos`, ambos apuntaban
 `fecha_inicio`, `fecha_fin`, `fecha_vencimiento`, `Liquidacion.fecha_desde/hasta` son `@db.Date` — se guardan como medianoche UTC sin hora. El proceso corre en `America/Cordoba` (UTC-3); leerlos con `.getMonth()`/`toLocaleDateString()` corre el día uno para atrás siempre (`new Date("2026-09-01").toLocaleDateString("es-AR")` → `"31/8/2026"`). `lib/fecha.ts` (`partesFechaUTC`, `formatFechaLocal`) es el único lugar que debería leer estos campos — cualquier código nuevo que necesite mostrar o comparar una de estas fechas debe pasar por ahí, no reinventar con getters locales.
 
 ---
+
+## La confección de contrato es solo un Cargo, nunca un Gasto
+
+Al activar un contrato con `cobra_confeccion`, se crea un
+`Cargo CONFECCION_CONTRATO` sin `id_gasto`. Es una deuda del inquilino,
+genera punitorios si se selecciona en el motor, conserva el tercer nivel de
+prelación junto con los gastos y, al cobrarse, genera
+`INGRESO_CONFECCION_CONTRATO` en caja operativa. Nunca participa en la
+liquidación del propietario.
+
+Un gasto real trasladado al inquilino mantiene el modelo `Gasto + Cargo GASTO`:
+el cobro al inquilino y el pago al proveedor son estados independientes. El valor
+`TipoGasto.CONFECCION_CONTRATO` queda únicamente como legado del enum de
+PostgreSQL; los schemas y servicios de la aplicación no permiten crear gastos de
+ese tipo.
 
 ## To confirm
 

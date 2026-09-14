@@ -1,6 +1,7 @@
 import { Decimal } from "@prisma/client/runtime/client";
 import type { Prisma } from "@prisma/client";
 import { calcularPendiente } from "@/lib/saldos";
+import type { TipoCargoCodigo } from "@/lib/cargos";
 
 /**
  * Busca crédito disponible del contrato (sobrante sin aplicar en cualquier
@@ -11,8 +12,9 @@ import { calcularPendiente } from "@/lib/saldos";
  * en la misma Transaccion de origen — nunca se pierde, nunca se cachea.
  *
  * La comisión sobre lo aplicado se genera recién en este momento (nunca
- * antes), y solo si el Cargo es de tipo ALQUILER — los gastos a cargo del
- * inquilino nunca generan comisión, igual que en PagosService.registrar.
+ * antes), y solo si el Cargo es de tipo ALQUILER. Si el Cargo es una
+ * confección de contrato, se reconoce el ingreso operativo por el importe
+ * aplicado, igual que en PagosService.registrar.
  *
  * Se llama en cualquier lugar donde nace un Cargo que el inquilino puede
  * deber: al abrir un período nuevo (ContratosService.abrirPeriodo) y al
@@ -23,7 +25,7 @@ export async function aplicarCreditoDisponible(
   params: {
     id_contrato: number;
     id_cargo: number;
-    tipo_cargo: "ALQUILER" | "GASTO" | "PUNITORIO" | "AJUSTE";
+    tipo_cargo: TipoCargoCodigo;
     pendiente_cargo: Decimal;
     pct_comision: Decimal;
     es_propia: boolean;
@@ -67,6 +69,17 @@ export async function aplicarCreditoDisponible(
           },
         });
       }
+    } else if (params.tipo_cargo === "CONFECCION_CONTRATO") {
+      await tx.transaccion.create({
+        data: {
+          tipo: "INGRESO_CONFECCION_CONTRATO",
+          caja_destino: "OPERATIVA",
+          monto: abono,
+          id_contrato: params.id_contrato,
+          id_usuario_creador: params.id_usuario_creador,
+          id_txn_origen: cobro.id,
+        },
+      });
     }
   }
 }

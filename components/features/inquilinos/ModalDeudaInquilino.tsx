@@ -7,10 +7,18 @@ import { Button } from "@/components/ui/button";
 import { PeriodoResumenRow, fmt } from "@/components/features/shared/PeriodoResumenRow";
 import { EstadoAsyncModal } from "@/components/features/shared/EstadoAsyncModal";
 
+interface DetalleConcepto {
+  id: number;
+  concepto: string;
+  monto: number;
+  direccion: string;
+}
+
 interface Saldo {
   deuda_alquiler: number;
   punitorios: number;
   deuda_gastos: number;
+  deuda_confeccion: number;
   total: number;
   detalle_periodos: {
     id: number;
@@ -20,12 +28,36 @@ interface Saldo {
     pendiente: number;
     fecha_vencimiento: string;
   }[];
-  detalle_gastos: {
-    id: number;
-    concepto: string;
-    monto: number;
-    direccion: string;
-  }[];
+  detalle_gastos: DetalleConcepto[];
+  detalle_confeccion: DetalleConcepto[];
+}
+
+function ListaConceptosPendientes({
+  titulo,
+  items,
+}: {
+  titulo: string;
+  items: DetalleConcepto[];
+}) {
+  if (items.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <h3 className="text-sm font-semibold">{titulo}</h3>
+      {items.map((item) => (
+        <div
+          key={item.id}
+          className="flex items-center justify-between rounded-xl border border-border p-2"
+        >
+          <div>
+            <p className="text-sm font-medium">{item.concepto}</p>
+            <p className="text-xs text-muted-foreground">{item.direccion}</p>
+          </div>
+          <p className="text-sm font-mono font-semibold text-status-danger">{fmt(item.monto)}</p>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function ModalDeudaInquilino({
@@ -93,24 +125,15 @@ export function ModalDeudaInquilino({
                 </div>
               )}
 
-              {/* Gastos a cargo del inquilino (ej. confección de contrato) */}
-              {saldo.detalle_gastos.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold">Gastos pendientes</h3>
-                  {saldo.detalle_gastos.map((g) => (
-                    <div
-                      key={g.id}
-                      className="flex items-center justify-between rounded-xl border border-border p-2"
-                    >
-                      <div>
-                        <p className="text-sm font-medium">{g.concepto}</p>
-                        <p className="text-xs text-muted-foreground">{g.direccion}</p>
-                      </div>
-                      <p className="text-sm font-mono font-semibold text-status-danger">{fmt(g.monto)}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <ListaConceptosPendientes
+                titulo="Confección de contrato"
+                items={saldo.detalle_confeccion}
+              />
+
+              <ListaConceptosPendientes
+                titulo="Gastos pendientes"
+                items={saldo.detalle_gastos}
+              />
             </div>
           )}
         </DialogContent>

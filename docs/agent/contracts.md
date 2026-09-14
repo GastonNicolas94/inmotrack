@@ -1,7 +1,7 @@
 ---
 type: Contracts
-version: 2c63145
-validated: 2026-09-10
+version: 4957633
+validated: 2026-09-14
 update_when: Rutas HTTP agregadas/cambiadas/eliminadas, o cambia el criterio de acceso por rol en proxy.ts/handlers
 scope:
   - app/api
@@ -32,14 +32,14 @@ El `proxy.ts` renueva cookies y aplica solo el gate grueso de identidad (ver [ar
 |--------|------|-----------|--------|-------------|
 | `GET` | `/contratos` | Listar contratos | Sesión | ✅ |
 | `POST` | `/contratos` | Crear contrato (estado inicial BORRADOR) | No-AUDITOR | ❌ |
-| `POST` | `/contratos/{id}/activar` | Activar contrato (BORRADOR → ACTIVO), crea primer período | No-AUDITOR | ❌ |
+| `POST` | `/contratos/{id}/activar` | Activar contrato (BORRADOR → ACTIVO), crea primer período y, si corresponde, el Cargo de confección | No-AUDITOR | ❌ |
 | `PATCH` | `/contratos/{id}/estado` | Cambiar estado manualmente (cualquier transición del enum) | No-AUDITOR | ✅ |
 | `GET` | `/contratos/{id}/cargos-pendientes` | Cargos con saldo > 0 de un contrato | Sesión | ✅ |
 | `GET` | `/contratos/{id}/periodos` | Períodos de pago de un contrato | Sesión | ✅ |
 | `POST` | `/contratos/{id}/calcular-intereses` | Correr el motor de punitorios sobre cargos elegidos | No-AUDITOR | ✅ (lock + `@@unique([id_cargo_origen, fecha_punitorio_desde])`) |
 | `GET` | `/inquilinos` | Listar inquilinos | Sesión | ✅ |
 | `POST` | `/inquilinos` | Crear inquilino | No-AUDITOR | ❌ |
-| `GET` | `/inquilinos/{id}/saldo` | Deuda total (alquiler+ajustes+punitorios+gastos) | Sesión | ✅ |
+| `GET` | `/inquilinos/{id}/saldo` | Deuda total (alquiler+ajustes+punitorios+gastos+confección) | Sesión | ✅ |
 | `GET` | `/propiedades` | Listar propiedades | Sesión | ✅ |
 | `POST` | `/propiedades` | Crear propiedad | No-AUDITOR | ❌ |
 | `GET` | `/propietarios` | Listar propietarios | Sesión | ✅ |
@@ -50,7 +50,7 @@ El `proxy.ts` renueva cookies y aplica solo el gate grueso de identidad (ver [ar
 | `GET` | `/propietarios/{id}/adelantos` | Adelantos pendientes (total + detalle por antigüedad) | Sesión | ✅ |
 | `POST` | `/propietarios/{id}/adelantos` | Registrar un adelanto (`EGRESO_ADELANTO`) | **ADMIN** | ❌ |
 | `GET` | `/pagos` | Pagos recientes (todos los contratos) | Sesión | ✅ |
-| `POST` | `/pagos` | Registrar un cobro (prelación punitorios→alquiler→gastos) | No-AUDITOR | ✅ vía `idempotency_key` (UUID obligatorio en el body) |
+| `POST` | `/pagos` | Registrar un cobro (prelación punitorios→alquiler→gastos/confección) | No-AUDITOR | ✅ vía `idempotency_key` (UUID obligatorio en el body) |
 | `GET` | `/gastos` | Listar gastos | Sesión | ✅ |
 | `POST` | `/gastos` | Cargar un gasto | No-AUDITOR | ❌ |
 | `PATCH` | `/gastos/{id}/marcar-pagado` | Marcar gasto como pagado al proveedor | No-AUDITOR | ✅ |
@@ -63,6 +63,12 @@ El `proxy.ts` renueva cookies y aplica solo el gate grueso de identidad (ver [ar
 | `GET` | `/usuarios` | Listar usuarios | Sesión | ✅ |
 | `POST` | `/usuarios` | Invitar usuario y crear su perfil | **ADMIN** | ❌ |
 | `PATCH` | `/usuarios` | Delegar `puede_aprobar_liquidaciones` a un EMPLEADO | **ADMIN** (chequeo propio en el handler, no en `SOLO_ADMIN`) | ✅ |
+
+### Respuesta de saldo del inquilino
+
+`GET /inquilinos/{id}/saldo` separa `deuda_confeccion` de `deuda_gastos` y
+la incluye en `total`. El detalle correspondiente se devuelve en
+`detalle_confeccion`; una confección nunca aparece como `Gasto`.
 
 ### Cron (`/api/v1/cron/*` — sin auth de sesión, `Authorization: Bearer $CRON_SECRET`)
 

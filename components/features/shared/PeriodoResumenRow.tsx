@@ -1,5 +1,6 @@
 import { BadgeEstadoPeriodo } from "./BadgeEstadoPeriodo";
 import { formatFechaLocal } from "@/lib/fecha";
+import { etiquetaTipoCargo } from "@/lib/cargos";
 
 export function fmt(n: number | string | null | undefined) {
   return Number(n ?? 0).toLocaleString("es-AR", {
@@ -9,14 +10,8 @@ export function fmt(n: number | string | null | undefined) {
   });
 }
 
-const ETIQUETA_TIPO: Record<string, string> = {
-  ALQUILER: "Alquiler",
-  GASTO: "Gasto",
-  PUNITORIO: "Punitorio",
-  AJUSTE: "Ajuste",
-};
 
-/** Fila de resumen de un Cargo (alquiler, gasto, punitorio o ajuste) dentro de un período de pago. */
+/** Fila de resumen de un Cargo dentro de un período de pago. */
 export function PeriodoResumenRow({
   periodo,
   estado,
@@ -36,7 +31,7 @@ export function PeriodoResumenRow({
     <div className="flex items-center justify-between rounded-xl border border-border px-3 py-2 text-sm">
       <div className="flex items-center gap-2">
         <span className="font-mono font-medium">{periodo}</span>
-        {tipo && <span className="text-xs text-muted-foreground">{ETIQUETA_TIPO[tipo] ?? tipo}</span>}
+        {tipo && <span className="text-xs text-muted-foreground">{etiquetaTipoCargo(tipo)}</span>}
         {estado && <BadgeEstadoPeriodo estado={estado} />}
       </div>
       <div className="space-y-0.5 text-right text-xs">

@@ -1,7 +1,7 @@
 ---
 type: Overview
-version: 2916483
-validated: 2026-09-12
+version: 4957633
+validated: 2026-09-14
 update_when: Purpose changes, new roles/actors added, or capability scope shifts
 scope:
   - app
@@ -18,7 +18,7 @@ InmoTrack es el **sistema de gestión de una inmobiliaria/estudio contable** (Ma
 Cuatro responsabilidades principales:
 
 1. **Ciclo de vida de contratos y períodos** — alta de contrato, apertura/cierre automático de períodos mensuales de alquiler (cron), transición a `MOROSO`/`POR_VENCER`/`VENCIDO`.
-2. **Cobranza** — registro de pagos de inquilinos con prelación fija (punitorios → alquiler/ajustes → gastos, siempre el más viejo primero), cálculo de intereses punitorios bajo demanda, gastos a cargo de inquilino/propietario/inmobiliaria.
+2. **Cobranza** — registro de pagos de inquilinos con prelación fija (punitorios → alquiler/ajustes → gastos/confección, siempre el más viejo primero), cálculo de intereses punitorios bajo demanda, gastos a cargo de inquilino/propietario/inmobiliaria.
 3. **Libro diario inmutable** — toda plata que se mueve queda como una fila de `Transaccion` que nunca se edita ni se borra; una corrección es siempre un contra-asiento nuevo, nunca un `UPDATE`.
 4. **Liquidación a propietarios** — rendición de cuentas por rango de fechas (base caja, auto-encadenado), con soporte de adelantos de plata a cuenta que se descuentan de liquidaciones futuras.
 
@@ -52,11 +52,12 @@ No hay multi-sitio ni multi-tenant — un solo despliegue, tres roles fijos. `pr
 | Capability | Code location |
 |-----------|--------------|
 | Contratos (alta, activación, wizard) | `services/contratos.service.ts`, `components/features/contratos/WizardContrato.tsx` |
+| Confección de contrato (Cargo cobrable, con punitorios, sin Gasto) | `services/contratos.service.ts`, `services/pagos.service.ts`, `lib/cargos.ts` |
 | Apertura/cierre automático de períodos (outbox + cron) | `services/cierre-periodos.service.ts`, `app/api/v1/cron/*` |
-| Registrar pagos (prelación punitorios→alquiler→gastos) | `services/pagos.service.ts` |
+| Registrar pagos (prelación punitorios→alquiler→gastos/confección) | `services/pagos.service.ts` |
 | Crédito flotante (sobrante de un cobro aplicado a deuda futura) | `services/creditos.service.ts` |
 | Motor de punitorios (interés simple diario bajo demanda) | `services/punitorios.service.ts`, `lib/punitorios.ts` |
-| Gastos (arreglo, expensas, gas, luz, impuesto, confección de contrato) | `services/gastos.service.ts` |
+| Gastos (arreglo, expensas, gas, luz, impuesto) | `services/gastos.service.ts` |
 | Libro diario / transacciones / contra-asientos | `services/transacciones.service.ts` |
 | Liquidación a propietarios (selección por rango, grano dual) | `services/liquidaciones.service.ts` |
 | Adelantos a propietarios (registrar, descontar con prelación por antigüedad) | `services/adelantos.service.ts` |
