@@ -1,38 +1,69 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { resolverFechaOperativa } from "@/lib/fecha";
-import { parseTestContractId, relojPruebasHabilitado } from "@/lib/reloj-pruebas";
+import {
+  createClock,
+  createSystemClock,
+  createTestClock,
+  type TestClockStore,
+} from "@/lib/clock";
+import { relojPruebasHabilitado } from "@/lib/reloj-pruebas";
 
-describe("reloj de pruebas", () => {
-  test("resuelve una fecha operativa explícita sin depender del reloj real", () => {
-    assert.deepEqual(resolverFechaOperativa("2026-04-15"), {
-      anio: 2026,
-      mes: 4,
-      dia: 15,
-    });
+describe("Clock", () => {
+  test("SystemClock devuelve la fecha real provista por su fuente", async () => {
+    const real = new Date("2026-09-15T18:00:00.000Z");
+    const clock = createSystemClock(() => real);
+
+    assert.equal((await clock.now()).toISOString(), real.toISOString());
+    assert.deepEqual(await clock.today(), { anio: 2026, mes: 9, dia: 15 });
   });
 
-  test("rechaza fechas calendarias imposibles", () => {
-    assert.throws(() => resolverFechaOperativa("2026-02-31"), /fuera de rango/i);
+  test("TestClock usa una fecha global persistida y conserva la hora argentina", async () => {
+    let value: string | null = "2026-04-15";
+    const store: TestClockStore = {
+      get: async () => value,
+      set: async (fecha) => { value = fecha; },
+      clear: async () => { value = null; },
+    };
+    const clock = createTestClock(store);
+
+    assert.deepEqual(await clock.today(), { anio: 2026, mes: 4, dia: 15 });
+    assert.equal((await clock.now()).toISOString(), "2026-04-15T15:00:00.000Z");
+
+    await clock.setDate("2026-07-20");
+    assert.deepEqual(await clock.today(), { anio: 2026, mes: 7, dia: 20 });
   });
 
-  test("acepta únicamente IDs de contrato enteros positivos", () => {
-    assert.equal(parseTestContractId("12"), 12);
-    assert.equal(parseTestContractId(3), 3);
-    assert.equal(parseTestContractId("0"), undefined);
-    assert.equal(parseTestContractId("1.5"), undefined);
-    assert.equal(parseTestContractId("abc"), undefined);
+  test("TestClock rechaza fechas imposibles", async () => {
+    const store: TestClockStore = {
+      get: async () => null,
+      set: async () => undefined,
+      clear: async () => undefined,
+    };
+    const clock = createTestClock(store);
+    await assert.rejects(() => clock.setDate("2026-02-31"), /fuera de rango/i);
   });
 
-  test("solo se habilita en local o preview, nunca en producción real", () => {
+  test("createClock selecciona TestClock en preview y SystemClock en producción", async () => {
+    const store: TestClockStore = {
+      get: async () => "2026-04-15",
+      set: async () => undefined,
+      clear: async () => undefined,
+    };
+
+    const preview = createClock({ NODE_ENV: "production", VERCEL_ENV: "preview" }, store);
+    assert.deepEqual(await preview.today(), { anio: 2026, mes: 4, dia: 15 });
+
+    const production = createClock(
+      { NODE_ENV: "production", VERCEL_ENV: "production" },
+      store,
+      () => new Date("2026-09-15T18:00:00.000Z"),
+    );
+    assert.deepEqual(await production.today(), { anio: 2026, mes: 9, dia: 15 });
+  });
+
+  test("solo se habilita el reloj editable en local o preview", () => {
     assert.equal(relojPruebasHabilitado({ NODE_ENV: "development" }), true);
-    assert.equal(
-      relojPruebasHabilitado({ NODE_ENV: "production", VERCEL_ENV: "preview" }),
-      true,
-    );
-    assert.equal(
-      relojPruebasHabilitado({ NODE_ENV: "production", VERCEL_ENV: "production" }),
-      false,
-    );
+    assert.equal(relojPruebasHabilitado({ NODE_ENV: "production", VERCEL_ENV: "preview" }), true);
+    assert.equal(relojPruebasHabilitado({ NODE_ENV: "production", VERCEL_ENV: "production" }), false);
   });
 });
