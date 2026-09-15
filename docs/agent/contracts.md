@@ -1,7 +1,7 @@
 ---
 type: Contracts
-version: 4957633
-validated: 2026-09-14
+version: 8a23727
+validated: 2026-09-15
 update_when: Rutas HTTP agregadas/cambiadas/eliminadas, o cambia el criterio de acceso por rol en proxy.ts/handlers
 scope:
   - app/api
@@ -55,6 +55,7 @@ El `proxy.ts` renueva cookies y aplica solo el gate grueso de identidad (ver [ar
 | `POST` | `/gastos` | Cargar un gasto | No-AUDITOR | ❌ |
 | `PATCH` | `/gastos/{id}/marcar-pagado` | Marcar gasto como pagado al proveedor | No-AUDITOR | ✅ |
 | `GET` | `/liquidaciones` | Listar liquidaciones (filtro opcional `?id_propietario=`) | Sesión | ✅ |
+| `GET` | `/liquidaciones/{id}` | Detalle auditable de cobros, gastos y adelantos incluidos | Sesión | ✅ |
 | `POST` | `/liquidaciones` | Generar liquidación (`id_propietario`, `hasta`, `descontar_adelantos`) | No-AUDITOR | ❌ (auto-encadenado por `desde`, ver traps.md) |
 | `POST` | `/liquidaciones/{id}/aprobar` | Aprobar (genera `EGRESO_LIQUIDACION`) — rechaza si `monto_neto < 0` | No-AUDITOR (chequeo propio: ADMIN o `puede_aprobar_liquidaciones`) | ✅ |
 | `POST` | `/liquidaciones/{id}/confirmar-pago` | Confirmar pago de una liquidación aprobada | **ADMIN** | ✅ |

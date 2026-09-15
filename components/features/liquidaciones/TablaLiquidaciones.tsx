@@ -8,6 +8,7 @@ import { TableCard } from "@/components/layout/TableCard";
 import { BadgeEstadoLiquidacion } from "./BadgeEstadoLiquidacion";
 import { ModalGenerarLiquidacion } from "./ModalGenerarLiquidacion";
 import { BotonesLiquidacion } from "./BotonesLiquidacion";
+import { EnlaceDetalleLiquidacion } from "./EnlaceDetalleLiquidacion";
 
 function formatMonto(n: number | string) {
   return Number(n).toLocaleString("es-AR", {
@@ -36,13 +37,13 @@ export async function TablaLiquidaciones() {
             <TableHead className="text-right">Retenciones</TableHead>
             <TableHead className="text-right">Neto</TableHead>
             <TableHead className="text-center">Estado</TableHead>
-            {mostrarAcciones && <TableHead />}
+            <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {liquidaciones.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={mostrarAcciones ? 7 : 6} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                 No hay liquidaciones generadas.
               </TableCell>
             </TableRow>
@@ -65,16 +66,19 @@ export async function TablaLiquidaciones() {
                 <TableCell className="text-center">
                   <BadgeEstadoLiquidacion estado={l.estado} />
                 </TableCell>
-                {mostrarAcciones && (
-                  <TableCell>
-                    <BotonesLiquidacion
-                      id={l.id}
-                      estado={l.estado}
-                      puedeAprobar={puedeAprobar}
-                      esAdmin={esAdmin}
-                    />
-                  </TableCell>
-                )}
+                <TableCell>
+                  <div className="flex items-center justify-end gap-2">
+                    <EnlaceDetalleLiquidacion id={l.id} />
+                    {mostrarAcciones ? (
+                      <BotonesLiquidacion
+                        id={l.id}
+                        estado={l.estado}
+                        puedeAprobar={puedeAprobar}
+                        esAdmin={esAdmin}
+                      />
+                    ) : null}
+                  </div>
+                </TableCell>
               </TableRow>
             ))
           )}

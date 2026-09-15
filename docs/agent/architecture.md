@@ -1,7 +1,7 @@
 ---
 type: Architecture
-version: 4957633
-validated: 2026-09-14
+version: 8a23727
+validated: 2026-09-15
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
   - app
@@ -35,6 +35,7 @@ app/
   (dashboard)/                       → Layout con nav lateral (DashboardShell); una carpeta por sección
     contratos/, gastos/, inquilinos/, liquidaciones/, pagos/, propiedades/, propietarios/, transacciones/
     contratos/[id]/movimientos/      → Detalle de movimientos de un contrato puntual
+    liquidaciones/[id]/              → Detalle auditable de una liquidación puntual
   api/
     auth/confirm/                    → Valida la invitación y establece cookies
     auth/confirm/password/           → Pantalla autenticada para fijar contraseña
@@ -113,6 +114,13 @@ tabla conserva su superficie, borde y seis filas de estado de carga. La página 
 mantiene además un límite independiente en la acción del header: `ContratosWizardData` resuelve
 las propiedades e inquilinos disponibles y recién entonces renderiza `WizardContrato`, sin
 cambiar sus props ni sus permisos.
+
+El detalle de liquidación ofrece un PDF A4 vertical generado en servidor desde la misma consulta
+sellada. El endpoint autenticado `/api/v1/liquidaciones/[id]/pdf` fuerza runtime Node.js, responde
+como archivo no cacheable y mantiene una maquetación formal multipágina separada de la UI web.
+El documento omite el estado y cualquier sección sin movimientos asociados.
+El emisor visible y los metadatos identifican a `Macchieraldo Villarruel — Estudio Contable &
+Inmobiliaria`; el nombre técnico del sistema no forma parte del documento entregado.
 
 Los métodos de listado que alimentan estas tablas usan `select` explícito y relaciones anidadas
 mínimas. El shape de cada consulta se mantiene alineado con los campos leídos por su `Tabla*`;

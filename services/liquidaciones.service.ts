@@ -1,5 +1,4 @@
 import { Decimal } from "@prisma/client/runtime/client";
-import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { AdelantosService } from "@/services/adelantos.service";
 
@@ -18,6 +17,96 @@ export const LiquidacionesService = {
         propietario: { select: { nombre: true } },
       },
       orderBy: { fecha_corrida: "desc" },
+    });
+  },
+
+  async obtenerDetalle(id: number) {
+    return prisma.liquidacion.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        id_propietario: true,
+        fecha_corrida: true,
+        fecha_desde: true,
+        fecha_hasta: true,
+        monto_bruto: true,
+        retenciones: true,
+        adelantos_descontados: true,
+        monto_neto: true,
+        estado: true,
+        propietario: { select: { id: true, nombre: true } },
+        items: {
+          select: {
+            id: true,
+            id_periodo: true,
+            id_propiedad: true,
+            monto_bruto: true,
+            comision: true,
+            gastos: true,
+            monto_neto: true,
+            propiedad: { select: { id: true, direccion: true } },
+            periodo: {
+              select: {
+                id: true,
+                periodo: true,
+                contrato: {
+                  select: {
+                    id: true,
+                    inquilino: { select: { id: true, nombre: true } },
+                  },
+                },
+              },
+            },
+            aplicaciones: {
+              select: {
+                id: true,
+                monto_aplicado: true,
+                transaccion: {
+                  select: { id: true, tipo: true, fecha_transaccion: true },
+                },
+                cargo: {
+                  select: {
+                    id: true,
+                    tipo: true,
+                    monto: true,
+                    descripcion: true,
+                  },
+                },
+              },
+              orderBy: { id: "asc" },
+            },
+            gastos_item: {
+              select: {
+                id: true,
+                concepto: true,
+                categoria_interno: true,
+                tipo: true,
+                monto: true,
+                estado_pago: true,
+                creado_en: true,
+              },
+              orderBy: { id: "asc" },
+            },
+          },
+          orderBy: [{ id_propiedad: "asc" }, { id: "asc" }],
+        },
+        deducciones: {
+          select: {
+            id: true,
+            id_transaccion: true,
+            monto_descontado: true,
+            transaccion: {
+              select: {
+                id: true,
+                monto: true,
+                fecha_transaccion: true,
+                comentario: true,
+              },
+            },
+          },
+          orderBy: { id: "asc" },
+        },
+      },
     });
   },
 
@@ -389,3 +478,7 @@ export const LiquidacionesService = {
     return prisma.liquidacion.update({ where: { id }, data: { estado: "PAGADA" } });
   },
 };
+
+export type LiquidacionDetalle = NonNullable<
+  Awaited<ReturnType<typeof LiquidacionesService.obtenerDetalle>>
+>;
