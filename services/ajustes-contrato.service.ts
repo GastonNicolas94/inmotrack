@@ -79,12 +79,15 @@ export const AjustesContratoService = {
         throw new Error("El ajuste no existe para este contrato.");
       }
 
-      await tx.$queryRaw<Array<{ id: number }>>`
+      const contratosLocked = await tx.$queryRaw<Array<{ id: number }>>`
         SELECT id
         FROM contratos
         WHERE id = ${idContrato}
         FOR UPDATE
       `;
+      if (contratosLocked.length === 0) {
+        throw new Error("El contrato no existe.");
+      }
 
       const ajuste = await tx.ajusteContrato.findUniqueOrThrow({
         where: { id: idAjuste },
@@ -97,28 +100,27 @@ export const AjustesContratoService = {
       const fechaUltimoAjuste = fechaPeriodo(ajuste.periodo_efectivo);
       const aplicadoEn = new Date();
 
-      const [contratoActualizado, ajusteAplicado] = await Promise.all([
-        tx.contrato.update({
-          where: { id: idContrato },
-          data: {
-            monto_base: nuevoMonto,
-            fecha_ultimo_ajuste: fechaUltimoAjuste,
-          },
-        }),
-        tx.ajusteContrato.update({
-          where: { id: idAjuste },
-          data: {
-            monto_nuevo: nuevoMonto,
-            observacion: data.observacion?.trim() || null,
-            estado: "APLICADO",
-            aplicado_en: aplicadoEn,
-            id_usuario_aplicador: idUsuarioAplicador,
-          },
-          include: {
-            usuario_aplicador: { select: { id: true, email: true } },
-          },
-        }),
-      ]);
+      const contratoActualizado = await tx.contrato.update({
+        where: { id: idContrato },
+        data: {
+          monto_base: nuevoMonto,
+          fecha_ultimo_ajuste: fechaUltimoAjuste,
+        },
+      });
+
+      const ajusteAplicado = await tx.ajusteContrato.update({
+        where: { id: idAjuste },
+        data: {
+          monto_nuevo: nuevoMonto,
+          observacion: data.observacion?.trim() || null,
+          estado: "APLICADO",
+          aplicado_en: aplicadoEn,
+          id_usuario_aplicador: idUsuarioAplicador,
+        },
+        include: {
+          usuario_aplicador: { select: { id: true, email: true } },
+        },
+      });
 
       const yaPendiente = await tx.outboxCierrePeriodo.findFirst({
         where: { id_contrato: idContrato, estado: "PENDIENTE" },
