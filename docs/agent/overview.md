@@ -1,7 +1,7 @@
 ---
 type: Overview
-version: 4957633
-validated: 2026-09-14
+version: b0da4ff
+validated: 2026-09-15
 update_when: Purpose changes, new roles/actors added, or capability scope shifts
 scope:
   - app
@@ -17,7 +17,7 @@ InmoTrack es el **sistema de gestión de una inmobiliaria/estudio contable** (Ma
 
 Cuatro responsabilidades principales:
 
-1. **Ciclo de vida de contratos y períodos** — alta de contrato, apertura/cierre automático de períodos mensuales de alquiler (cron), transición a `MOROSO`/`POR_VENCER`/`VENCIDO`.
+1. **Ciclo de vida de contratos y períodos** — alta de contrato, apertura/cierre automático de períodos mensuales de alquiler (cron), actualización periódica del monto de alquiler con bloqueo por ajuste pendiente, transición a `MOROSO`/`POR_VENCER`/`VENCIDO`.
 2. **Cobranza** — registro de pagos de inquilinos con prelación fija (punitorios → alquiler/ajustes → gastos/confección, siempre el más viejo primero), cálculo de intereses punitorios bajo demanda, gastos a cargo de inquilino/propietario/inmobiliaria.
 3. **Libro diario inmutable** — toda plata que se mueve queda como una fila de `Transaccion` que nunca se edita ni se borra; una corrección es siempre un contra-asiento nuevo, nunca un `UPDATE`.
 4. **Liquidación a propietarios** — rendición de cuentas por rango de fechas (base caja, auto-encadenado), con soporte de adelantos de plata a cuenta que se descuentan de liquidaciones futuras.
@@ -52,6 +52,7 @@ No hay multi-sitio ni multi-tenant — un solo despliegue, tres roles fijos. `pr
 | Capability | Code location |
 |-----------|--------------|
 | Contratos (alta, activación, wizard) | `services/contratos.service.ts`, `components/features/contratos/WizardContrato.tsx` |
+| Ajustes periódicos de alquiler (detección, historial, aplicación manual, reencolado) | `lib/ajustes-contrato.ts`, `services/ajustes-contrato.service.ts`, `components/features/contratos/ModalAjustesContrato.tsx` |
 | Confección de contrato (Cargo cobrable, con punitorios, sin Gasto) | `services/contratos.service.ts`, `services/pagos.service.ts`, `lib/cargos.ts` |
 | Apertura/cierre automático de períodos (outbox + cron) | `services/cierre-periodos.service.ts`, `app/api/v1/cron/*` |
 | Registrar pagos (prelación punitorios→alquiler→gastos/confección) | `services/pagos.service.ts` |
