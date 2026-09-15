@@ -45,6 +45,15 @@ type LiquidationAlertRow = {
   fecha_corrida: Date;
   propietario: { nombre: string };
 };
+type AdjustmentAlertRow = {
+  id: number;
+  periodo_efectivo: string;
+  contrato: {
+    id: number;
+    inquilino: { nombre: string };
+    propiedad: { direccion: string };
+  };
+};
 
 const ACTIVE_CONTRACT_STATES = ["ACTIVO", "MOROSO", "POR_VENCER"] as const;
 const PENDING_LIQUIDATION_STATES = ["PENDIENTE", "APROBADA"] as const;
@@ -80,11 +89,6 @@ function addMonths(periodo: string, offset: number): string {
   return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}`;
 }
 
-/**
- * This is the sole property predicate used by dashboard queries. A property
- * is selected only through its explicit id and/or es_propia flag; no owner or
- * contract date is ever used as a proxy for attribution.
- */
 function propertyPredicate(filters: DashboardFilters): Prisma.PropiedadWhereInput {
   return {
     ...(filters.propiedadId === null ? {} : { id: filters.propiedadId }),
@@ -197,6 +201,19 @@ async function queryDebtAlerts(
   `);
 }
 
+function createAdjustmentAlerts(rows: AdjustmentAlertRow[]): DashboardAlert[] {
+  return rows.map((row) => ({
+    kind: "ajuste-pendiente" as const,
+    id: row.id,
+    title: `Actualización ${row.periodo_efectivo}`,
+    description: `${row.contrato.inquilino.nombre} · ${row.contrato.propiedad.direccion}`,
+    href: "/contratos",
+    contractId: row.contrato.id,
+    tenantName: row.contrato.inquilino.nombre,
+    propertyAddress: row.contrato.propiedad.direccion,
+  }));
+}
+
 function createContractAlerts(rows: Array<{
   id: number;
   fecha_fin: Date;
@@ -276,8 +293,6 @@ async function queryLiquidationAlerts(
   client: PrismaClient,
   filters: DashboardFilters,
 ): Promise<LiquidationAlertRow[]> {
-  // Prisma cannot express a custom enum ordering. Fetch each state in a
-  // bounded query, then merge the two already date/id-ordered lists.
   if (hasAttributionFilter(filters)) {
     return client.$queryRaw<LiquidationAlertRow[]>(Prisma.sql`
       SELECT l.id, l.estado, SUM(li.monto_neto) AS monto_neto,
@@ -319,6 +334,10 @@ async function getOperationalData(
   end.setUTCDate(end.getUTCDate() + 30);
   const property = propertyRelation(filters);
   const contractBaseWhere: Prisma.ContratoWhereInput = property ? { propiedad: property.propiedad } : {};
+  const adjustmentWhere: Prisma.AjusteContratoWhereInput = {
+    estado: "PENDIENTE",
+    ...(property ? { contrato: { propiedad: property.propiedad } } : {}),
+  };
   const gastoBaseWhere: Prisma.GastoWhereInput = property
     ? {
         OR: [
@@ -329,7 +348,7 @@ async function getOperationalData(
     : {};
 
   const [vigentes, porVencer, debt, pendingExpenseAggregate, pendingExpenseCount,
-    pendingLiquidation, contractAlerts,
+    pendingLiquidation, pendingAdjustmentCount, adjustmentAlerts, contractAlerts,
     debtAlerts, expenseAlerts, liquidationAlerts] = await Promise.all([
     dependencies.prisma.contrato.count({
       where: { ...contractBaseWhere, estado: { in: [...ACTIVE_CONTRACT_STATES] } },
@@ -350,6 +369,23 @@ async function getOperationalData(
       where: { ...gastoBaseWhere, estado_pago: "PENDIENTE", cargo_a: { in: ["PROPIETARIO", "INMOBILIARIA"] } },
     }),
     queryLiquidationMetric(dependencies.prisma, filters),
+    dependencies.prisma.ajusteContrato.count({ where: adjustmentWhere }),
+    dependencies.prisma.ajusteContrato.findMany({
+      where: adjustmentWhere,
+      select: {
+        id: true,
+        periodo_efectivo: true,
+        contrato: {
+          select: {
+            id: true,
+            inquilino: { select: { nombre: true } },
+            propiedad: { select: { direccion: true } },
+          },
+        },
+      },
+      orderBy: [{ periodo_efectivo: "asc" }, { id: "asc" }],
+      take: ALERT_LIMIT,
+    }),
     dependencies.prisma.contrato.findMany({
       where: {
         ...contractBaseWhere,
@@ -384,6 +420,7 @@ async function getOperationalData(
 
   return {
     generatedAt,
+    ajustesPendientes: pendingAdjustmentCount,
     metrics: {
       contratosVigentes: vigentes,
       contratosPorVencer: porVencer,
@@ -393,6 +430,7 @@ async function getOperationalData(
       liquidacionesPendientes: { cantidad: pendingLiquidation.cantidad, monto: pendingLiquidation.monto },
     },
     alerts: [
+      ...createAdjustmentAlerts(adjustmentAlerts),
       ...createContractAlerts(contractAlerts),
       ...createDebtAlerts(debtAlerts),
       ...createExpenseAlerts(expenseAlerts),
