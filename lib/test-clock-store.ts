@@ -57,7 +57,8 @@ function globalConfigStore(env: EnvLike, fetchImpl: FetchLike): TestClockStore {
     }
 
     const writeUrl = new URL(`https://api.vercel.com/v1/global-config/${value.configId}/items`);
-    if (env.VERCEL_TEAM_ID) writeUrl.searchParams.set("teamId", env.VERCEL_TEAM_ID);
+    const teamId = env.VERCEL_TEAM_ID ?? env.VERCEL_ORG_ID;
+    if (teamId) writeUrl.searchParams.set("teamId", teamId);
 
     return { writeUrl: writeUrl.toString(), writeToken };
   }
