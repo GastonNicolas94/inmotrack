@@ -52,6 +52,30 @@ describe("test clock store", () => {
     });
   });
 
+  test("preview usa VERCEL_ORG_ID del runtime para scopear escrituras cuando no hay VERCEL_TEAM_ID", async () => {
+    const requests: Array<{ url: string; init?: RequestInit }> = [];
+    const store = createTestClockStore(
+      {
+        NODE_ENV: "production",
+        VERCEL_ENV: "preview",
+        GLOBAL_CONFIG: "https://global-config.vercel.com/ecfg_clock?token=read-token",
+        VERCEL_TOKEN: "write-token",
+        VERCEL_ORG_ID: "team_runtime",
+      },
+      (async (input, init) => {
+        requests.push({ url: String(input), init });
+        return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
+      }) as typeof fetch,
+    );
+
+    await store.set("2026-04-15");
+
+    assert.equal(
+      requests[0]?.url,
+      "https://api.vercel.com/v1/global-config/ecfg_clock/items?teamId=team_runtime",
+    );
+  });
+
   test("preview puede leer pero rechaza escrituras si falta token de escritura", async () => {
     const store = createTestClockStore(
       {
