@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { validarCronSecret } from "@/lib/cron-auth";
-import { CierrePeriodosClockService } from "@/services/cierre-periodos-clock.service";
+import { CierrePeriodosService } from "@/services/cierre-periodos.service";
 import { errorResponse } from "@/lib/errors";
 
 export async function POST(req: Request) {
@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     return errorResponse("UNAUTHORIZED", "Secret inválido.", 401);
   }
 
-  const { huboTrabajo } = await CierrePeriodosClockService.procesarUnaFilaDeCola();
+  const { huboTrabajo } = await CierrePeriodosService.procesarUnaFilaDeCola();
 
   if (huboTrabajo) {
     after(async () => {
