@@ -71,5 +71,27 @@ test("genera un PDF A4 descargable con el detalle de la liquidación", async () 
 
   assert.ok(Buffer.isBuffer(pdf));
   assert.equal(pdf.subarray(0, 5).toString(), "%PDF-");
+  assert.match(pdf.toString("latin1"), /\/MediaBox \[0 0 595\.28 841\.89\]/);
   assert.ok(pdf.length > 2_000, "el PDF debe contener el detalle, no estar vacío");
+});
+
+test("omite conceptos que no tienen movimientos", async () => {
+  const modulo = await import("../../lib/liquidacion-pdf.ts");
+  assert.equal(typeof modulo.obtenerSeccionesPdf, "function");
+
+  assert.deepEqual(
+    modulo.obtenerSeccionesPdf({
+      items: [
+        { id_periodo: 12, gastos_item: [] },
+        { id_periodo: null, gastos_item: [] },
+      ],
+      deducciones: [],
+    }),
+    ["ALQUILERES"]
+  );
+
+  assert.deepEqual(
+    modulo.obtenerSeccionesPdf({ items: [], deducciones: [] }),
+    []
+  );
 });

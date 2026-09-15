@@ -115,9 +115,10 @@ mantiene además un límite independiente en la acción del header: `ContratosWi
 las propiedades e inquilinos disponibles y recién entonces renderiza `WizardContrato`, sin
 cambiar sus props ni sus permisos.
 
-El detalle de liquidación ofrece un PDF A4 generado en servidor desde la misma consulta sellada.
-El endpoint autenticado `/api/v1/liquidaciones/[id]/pdf` fuerza runtime Node.js, responde como
-archivo no cacheable y mantiene su propia maquetación multipágina, separada de la UI web.
+El detalle de liquidación ofrece un PDF A4 vertical generado en servidor desde la misma consulta
+sellada. El endpoint autenticado `/api/v1/liquidaciones/[id]/pdf` fuerza runtime Node.js, responde
+como archivo no cacheable y mantiene una maquetación formal multipágina separada de la UI web.
+El documento omite el estado y cualquier sección sin movimientos asociados.
 
 Los métodos de listado que alimentan estas tablas usan `select` explícito y relaciones anidadas
 mínimas. El shape de cada consulta se mantiene alineado con los campos leídos por su `Tabla*`;

@@ -7,13 +7,13 @@ import {
   calcularPorcentajeComision,
 } from "@/lib/liquidacion-detalle";
 
-const MARGEN = 32;
-const COLOR_TEXTO = "#172033";
-const COLOR_SECUNDARIO = "#667085";
-const COLOR_PRIMARIO = "#2457D6";
-const COLOR_BORDE = "#D8DEE9";
-const COLOR_CABECERA = "#EEF3FF";
-const COLOR_FONDO = "#F7F9FC";
+const MARGEN = 42;
+const AZUL = "#173B70";
+const AZUL_CLARO = "#EAF0F8";
+const TINTA = "#172033";
+const GRIS = "#667085";
+const BORDE = "#CBD5E1";
+const FONDO = "#F7F8FA";
 
 const FORMATO_MONTO = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -28,12 +28,26 @@ const FORMATO_FECHA_HORA = new Intl.DateTimeFormat("es-AR", {
   timeStyle: "short",
 });
 
+type SeccionPdf = "ALQUILERES" | "GASTOS" | "ADELANTOS";
 type Alineacion = "left" | "center" | "right";
+
+interface LiquidacionParaSecciones {
+  items: Array<{ id_periodo: number | null; gastos_item: unknown[] }>;
+  deducciones: unknown[];
+}
 
 interface Columna {
   titulo: string;
   ancho: number;
   alineacion?: Alineacion;
+}
+
+export function obtenerSeccionesPdf(liquidacion: LiquidacionParaSecciones): SeccionPdf[] {
+  const secciones: SeccionPdf[] = [];
+  if (liquidacion.items.some((item) => item.id_periodo !== null)) secciones.push("ALQUILERES");
+  if (liquidacion.items.some((item) => item.gastos_item.length > 0)) secciones.push("GASTOS");
+  if (liquidacion.deducciones.length > 0) secciones.push("ADELANTOS");
+  return secciones;
 }
 
 function monto(valor: { toString(): string } | number | string) {
@@ -44,98 +58,176 @@ function fechaHora(valor: Date | string) {
   return FORMATO_FECHA_HORA.format(new Date(valor));
 }
 
-function estadoLegible(estado: string) {
+function textoEstado(estado: string) {
   return estado.replaceAll("_", " ");
 }
 
-function agregarEncabezado(doc: PDFKit.PDFDocument, liquidacion: LiquidacionDetalle) {
-  doc.fillColor(COLOR_PRIMARIO).font("Helvetica-Bold").fontSize(11).text("INMOTRACK");
+function agregarMembrete(doc: PDFKit.PDFDocument, liquidacion: LiquidacionDetalle) {
+  const ancho = doc.page.width;
+  doc.rect(0, 0, ancho, 8).fill(AZUL);
+  doc.rect(MARGEN, 30, 42, 42).fill(AZUL);
   doc
-    .fillColor(COLOR_TEXTO)
+    .fillColor("#FFFFFF")
     .font("Helvetica-Bold")
-    .fontSize(22)
-    .text("Detalle de liquidación", MARGEN, 50);
-  doc
-    .fillColor(COLOR_SECUNDARIO)
-    .font("Helvetica")
-    .fontSize(9)
-    .text(`Liquidación #${liquidacion.id} · ${estadoLegible(liquidacion.estado)}`, MARGEN, 79);
+    .fontSize(24)
+    .text("I", MARGEN, 37, { width: 42, align: "center" });
 
-  const derecha = doc.page.width - MARGEN - 300;
+  doc.fillColor(AZUL).font("Helvetica-Bold").fontSize(18).text("INMOTRACK", 96, 32);
   doc
-    .fillColor(COLOR_TEXTO)
+    .fillColor(GRIS)
+    .font("Helvetica")
+    .fontSize(8)
+    .text("ADMINISTRACIÓN INMOBILIARIA", 96, 55, { characterSpacing: 0.8 });
+
+  doc
+    .fillColor(GRIS)
+    .font("Helvetica-Bold")
+    .fontSize(8)
+    .text("LIQUIDACIÓN DE PROPIETARIO", 330, 33, {
+      width: ancho - MARGEN - 330,
+      align: "right",
+    });
+  doc
+    .fillColor(TINTA)
+    .font("Helvetica-Bold")
+    .fontSize(15)
+    .text(`N° ${String(liquidacion.id).padStart(6, "0")}`, 330, 49, {
+      width: ancho - MARGEN - 330,
+      align: "right",
+    });
+
+  doc.moveTo(MARGEN, 88).lineTo(ancho - MARGEN, 88).strokeColor(AZUL).lineWidth(1).stroke();
+
+  doc.fillColor(GRIS).font("Helvetica-Bold").fontSize(7).text("PROPIETARIO", MARGEN, 105);
+  doc
+    .fillColor(TINTA)
     .font("Helvetica-Bold")
     .fontSize(12)
-    .text(liquidacion.propietario.nombre, derecha, 48, { width: 300, align: "right" });
+    .text(liquidacion.propietario.nombre, MARGEN, 119, { width: 235 });
+
+  doc.fillColor(GRIS).font("Helvetica-Bold").fontSize(7).text("PERÍODO LIQUIDADO", 315, 105);
   doc
-    .fillColor(COLOR_SECUNDARIO)
+    .fillColor(TINTA)
     .font("Helvetica")
     .fontSize(9)
     .text(
-      `Período: ${formatFechaLocal(liquidacion.fecha_desde)} al ${formatFechaLocal(liquidacion.fecha_hasta)}`,
-      derecha,
-      68,
-      { width: 300, align: "right" }
+      `${formatFechaLocal(liquidacion.fecha_desde)} al ${formatFechaLocal(liquidacion.fecha_hasta)}`,
+      315,
+      119,
+      { width: 135 }
     );
 
-  doc.moveTo(MARGEN, 100).lineTo(doc.page.width - MARGEN, 100).strokeColor(COLOR_BORDE).stroke();
-  doc.y = 116;
-}
-
-function agregarResumen(doc: PDFKit.PDFDocument, liquidacion: LiquidacionDetalle) {
-  const desglose = calcularDesgloseLiquidacion(liquidacion);
-  const datos = [
-    ["BRUTO COBRADO", monto(liquidacion.monto_bruto)],
-    ["COMISIÓN", monto(desglose.comisiones)],
-    ["GASTOS", monto(desglose.gastos)],
-    ["ADELANTOS", monto(desglose.adelantos)],
-    ["NETO A PAGAR", monto(liquidacion.monto_neto)],
-  ];
-  const espacio = 8;
-  const ancho = (doc.page.width - MARGEN * 2 - espacio * 4) / 5;
-  const y = doc.y;
-
-  datos.forEach(([etiqueta, valor], indice) => {
-    const x = MARGEN + indice * (ancho + espacio);
-    doc
-      .roundedRect(x, y, ancho, 54, 5)
-      .fillAndStroke(indice === 4 ? COLOR_CABECERA : COLOR_FONDO, COLOR_BORDE);
-    doc
-      .fillColor(COLOR_SECUNDARIO)
-      .font("Helvetica-Bold")
-      .fontSize(7)
-      .text(etiqueta, x + 9, y + 9, { width: ancho - 18 });
-    doc
-      .fillColor(indice === 4 ? COLOR_PRIMARIO : COLOR_TEXTO)
-      .font("Helvetica-Bold")
-      .fontSize(11)
-      .text(valor, x + 9, y + 29, { width: ancho - 18 });
-  });
-
-  doc.y = y + 72;
-}
-
-function agregarTituloSeccion(doc: PDFKit.PDFDocument, titulo: string, descripcion: string) {
-  if (doc.y > doc.page.height - 90) doc.addPage();
-  doc.fillColor(COLOR_TEXTO).font("Helvetica-Bold").fontSize(14).text(titulo, MARGEN, doc.y);
+  doc.fillColor(GRIS).font("Helvetica-Bold").fontSize(7).text("FECHA DE EMISIÓN", 465, 105);
   doc
-    .fillColor(COLOR_SECUNDARIO)
+    .fillColor(TINTA)
+    .font("Helvetica")
+    .fontSize(9)
+    .text(formatFechaLocal(liquidacion.fecha_corrida), 465, 119, {
+      width: ancho - MARGEN - 465,
+      align: "right",
+    });
+
+  doc.moveTo(MARGEN, 145).lineTo(ancho - MARGEN, 145).strokeColor(BORDE).lineWidth(0.6).stroke();
+  doc.y = 164;
+}
+
+function agregarEncabezadoContinuacion(doc: PDFKit.PDFDocument, liquidacion: LiquidacionDetalle) {
+  doc.rect(0, 0, doc.page.width, 6).fill(AZUL);
+  doc.fillColor(AZUL).font("Helvetica-Bold").fontSize(10).text("INMOTRACK", MARGEN, 25);
+  doc
+    .fillColor(GRIS)
     .font("Helvetica")
     .fontSize(8)
-    .text(descripcion, MARGEN, doc.y + 3);
-  doc.y += 12;
+    .text(
+      `Liquidación N° ${String(liquidacion.id).padStart(6, "0")} - ${liquidacion.propietario.nombre}`,
+      220,
+      25,
+      { width: doc.page.width - MARGEN - 220, align: "right" }
+    );
+  doc.moveTo(MARGEN, 44).lineTo(doc.page.width - MARGEN, 44).strokeColor(BORDE).stroke();
+  doc.y = 58;
+}
+
+function agregarResumen(
+  doc: PDFKit.PDFDocument,
+  liquidacion: LiquidacionDetalle,
+  secciones: SeccionPdf[]
+) {
+  const desglose = calcularDesgloseLiquidacion(liquidacion);
+  const filas: Array<{ concepto: string; valor: string; deduccion?: boolean }> = [];
+  if (secciones.includes("ALQUILERES")) {
+    filas.push({ concepto: "Alquileres cobrados", valor: monto(liquidacion.monto_bruto) });
+    filas.push({ concepto: "Comisión de administración", valor: monto(desglose.comisiones), deduccion: true });
+  }
+  if (secciones.includes("GASTOS")) {
+    filas.push({ concepto: "Gastos descontados", valor: monto(desglose.gastos), deduccion: true });
+  }
+  if (secciones.includes("ADELANTOS")) {
+    filas.push({ concepto: "Adelantos descontados", valor: monto(desglose.adelantos), deduccion: true });
+  }
+
+  doc.fillColor(AZUL).font("Helvetica-Bold").fontSize(9).text("RESUMEN DE LIQUIDACIÓN", MARGEN, doc.y, {
+    characterSpacing: 0.6,
+  });
+  doc.y += 15;
+  const inicio = doc.y;
+  const altoFila = 22;
+
+  filas.forEach((fila, indice) => {
+    const y = inicio + indice * altoFila;
+    doc.rect(MARGEN, y, doc.page.width - MARGEN * 2, altoFila).fill(indice % 2 ? FONDO : "#FFFFFF");
+    doc
+      .fillColor(TINTA)
+      .font("Helvetica")
+      .fontSize(9)
+      .text(fila.deduccion ? `(-) ${fila.concepto}` : fila.concepto, MARGEN + 10, y + 7);
+    doc
+      .fillColor(TINTA)
+      .font("Helvetica")
+      .fontSize(9)
+      .text(fila.valor, 390, y + 7, {
+        width: doc.page.width - MARGEN - 400,
+        align: "right",
+      });
+  });
+
+  const yTotal = inicio + filas.length * altoFila;
+  doc.rect(MARGEN, yTotal, doc.page.width - MARGEN * 2, 31).fill(AZUL_CLARO);
+  doc.fillColor(AZUL).font("Helvetica-Bold").fontSize(10).text("NETO A PAGAR", MARGEN + 10, yTotal + 10);
+  doc
+    .fillColor(AZUL)
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .text(monto(liquidacion.monto_neto), 370, yTotal + 8, {
+      width: doc.page.width - MARGEN - 380,
+      align: "right",
+    });
+  doc
+    .rect(MARGEN, inicio, doc.page.width - MARGEN * 2, filas.length * altoFila + 31)
+    .strokeColor(BORDE)
+    .lineWidth(0.6)
+    .stroke();
+  doc.y = yTotal + 52;
+}
+
+function agregarTituloSeccion(doc: PDFKit.PDFDocument, titulo: string) {
+  doc.fillColor(AZUL).font("Helvetica-Bold").fontSize(11).text(titulo.toUpperCase(), MARGEN, doc.y, {
+    characterSpacing: 0.5,
+  });
+  doc.moveTo(MARGEN, doc.y + 4).lineTo(doc.page.width - MARGEN, doc.y + 4).strokeColor(BORDE).stroke();
+  doc.y += 13;
 }
 
 function dibujarCabeceraTabla(doc: PDFKit.PDFDocument, columnas: Columna[], y: number) {
   let x = MARGEN;
   for (const columna of columnas) {
-    doc.rect(x, y, columna.ancho, 22).fillAndStroke(COLOR_CABECERA, COLOR_BORDE);
+    doc.rect(x, y, columna.ancho, 22).fillAndStroke(AZUL, AZUL);
     doc
-      .fillColor(COLOR_TEXTO)
+      .fillColor("#FFFFFF")
       .font("Helvetica-Bold")
-      .fontSize(7)
-      .text(columna.titulo, x + 5, y + 7, {
-        width: columna.ancho - 10,
+      .fontSize(6.5)
+      .text(columna.titulo, x + 4, y + 7, {
+        width: columna.ancho - 8,
         align: columna.alineacion ?? "left",
       });
     x += columna.ancho;
@@ -143,37 +235,39 @@ function dibujarCabeceraTabla(doc: PDFKit.PDFDocument, columnas: Columna[], y: n
   return y + 22;
 }
 
-function agregarTabla(doc: PDFKit.PDFDocument, columnas: Columna[], filas: string[][]) {
+function agregarTabla(
+  doc: PDFKit.PDFDocument,
+  liquidacion: LiquidacionDetalle,
+  columnas: Columna[],
+  filas: string[][]
+) {
   let y = dibujarCabeceraTabla(doc, columnas, doc.y);
-  const limite = () => doc.page.height - MARGEN - 22;
+  const limite = () => doc.page.height - MARGEN - 28;
 
-  const agregarPagina = () => {
-    doc.addPage();
-    y = dibujarCabeceraTabla(doc, columnas, MARGEN);
-  };
-
-  const filasFinales = filas.length > 0 ? filas : [["Sin movimientos incluidos."]];
-  filasFinales.forEach((fila, indiceFila) => {
-    const valores = filas.length > 0 ? fila : [fila[0], ...columnas.slice(1).map(() => "")];
-    doc.font("Helvetica").fontSize(7);
+  for (let indiceFila = 0; indiceFila < filas.length; indiceFila += 1) {
+    const fila = filas[indiceFila];
+    doc.font("Helvetica").fontSize(6.7);
     const alto = Math.max(
       23,
       ...columnas.map((columna, indice) =>
-        doc.heightOfString(valores[indice] ?? "", { width: columna.ancho - 10 }) + 10
+        doc.heightOfString(fila[indice] ?? "", { width: columna.ancho - 8 }) + 10
       )
     );
-    if (y + alto > limite()) agregarPagina();
+    if (y + alto > limite()) {
+      doc.addPage();
+      agregarEncabezadoContinuacion(doc, liquidacion);
+      y = dibujarCabeceraTabla(doc, columnas, doc.y);
+    }
 
     let x = MARGEN;
     columnas.forEach((columna, indice) => {
-      const fondo = indiceFila % 2 === 0 ? "#FFFFFF" : COLOR_FONDO;
-      doc.rect(x, y, columna.ancho, alto).fillAndStroke(fondo, COLOR_BORDE);
+      doc.rect(x, y, columna.ancho, alto).fillAndStroke(indiceFila % 2 ? FONDO : "#FFFFFF", BORDE);
       doc
-        .fillColor(COLOR_TEXTO)
+        .fillColor(TINTA)
         .font("Helvetica")
-        .fontSize(7)
-        .text(valores[indice] ?? "", x + 5, y + 5, {
-          width: columna.ancho - 10,
+        .fontSize(6.7)
+        .text(fila[indice] ?? "", x + 4, y + 5, {
+          width: columna.ancho - 8,
           height: alto - 10,
           align: columna.alineacion ?? "left",
           ellipsis: true,
@@ -181,9 +275,14 @@ function agregarTabla(doc: PDFKit.PDFDocument, columnas: Columna[], filas: strin
       x += columna.ancho;
     });
     y += alto;
-  });
+  }
+  doc.y = y + 25;
+}
 
-  doc.y = y + 22;
+function asegurarEspacio(doc: PDFKit.PDFDocument, liquidacion: LiquidacionDetalle, alto: number) {
+  if (doc.y + alto <= doc.page.height - MARGEN - 28) return;
+  doc.addPage();
+  agregarEncabezadoContinuacion(doc, liquidacion);
 }
 
 function agregarPieDePagina(doc: PDFKit.PDFDocument) {
@@ -191,29 +290,36 @@ function agregarPieDePagina(doc: PDFKit.PDFDocument) {
   for (let indice = 0; indice < rango.count; indice += 1) {
     doc.switchToPage(rango.start + indice);
     doc
-      .fillColor(COLOR_SECUNDARIO)
+      .fillColor(GRIS)
       .font("Helvetica")
       .fontSize(7)
-      .text(
-        `Liquidación · Documento generado por Inmotrack · Página ${indice + 1} de ${rango.count}`,
-        MARGEN,
-        doc.page.height - MARGEN - 18,
-        { width: doc.page.width - MARGEN * 2, align: "center", lineBreak: false }
-      );
+      .text("Documento emitido por Inmotrack", MARGEN, doc.page.height - MARGEN - 10, {
+        width: 220,
+        lineBreak: false,
+      });
+    doc
+      .fillColor(GRIS)
+      .font("Helvetica")
+      .fontSize(7)
+      .text(`Página ${indice + 1} de ${rango.count}`, doc.page.width - MARGEN - 120, doc.page.height - MARGEN - 10, {
+        width: 120,
+        align: "right",
+        lineBreak: false,
+      });
   }
 }
 
 export async function generarPdfLiquidacion(liquidacion: LiquidacionDetalle): Promise<Buffer> {
   const doc = new PDFDocument({
     size: "A4",
-    layout: "landscape",
+    layout: "portrait",
     margins: { top: MARGEN, right: MARGEN, bottom: MARGEN, left: MARGEN },
     bufferPages: true,
     compress: false,
     info: {
-      Title: `Liquidación #${liquidacion.id} - ${liquidacion.propietario.nombre}`,
+      Title: `Liquidación N° ${liquidacion.id} - ${liquidacion.propietario.nombre}`,
       Author: "Inmotrack",
-      Subject: "Detalle auditable de liquidación",
+      Subject: "Liquidación de propietario",
     },
   });
   const fragmentos: Buffer[] = [];
@@ -223,125 +329,119 @@ export async function generarPdfLiquidacion(liquidacion: LiquidacionDetalle): Pr
     doc.on("error", reject);
   });
 
-  agregarEncabezado(doc, liquidacion);
-  agregarResumen(doc, liquidacion);
+  const secciones = obtenerSeccionesPdf(liquidacion);
+  agregarMembrete(doc, liquidacion);
+  agregarResumen(doc, liquidacion, secciones);
 
-  const itemsAlquiler = liquidacion.items.filter((item) => item.id_periodo !== null);
-  agregarTituloSeccion(
-    doc,
-    "Alquileres cobrados",
-    "Cargos y cobros efectivamente incluidos en esta liquidación."
-  );
-  agregarTabla(
-    doc,
-    [
-      { titulo: "PROPIEDAD", ancho: 105 },
-      { titulo: "PERÍODO", ancho: 55 },
-      { titulo: "INQUILINO", ancho: 95 },
-      { titulo: "CARGOS Y COBROS", ancho: 235 },
-      { titulo: "BRUTO", ancho: 87, alineacion: "right" },
-      { titulo: "COMISIÓN", ancho: 87, alineacion: "right" },
-      { titulo: "NETO", ancho: 87, alineacion: "right" },
-    ],
-    itemsAlquiler.flatMap((item) => {
-      const aplicaciones = item.aplicaciones.length > 0 ? item.aplicaciones : [null];
-      return aplicaciones.map((aplicacion, indice) => [
-        indice === 0 ? item.propiedad.direccion : "",
-        indice === 0 ? item.periodo?.periodo ?? "-" : "",
-        indice === 0 ? item.periodo?.contrato.inquilino.nombre ?? "-" : "",
-        aplicacion
-          ? `Cargo #${aplicacion.cargo.id} · ${etiquetaTipoCargo(aplicacion.cargo.tipo)}${
-              aplicacion.cargo.descripcion ? ` - ${aplicacion.cargo.descripcion}` : ""
-            }\nTransacción #${aplicacion.transaccion.id} · ${fechaHora(
-              aplicacion.transaccion.fecha_transaccion
-            )} · ${monto(aplicacion.monto_aplicado)}`
-          : "Sin aplicaciones asociadas",
-        indice === 0 ? monto(item.monto_bruto) : "",
-        indice === 0
-          ? `${monto(item.comision)}\n${calcularPorcentajeComision(
-              item.monto_bruto,
-              item.comision
-            ).toFixed(2)}%`
-          : "",
-        indice === 0 ? monto(item.monto_neto) : "",
-      ]);
-    })
-  );
-
-  const gastos = liquidacion.items.flatMap((item) =>
-    item.gastos_item.map((gasto) => ({ gasto, propiedad: item.propiedad }))
-  );
-  agregarTituloSeccion(
-    doc,
-    "Gastos descontados",
-    "Gastos a cargo del propietario incluidos como deducción."
-  );
-  agregarTabla(
-    doc,
-    [
-      { titulo: "PROPIEDAD", ancho: 175 },
-      { titulo: "GASTO", ancho: 270 },
-      { titulo: "FECHA", ancho: 110 },
-      { titulo: "ESTADO", ancho: 100, alineacion: "center" },
-      { titulo: "MONTO", ancho: 96, alineacion: "right" },
-    ],
-    gastos.map(({ gasto, propiedad }) => [
-      propiedad.direccion,
-      `Gasto #${gasto.id} - ${gasto.concepto}\n${estadoLegible(gasto.tipo)}${
-        gasto.categoria_interno ? ` · ${gasto.categoria_interno}` : ""
-      }`,
-      fechaHora(gasto.creado_en),
-      estadoLegible(gasto.estado_pago),
-      monto(gasto.monto),
-    ])
-  );
-
-  agregarTituloSeccion(
-    doc,
-    "Adelantos descontados",
-    "Adelantos previos recuperados en esta liquidación."
-  );
-  agregarTabla(
-    doc,
-    [
-      { titulo: "ADELANTO", ancho: 320 },
-      { titulo: "FECHA ORIGINAL", ancho: 150 },
-      { titulo: "MONTO ORIGINAL", ancho: 140, alineacion: "right" },
-      { titulo: "DESCONTADO", ancho: 141, alineacion: "right" },
-    ],
-    liquidacion.deducciones.map((deduccion) => [
-      `${deduccion.transaccion.comentario || `Adelanto #${deduccion.transaccion.id}`}\nTransacción #${
-        deduccion.transaccion.id
-      }`,
-      fechaHora(deduccion.transaccion.fecha_transaccion),
-      monto(Math.abs(Number(deduccion.transaccion.monto))),
-      monto(deduccion.monto_descontado),
-    ])
-  );
-
-  if (doc.y > doc.page.height - 86) doc.addPage();
-  const desglose = calcularDesgloseLiquidacion(liquidacion);
-  doc
-    .roundedRect(doc.page.width - MARGEN - 330, doc.y, 330, 56, 5)
-    .fillAndStroke(COLOR_CABECERA, COLOR_BORDE);
-  doc
-    .fillColor(COLOR_SECUNDARIO)
-    .font("Helvetica")
-    .fontSize(8)
-    .text(
-      `${monto(liquidacion.monto_bruto)} - ${monto(desglose.comisiones)} - ${monto(
-        desglose.gastos
-      )} - ${monto(desglose.adelantos)}`,
-      doc.page.width - MARGEN - 318,
-      doc.y + 10,
-      { width: 306, align: "right" }
+  if (secciones.includes("ALQUILERES")) {
+    asegurarEspacio(doc, liquidacion, 80);
+    agregarTituloSeccion(doc, "Detalle de alquileres cobrados");
+    const items = liquidacion.items.filter((item) => item.id_periodo !== null);
+    agregarTabla(
+      doc,
+      liquidacion,
+      [
+        { titulo: "PROPIEDAD / INQUILINO", ancho: 105 },
+        { titulo: "PERÍODO", ancho: 47 },
+        { titulo: "CARGO Y COBRO", ancho: 176 },
+        { titulo: "BRUTO", ancho: 60, alineacion: "right" },
+        { titulo: "COMISIÓN", ancho: 61, alineacion: "right" },
+        { titulo: "NETO", ancho: 62, alineacion: "right" },
+      ],
+      items.flatMap((item) => {
+        const aplicaciones = item.aplicaciones.length > 0 ? item.aplicaciones : [null];
+        return aplicaciones.map((aplicacion, indice) => [
+          indice === 0
+            ? `${item.propiedad.direccion}\n${item.periodo?.contrato.inquilino.nombre ?? "-"}`
+            : "",
+          indice === 0 ? item.periodo?.periodo ?? "-" : "",
+          aplicacion
+            ? `Cargo #${aplicacion.cargo.id} · ${etiquetaTipoCargo(aplicacion.cargo.tipo)}${
+                aplicacion.cargo.descripcion ? ` - ${aplicacion.cargo.descripcion}` : ""
+              }\nTransacción #${aplicacion.transaccion.id} · ${fechaHora(
+                aplicacion.transaccion.fecha_transaccion
+              )} · ${monto(aplicacion.monto_aplicado)}`
+            : "Sin aplicaciones asociadas",
+          indice === 0 ? monto(item.monto_bruto) : "",
+          indice === 0
+            ? `${monto(item.comision)}\n${calcularPorcentajeComision(
+                item.monto_bruto,
+                item.comision
+              ).toFixed(2)}%`
+            : "",
+          indice === 0 ? monto(item.monto_neto) : "",
+        ]);
+      })
     );
+  }
+
+  if (secciones.includes("GASTOS")) {
+    asegurarEspacio(doc, liquidacion, 80);
+    agregarTituloSeccion(doc, "Detalle de gastos descontados");
+    const gastos = liquidacion.items.flatMap((item) =>
+      item.gastos_item.map((gasto) => ({ gasto, propiedad: item.propiedad }))
+    );
+    agregarTabla(
+      doc,
+      liquidacion,
+      [
+        { titulo: "PROPIEDAD", ancho: 105 },
+        { titulo: "CONCEPTO", ancho: 196 },
+        { titulo: "FECHA", ancho: 75 },
+        { titulo: "ESTADO", ancho: 73, alineacion: "center" },
+        { titulo: "MONTO", ancho: 62, alineacion: "right" },
+      ],
+      gastos.map(({ gasto, propiedad }) => [
+        propiedad.direccion,
+        `Gasto #${gasto.id} - ${gasto.concepto}\n${textoEstado(gasto.tipo)}${
+          gasto.categoria_interno ? ` · ${gasto.categoria_interno}` : ""
+        }`,
+        fechaHora(gasto.creado_en),
+        textoEstado(gasto.estado_pago),
+        monto(gasto.monto),
+      ])
+    );
+  }
+
+  if (secciones.includes("ADELANTOS")) {
+    asegurarEspacio(doc, liquidacion, 80);
+    agregarTituloSeccion(doc, "Detalle de adelantos descontados");
+    agregarTabla(
+      doc,
+      liquidacion,
+      [
+        { titulo: "CONCEPTO", ancho: 220 },
+        { titulo: "FECHA", ancho: 95 },
+        { titulo: "MONTO ORIGINAL", ancho: 98, alineacion: "right" },
+        { titulo: "DESCONTADO", ancho: 98, alineacion: "right" },
+      ],
+      liquidacion.deducciones.map((deduccion) => [
+        `${deduccion.transaccion.comentario || `Adelanto #${deduccion.transaccion.id}`}\nTransacción #${
+          deduccion.transaccion.id
+        }`,
+        fechaHora(deduccion.transaccion.fecha_transaccion),
+        monto(Math.abs(Number(deduccion.transaccion.monto))),
+        monto(deduccion.monto_descontado),
+      ])
+    );
+  }
+
+  asegurarEspacio(doc, liquidacion, 58);
+  doc.moveTo(300, doc.y).lineTo(doc.page.width - MARGEN, doc.y).strokeColor(AZUL).lineWidth(1).stroke();
   doc
-    .fillColor(COLOR_PRIMARIO)
+    .fillColor(GRIS)
     .font("Helvetica-Bold")
-    .fontSize(14)
-    .text(`Neto a pagar: ${monto(liquidacion.monto_neto)}`, {
-      width: 306,
+    .fontSize(8)
+    .text("IMPORTE NETO DE LA LIQUIDACIÓN", 300, doc.y + 12, {
+      width: doc.page.width - MARGEN - 300,
+      align: "right",
+    });
+  doc
+    .fillColor(AZUL)
+    .font("Helvetica-Bold")
+    .fontSize(16)
+    .text(monto(liquidacion.monto_neto), 300, doc.y + 5, {
+      width: doc.page.width - MARGEN - 300,
       align: "right",
     });
 
