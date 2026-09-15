@@ -5,7 +5,10 @@ import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { errorResponse } from "@/lib/errors";
 import {
+  parseTestContractId,
   relojPruebasHabilitado,
+  TEST_CLOCK_CONTRACT_COOKIE,
+  TEST_CLOCK_CONTRACT_HEADER,
   TEST_CLOCK_COOKIE,
   TEST_CLOCK_HEADER,
 } from "@/lib/reloj-pruebas";
@@ -18,28 +21,39 @@ export async function POST(
     const user = await requireAuthenticatedUser();
     assertCanWrite(user);
     const { id, idAjuste } = await params;
+    const idContrato = Number(id);
     const parsed = aplicarAjusteContratoSchema.safeParse(await req.json());
     if (!parsed.success) {
       return errorResponse("AJUSTE_INVALIDO", parsed.error.issues[0]?.message ?? "Datos inválidos.", 400);
     }
 
     const resultado = await AjustesContratoService.aplicar(
-      Number(id),
+      idContrato,
       Number(idAjuste),
       parsed.data,
       user.id,
     );
 
-    const fechaPrueba = relojPruebasHabilitado()
+    const testClockEnabled = relojPruebasHabilitado();
+    const fechaPrueba = testClockEnabled
       ? req.cookies.get(TEST_CLOCK_COOKIE)?.value
       : undefined;
+    const idContratoPrueba = testClockEnabled
+      ? parseTestContractId(req.cookies.get(TEST_CLOCK_CONTRACT_COOKIE)?.value)
+      : undefined;
+    const propagarReloj = Boolean(
+      fechaPrueba && idContratoPrueba && idContratoPrueba === idContrato,
+    );
 
     after(async () => {
       const secret = process.env.CRON_SECRET;
       if (!secret) return;
       const url = new URL("/api/v1/cron/procesar-cola-cierre", req.url);
       const headers: Record<string, string> = { Authorization: `Bearer ${secret}` };
-      if (fechaPrueba) headers[TEST_CLOCK_HEADER] = fechaPrueba;
+      if (propagarReloj && fechaPrueba && idContratoPrueba) {
+        headers[TEST_CLOCK_HEADER] = fechaPrueba;
+        headers[TEST_CLOCK_CONTRACT_HEADER] = String(idContratoPrueba);
+      }
       await fetch(url, {
         method: "POST",
         headers,
