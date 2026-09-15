@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { hoyEnArgentina, calcularVencimientoPeriodo, partesFechaUTC } from "@/lib/fecha";
+import { resolverFechaOperativa, calcularVencimientoPeriodo, partesFechaUTC } from "@/lib/fecha";
 import { ContratosService } from "@/services/contratos.service";
 
 const MAX_INTENTOS = 3;
@@ -11,8 +11,8 @@ interface FilaOutbox {
 }
 
 export const CierrePeriodosService = {
-  async encolarContratosVencidos() {
-    const { anio, mes, dia } = hoyEnArgentina();
+  async encolarContratosVencidos(fechaOperativa?: string) {
+    const { anio, mes, dia } = resolverFechaOperativa(fechaOperativa);
     const mesActual = `${anio}-${String(mes).padStart(2, "0")}`;
     const hoyStr = `${anio}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
 
@@ -39,8 +39,6 @@ export const CierrePeriodosService = {
       const finStr = `${finAnio}-${String(finMes).padStart(2, "0")}-${String(finDia).padStart(2, "0")}`;
 
       if (finStr < hoyStr) {
-        // El contrato ya terminó: no se toca el período abierto ni se
-        // generan cargos nuevos; queda VENCIDO para revisión humana.
         await prisma.contrato.update({
           where: { id: contrato.id },
           data: { estado: "VENCIDO" },
@@ -59,15 +57,10 @@ export const CierrePeriodosService = {
     return { encolados, vencidos };
   },
 
-  async procesarUnaFilaDeCola(): Promise<{ huboTrabajo: boolean }> {
-    // Se calcula antes de reclamar una fila y fuera del try/catch: una
-    // FECHA_SIMULADA inválida es un error de configuración global y no debe
-    // consumir retries ni quedar disfrazada como error de negocio de una fila.
-    const { anio: anioActual, mes: mesActual } = hoyEnArgentina();
+  async procesarUnaFilaDeCola(fechaOperativa?: string): Promise<{ huboTrabajo: boolean }> {
+    const { anio: anioActual, mes: mesActual } = resolverFechaOperativa(fechaOperativa);
     const mesActualStr = `${anioActual}-${String(mesActual).padStart(2, "0")}`;
 
-    // UPDATE atómico: FOR UPDATE SKIP LOCKED + re-chequeo externo del
-    // estado impiden que dos workers reclamen la misma fila.
     const filas = await prisma.$queryRawUnsafe<FilaOutbox[]>(`
       UPDATE outbox_cierre_periodo
       SET estado = 'PROCESANDO'
@@ -86,8 +79,6 @@ export const CierrePeriodosService = {
     if (!fila) return { huboTrabajo: false };
 
     try {
-      // Releer período y estado ACTUAL del contrato. Si cambió a un estado
-      // que ya no devenga, el loop no entra y la fila termina COMPLETADO.
       let periodoAbierto = await prisma.periodoPago.findFirst({
         where: {
           id_contrato: fila.id_contrato,
@@ -114,15 +105,10 @@ export const CierrePeriodosService = {
           vencimiento,
         );
 
-        // Un ajuste pendiente es una condición funcional esperada: el
-        // período actual queda ABIERTO, no consume retries y el worker se
-        // detiene exactamente antes del período que necesita actualización.
         if (resultado.estado === "AJUSTE_PENDIENTE") {
           break;
         }
 
-        // Releer el período abierto fresco para la próxima vuelta. Nunca
-        // calcular el catch-up desde estado viejo retenido en memoria.
         periodoAbierto = await prisma.periodoPago.findFirst({
           where: {
             id_contrato: fila.id_contrato,
