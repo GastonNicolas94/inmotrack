@@ -79,12 +79,10 @@ export async function POST(req: NextRequest) {
       ...COOKIE_OPTIONS,
       maxAge: 60 * 60 * 8,
     });
-    if (idContrato) {
-      response.cookies.set(TEST_CLOCK_CONTRACT_COOKIE, String(idContrato), {
-        ...COOKIE_OPTIONS,
-        maxAge: 60 * 60 * 8,
-      });
-    }
+    response.cookies.set(TEST_CLOCK_CONTRACT_COOKIE, idContrato ? String(idContrato) : "", {
+      ...COOKIE_OPTIONS,
+      maxAge: idContrato ? 60 * 60 * 8 : 0,
+    });
     return response;
   } catch (error) {
     return handleServiceError(error);
