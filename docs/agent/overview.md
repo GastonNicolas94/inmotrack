@@ -55,12 +55,13 @@ Toda lógica que necesita conocer "ahora" o "hoy" debe depender de la interfaz `
 - **Local / Preview**: `TestClock`; si no hay fecha simulada configurada cae a la fecha real, y si existe una fecha simulada todo consumidor del `AppClock` observa la misma fecha.
 - **Preview**: el estado del `TestClock` se guarda fuera de Postgres mediante Vercel Global Config (`lib/test-clock-store.ts`). La UI `/dev/reloj` modifica ese valor global; no usa cookies, headers ni scope por contrato.
 
-Variables requeridas en Preview para Global Config:
+Configuración de Preview:
 
-- `INMOTRACK_TEST_CLOCK_CONFIG_ID`
-- `INMOTRACK_TEST_CLOCK_READ_TOKEN`
-- `INMOTRACK_TEST_CLOCK_VERCEL_TOKEN`
-- `INMOTRACK_TEST_CLOCK_TEAM_ID`
+- `GLOBAL_CONFIG`: la crea Vercel automáticamente al adjuntar `inmotrack-test-clock` al proyecto; incluye la conexión de lectura al store.
+- `VERCEL_TOKEN`: token de Vercel con permisos de escritura sobre Global Config; se usa únicamente en el backend de Preview para que `/dev/reloj` pueda sobrescribir o borrar `inmotrack_test_date` vía API.
+- `VERCEL_TEAM_ID`: opcional; si está presente se agrega al request de escritura para scoping explícito del team.
+
+La fecha simulada **no** vive en una variable de entorno. Vive en la key mutable `inmotrack_test_date` de Global Config y se cambia en runtime desde `/dev/reloj`, sin redeploy.
 
 No introducir `new Date()`/`Date.now()` como fuente de tiempo de negocio dentro de un service. Crear `Date` para convertir una fecha explícita o hacer aritmética calendaria sí es válido.
 
