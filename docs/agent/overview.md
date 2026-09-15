@@ -61,6 +61,8 @@ Configuración de Preview:
 - `VERCEL_TOKEN`: token de Vercel con permisos de escritura sobre Global Config; se usa únicamente en el backend de Preview para que `/dev/reloj` pueda sobrescribir o borrar `inmotrack_test_date` vía API.
 - `VERCEL_TEAM_ID`: opcional; si está presente se agrega al request de escritura para scoping explícito del team.
 
+Cuando se agrega o cambia `VERCEL_TOKEN` en Vercel, hace falta un redeploy del Preview una sola vez para que las funciones nuevas reciban esa env. Después, cambiar la fecha desde `/dev/reloj` no requiere nuevos deploys.
+
 La fecha simulada **no** vive en una variable de entorno. Vive en la key mutable `inmotrack_test_date` de Global Config y se cambia en runtime desde `/dev/reloj`, sin redeploy.
 
 No introducir `new Date()`/`Date.now()` como fuente de tiempo de negocio dentro de un service. Crear `Date` para convertir una fecha explícita o hacer aritmética calendaria sí es válido.
