@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,7 +53,7 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
   const [observacion, setObservacion] = useState("");
   const router = useRouter();
 
-  async function cargar() {
+  const cargar = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/v1/contratos/${contratoId}/ajustes`);
@@ -64,12 +64,12 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
     } finally {
       setLoading(false);
     }
-  }
+  }, [contratoId]);
 
   useEffect(() => {
     if (!open) return;
     void cargar();
-  }, [open, contratoId]);
+  }, [open, cargar]);
 
   async function aplicar() {
     if (!ajustePendiente || !montoNuevo) return;
@@ -80,30 +80,35 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
     }
 
     setEnviando(true);
-    const res = await fetch(
-      `/api/v1/contratos/${contratoId}/ajustes/${ajustePendiente.id}/aplicar`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          monto_nuevo: numero,
-          observacion: observacion.trim() || undefined,
-        }),
-      },
-    );
-    setEnviando(false);
+    try {
+      const res = await fetch(
+        `/api/v1/contratos/${contratoId}/ajustes/${ajustePendiente.id}/aplicar`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            monto_nuevo: numero,
+            observacion: observacion.trim() || undefined,
+          }),
+        },
+      );
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => null);
-      toast.error(err?.message ?? "No se pudo aplicar el ajuste.");
-      return;
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        toast.error(err?.message ?? "No se pudo aplicar el ajuste.");
+        return;
+      }
+
+      toast.success("Alquiler actualizado. El cierre automático continuará con el nuevo monto.");
+      setMontoNuevo("");
+      setObservacion("");
+      await cargar();
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo aplicar el ajuste.");
+    } finally {
+      setEnviando(false);
     }
-
-    toast.success("Alquiler actualizado. El cierre automático continuará con el nuevo monto.");
-    setMontoNuevo("");
-    setObservacion("");
-    await cargar();
-    router.refresh();
   }
 
   return (
