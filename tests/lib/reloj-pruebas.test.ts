@@ -17,7 +17,7 @@ describe("Clock", () => {
     assert.deepEqual(await clock.today(), { anio: 2026, mes: 9, dia: 15 });
   });
 
-  test("TestClock usa una fecha global persistida y conserva la hora argentina", async () => {
+  test("TestClock usa una fecha global persistida", async () => {
     let value: string | null = "2026-04-15";
     const store: TestClockStore = {
       get: async () => value,
@@ -31,6 +31,19 @@ describe("Clock", () => {
 
     await clock.setDate("2026-07-20");
     assert.deepEqual(await clock.today(), { anio: 2026, mes: 7, dia: 20 });
+  });
+
+  test("TestClock vuelve al reloj real cuando no hay fecha simulada", async () => {
+    const store: TestClockStore = {
+      get: async () => null,
+      set: async () => undefined,
+      clear: async () => undefined,
+    };
+    const real = new Date("2026-09-15T18:00:00.000Z");
+    const clock = createTestClock(store, () => real);
+
+    assert.equal((await clock.now()).toISOString(), real.toISOString());
+    assert.deepEqual(await clock.today(), { anio: 2026, mes: 9, dia: 15 });
   });
 
   test("TestClock rechaza fechas imposibles", async () => {
