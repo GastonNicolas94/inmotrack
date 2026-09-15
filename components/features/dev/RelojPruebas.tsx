@@ -4,9 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 
-export function RelojPruebas({ initialFecha }: { initialFecha: string }) {
+export function RelojPruebas({
+  initialFecha,
+  initialIdContrato = "",
+}: {
+  initialFecha: string;
+  initialIdContrato?: string;
+}) {
   const [fecha, setFecha] = useState(initialFecha);
-  const [idContrato, setIdContrato] = useState("");
+  const [idContrato, setIdContrato] = useState(initialIdContrato);
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState<string>("");
   const contratoValido = Number.isInteger(Number(idContrato)) && Number(idContrato) > 0;
@@ -49,6 +55,7 @@ export function RelojPruebas({ initialFecha }: { initialFecha: string }) {
     try {
       const response = await fetch("/api/v1/dev/reloj-pruebas", { method: "DELETE" });
       if (!response.ok) throw new Error("No se pudo desactivar el reloj de prueba.");
+      setIdContrato("");
       setResultado("Reloj de prueba desactivado. El sistema vuelve a usar la fecha real.");
     } catch (error) {
       setResultado(error instanceof Error ? error.message : String(error));
