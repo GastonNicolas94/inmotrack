@@ -115,6 +115,10 @@ mantiene además un límite independiente en la acción del header: `ContratosWi
 las propiedades e inquilinos disponibles y recién entonces renderiza `WizardContrato`, sin
 cambiar sus props ni sus permisos.
 
+El detalle de liquidación monta un control cliente mínimo para invocar la impresión nativa.
+Los estilos `@media print` ocultan el shell y las acciones, conservan el encabezado y evitan
+cortes dentro de filas y tarjetas sin duplicar el contenido en una segunda plantilla.
+
 Los métodos de listado que alimentan estas tablas usan `select` explícito y relaciones anidadas
 mínimas. El shape de cada consulta se mantiene alineado con los campos leídos por su `Tabla*`;
 las relaciones de `TransaccionesService.listar` que necesita la UI (`contra_asientos` y

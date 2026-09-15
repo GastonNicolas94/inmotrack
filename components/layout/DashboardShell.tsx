@@ -46,7 +46,7 @@ export function DashboardShell({
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background print:block print:min-h-0">
       {/* Backdrop del drawer en mobile */}
       {mobileOpen && (
         <div
@@ -60,7 +60,7 @@ export function DashboardShell({
       <aside
         data-collapsed={collapsed}
         className={cn(
-          "group/aside fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border bg-sidebar transition-transform duration-200 ease-in-out",
+          "group/aside fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border bg-sidebar transition-transform duration-200 ease-in-out print:hidden",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
           "md:static md:z-auto md:translate-x-0 md:transition-[width]",
           collapsed ? "md:w-[72px]" : "md:w-64"
@@ -126,7 +126,7 @@ export function DashboardShell({
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header mobile: solo botón de menú, visible por debajo de md */}
-        <header className="relative flex items-center justify-center border-b border-border px-4 py-3 md:hidden">
+        <header className="relative flex items-center justify-center border-b border-border px-4 py-3 md:hidden print:hidden">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
@@ -143,8 +143,10 @@ export function DashboardShell({
           />
         </header>
 
-        <main className="flex-1 overflow-auto">
-          <div className="mx-auto max-w-6xl px-6 py-8 md:px-8 md:py-10">{children}</div>
+        <main className="flex-1 overflow-auto print:overflow-visible">
+          <div className="mx-auto max-w-6xl px-6 py-8 print:max-w-none print:p-0 md:px-8 md:py-10">
+            {children}
+          </div>
         </main>
       </div>
     </div>

@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { buttonVariants } from "@/components/ui/button";
 import { BadgeEstadoLiquidacion } from "@/components/features/liquidaciones/BadgeEstadoLiquidacion";
 import { DetalleLiquidacion } from "@/components/features/liquidaciones/DetalleLiquidacion";
+import { BotonImprimirLiquidacion } from "@/components/features/liquidaciones/BotonImprimirLiquidacion";
 import { formatFechaLocal } from "@/lib/fecha";
 
 export default async function LiquidacionDetallePage({
@@ -21,16 +22,22 @@ export default async function LiquidacionDetallePage({
   if (!liquidacion) notFound();
 
   return (
-    <div>
+    <div className="liquidacion-print">
       <PageHeader
         eyebrow={`Liquidación #${liquidacion.id}`}
         title={liquidacion.propietario.nombre}
         description={`Período liquidado: ${formatFechaLocal(liquidacion.fecha_desde)} al ${formatFechaLocal(liquidacion.fecha_hasta)}`}
         action={
-          <Link href="/liquidaciones" className={buttonVariants({ variant: "outline", size: "sm" })}>
-            <ArrowLeft aria-hidden className="size-4" />
-            Volver a liquidaciones
-          </Link>
+          <div className="flex flex-wrap items-center justify-end gap-2 print:hidden">
+            <BotonImprimirLiquidacion />
+            <Link
+              href="/liquidaciones"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <ArrowLeft aria-hidden className="size-4" />
+              Volver a liquidaciones
+            </Link>
+          </div>
         }
       />
 

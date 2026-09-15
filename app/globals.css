@@ -200,3 +200,47 @@
     opacity: 0.15;
   }
 }
+
+@media print {
+  .liquidacion-print {
+    --background: #ffffff;
+    --foreground: #1d1d1f;
+    --card: #ffffff;
+    --card-foreground: #1d1d1f;
+    --muted-foreground: #6e6e73;
+    --border: #d2d2d7;
+    color: var(--foreground);
+    background: var(--background);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .liquidacion-print [data-slot="table-container"] {
+    overflow: visible;
+  }
+
+  .liquidacion-print table {
+    width: 100%;
+    font-size: 8pt;
+  }
+
+  .liquidacion-print th,
+  .liquidacion-print td {
+    padding: 0.35rem 0.45rem;
+  }
+
+  .liquidacion-print thead {
+    display: table-header-group;
+  }
+
+  .liquidacion-print tr,
+  .liquidacion-print .print-keep-together {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .liquidacion-print h2 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+}
