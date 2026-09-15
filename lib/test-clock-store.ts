@@ -74,7 +74,12 @@ function globalConfigStore(env: EnvLike, fetchImpl: FetchLike): TestClockStore {
       body: JSON.stringify({ items }),
     });
 
-    if (!response.ok) throw new Error(`No se pudo actualizar el reloj global (${response.status}).`);
+    if (!response.ok) {
+      const detail = (await response.text()).trim();
+      throw new Error(
+        `No se pudo actualizar el reloj global (${response.status})${detail ? `: ${detail}` : "."}`,
+      );
+    }
   }
 
   return {
