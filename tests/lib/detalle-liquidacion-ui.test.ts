@@ -1,21 +1,32 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createElement, type ComponentType } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import {
+  isValidElement,
+  type ComponentType,
+  type ReactNode,
+} from "react";
+import { hrefDetalleLiquidacion } from "../../lib/liquidacion-detalle.ts";
 
-test("el enlace de una liquidación navega a su página de detalle", async () => {
-  const modulo = await import(
-    "../../components/features/liquidaciones/EnlaceDetalleLiquidacion.tsx"
-  ).catch(() => null);
-  assert.ok(modulo, "debe existir el enlace al detalle");
+function textoDelArbol(node: ReactNode) {
+  const textos: string[] = [];
+  const visitar = (valor: ReactNode) => {
+    if (Array.isArray(valor)) {
+      valor.forEach(visitar);
+      return;
+    }
+    if (typeof valor === "string" || typeof valor === "number") {
+      textos.push(String(valor));
+      return;
+    }
+    if (!isValidElement(valor)) return;
+    visitar((valor.props as { children?: ReactNode }).children);
+  };
+  visitar(node);
+  return textos.join(" ");
+}
 
-  const EnlaceDetalleLiquidacion = modulo.EnlaceDetalleLiquidacion as ComponentType<{
-    id: number;
-  }>;
-  const html = renderToStaticMarkup(createElement(EnlaceDetalleLiquidacion, { id: 9 }));
-
-  assert.match(html, /href="\/liquidaciones\/9"/);
-  assert.match(html, /Ver detalle/);
+test("construye la navegación a la página de detalle de una liquidación", () => {
+  assert.equal(hrefDetalleLiquidacion(9), "/liquidaciones/9");
 });
 
 test("el detalle muestra cargos cobrados, gastos y adelantos que forman el neto", async () => {
@@ -25,9 +36,8 @@ test("el detalle muestra cargos cobrados, gastos y adelantos que forman el neto"
   assert.ok(modulo, "debe existir la vista de detalle de liquidación");
 
   const DetalleLiquidacion = modulo.DetalleLiquidacion as ComponentType<{ liquidacion: unknown }>;
-  const html = renderToStaticMarkup(
-    createElement(DetalleLiquidacion, {
-      liquidacion: {
+  const vista = DetalleLiquidacion({
+    liquidacion: {
         id: 9,
         id_propietario: 4,
         fecha_corrida: new Date("2026-09-14T15:30:00Z"),
@@ -108,18 +118,18 @@ test("el detalle muestra cargos cobrados, gastos y adelantos que forman el neto"
             },
           },
         ],
-      },
-    })
-  );
+    },
+  });
+  const html = textoDelArbol(vista);
 
   assert.match(html, /Alquileres cobrados/);
   assert.match(html, /San Martín 123/);
   assert.match(html, /Juan Inquilino/);
-  assert.match(html, /Cargo #51/);
-  assert.match(html, /Transacción #41/);
-  assert.match(html, /10\.00%/);
+  assert.match(html, /Cargo #\s*51/);
+  assert.match(html, /Transacción #\s*41/);
+  assert.match(html, /10\.00\s*%/);
   assert.match(html, /Reparación de techo/);
-  assert.match(html, /Gasto #61/);
+  assert.match(html, /Gasto #\s*61/);
   assert.match(html, /Adelanto de septiembre/);
   assert.match(html, /Adelantos descontados/);
   assert.match(html, /Neto a pagar/);

@@ -13,6 +13,10 @@ interface LiquidacionParaDesglosar {
   }>;
 }
 
+export function hrefDetalleLiquidacion(id: number) {
+  return `/liquidaciones/${id}`;
+}
+
 export function calcularPorcentajeComision(montoBruto: Monto, comision: Monto) {
   const bruto = new Decimal(montoBruto);
   if (bruto.isZero()) return new Decimal(0);
