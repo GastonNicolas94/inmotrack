@@ -119,6 +119,8 @@ El detalle de liquidación ofrece un PDF A4 vertical generado en servidor desde 
 sellada. El endpoint autenticado `/api/v1/liquidaciones/[id]/pdf` fuerza runtime Node.js, responde
 como archivo no cacheable y mantiene una maquetación formal multipágina separada de la UI web.
 El documento omite el estado y cualquier sección sin movimientos asociados.
+El emisor visible y los metadatos identifican a `Macchieraldo Villarruel — Estudio Contable &
+Inmobiliaria`; el nombre técnico del sistema no forma parte del documento entregado.
 
 Los métodos de listado que alimentan estas tablas usan `select` explícito y relaciones anidadas
 mínimas. El shape de cada consulta se mantiene alineado con los campos leídos por su `Tabla*`;

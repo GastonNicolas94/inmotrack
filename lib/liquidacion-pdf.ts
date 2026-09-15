@@ -15,6 +15,11 @@ const GRIS = "#667085";
 const BORDE = "#CBD5E1";
 const FONDO = "#F7F8FA";
 
+export const IDENTIDAD_INMOBILIARIA = {
+  nombre: "Macchieraldo Villarruel",
+  descripcion: "Estudio Contable & Inmobiliaria",
+} as const;
+
 const FORMATO_MONTO = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -69,15 +74,21 @@ function agregarMembrete(doc: PDFKit.PDFDocument, liquidacion: LiquidacionDetall
   doc
     .fillColor("#FFFFFF")
     .font("Helvetica-Bold")
-    .fontSize(24)
-    .text("I", MARGEN, 37, { width: 42, align: "center" });
+    .fontSize(15)
+    .text("MV", MARGEN, 42, { width: 42, align: "center" });
 
-  doc.fillColor(AZUL).font("Helvetica-Bold").fontSize(18).text("INMOTRACK", 96, 32);
+  doc
+    .fillColor(AZUL)
+    .font("Helvetica-Bold")
+    .fontSize(16)
+    .text(IDENTIDAD_INMOBILIARIA.nombre, 96, 32);
   doc
     .fillColor(GRIS)
     .font("Helvetica")
     .fontSize(8)
-    .text("ADMINISTRACIÓN INMOBILIARIA", 96, 55, { characterSpacing: 0.8 });
+    .text(IDENTIDAD_INMOBILIARIA.descripcion.toUpperCase(), 96, 55, {
+      characterSpacing: 0.6,
+    });
 
   doc
     .fillColor(GRIS)
@@ -133,7 +144,11 @@ function agregarMembrete(doc: PDFKit.PDFDocument, liquidacion: LiquidacionDetall
 
 function agregarEncabezadoContinuacion(doc: PDFKit.PDFDocument, liquidacion: LiquidacionDetalle) {
   doc.rect(0, 0, doc.page.width, 6).fill(AZUL);
-  doc.fillColor(AZUL).font("Helvetica-Bold").fontSize(10).text("INMOTRACK", MARGEN, 25);
+  doc
+    .fillColor(AZUL)
+    .font("Helvetica-Bold")
+    .fontSize(10)
+    .text(IDENTIDAD_INMOBILIARIA.nombre, MARGEN, 25);
   doc
     .fillColor(GRIS)
     .font("Helvetica")
@@ -293,7 +308,7 @@ function agregarPieDePagina(doc: PDFKit.PDFDocument) {
       .fillColor(GRIS)
       .font("Helvetica")
       .fontSize(7)
-      .text("Documento emitido por Inmotrack", MARGEN, doc.page.height - MARGEN - 10, {
+      .text("Documento emitido electrónicamente", MARGEN, doc.page.height - MARGEN - 10, {
         width: 220,
         lineBreak: false,
       });
@@ -318,7 +333,7 @@ export async function generarPdfLiquidacion(liquidacion: LiquidacionDetalle): Pr
     compress: false,
     info: {
       Title: `Liquidación N° ${liquidacion.id} - ${liquidacion.propietario.nombre}`,
-      Author: "Inmotrack",
+      Author: IDENTIDAD_INMOBILIARIA.nombre,
       Subject: "Liquidación de propietario",
     },
   });

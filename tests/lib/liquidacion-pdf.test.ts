@@ -95,3 +95,13 @@ test("omite conceptos que no tienen movimientos", async () => {
     []
   );
 });
+
+test("identifica a la inmobiliaria como emisora y no al sistema", async () => {
+  const modulo = await import("../../lib/liquidacion-pdf.ts");
+
+  assert.deepEqual(modulo.IDENTIDAD_INMOBILIARIA, {
+    nombre: "Macchieraldo Villarruel",
+    descripcion: "Estudio Contable & Inmobiliaria",
+  });
+  assert.doesNotMatch(JSON.stringify(modulo.IDENTIDAD_INMOBILIARIA), /inmotrack/i);
+});
