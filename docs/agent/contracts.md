@@ -1,6 +1,6 @@
 ---
 type: Contracts
-version: 8a23727
+version: b0da4ff
 validated: 2026-09-15
 update_when: Rutas HTTP agregadas/cambiadas/eliminadas, o cambia el criterio de acceso por rol en proxy.ts/handlers
 scope:
@@ -36,6 +36,8 @@ El `proxy.ts` renueva cookies y aplica solo el gate grueso de identidad (ver [ar
 | `PATCH` | `/contratos/{id}/estado` | Cambiar estado manualmente (cualquier transición del enum) | No-AUDITOR | ✅ |
 | `GET` | `/contratos/{id}/cargos-pendientes` | Cargos con saldo > 0 de un contrato | Sesión | ✅ |
 | `GET` | `/contratos/{id}/periodos` | Períodos de pago de un contrato | Sesión | ✅ |
+| `GET` | `/contratos/{id}/ajustes` | Historial auditable de actualizaciones de alquiler | Sesión | ✅ |
+| `POST` | `/contratos/{id}/ajustes/{idAjuste}/aplicar` | Aplicar monto nuevo a un ajuste pendiente y reencolar el cierre | No-AUDITOR | ✅ por estado/lock: un ajuste solo pasa una vez a `APLICADO` |
 | `POST` | `/contratos/{id}/calcular-intereses` | Correr el motor de punitorios sobre cargos elegidos | No-AUDITOR | ✅ (lock + `@@unique([id_cargo_origen, fecha_punitorio_desde])`) |
 | `GET` | `/inquilinos` | Listar inquilinos | Sesión | ✅ |
 | `POST` | `/inquilinos` | Crear inquilino | No-AUDITOR | ❌ |
@@ -65,6 +67,21 @@ El `proxy.ts` renueva cookies y aplica solo el gate grueso de identidad (ver [ar
 | `POST` | `/usuarios` | Invitar usuario y crear su perfil | **ADMIN** | ❌ |
 | `PATCH` | `/usuarios` | Delegar `puede_aprobar_liquidaciones` a un EMPLEADO | **ADMIN** (chequeo propio en el handler, no en `SOLO_ADMIN`) | ✅ |
 
+### Ajustes de contrato
+
+`GET /contratos/{id}/ajustes` devuelve el historial ordenado del más reciente al más antiguo; los `Decimal` salen serializados como strings.
+
+`POST /contratos/{id}/ajustes/{idAjuste}/aplicar` acepta:
+
+```json
+{
+  "monto_nuevo": 600000,
+  "observacion": "Actualización trimestral ICL"
+}
+```
+
+`monto_nuevo` debe ser positivo y `observacion` es opcional (máximo 500 caracteres). La operación bloquea ajuste/contrato, exige estado `PENDIENTE`, actualiza `monto_base` + `fecha_ultimo_ajuste`, marca el ajuste `APLICADO` y reencola el cierre si hace falta. Un AUDITOR recibe 403.
+
 ### Respuesta de saldo del inquilino
 
 `GET /inquilinos/{id}/saldo` separa `deuda_confeccion` de `deuda_gastos` y
@@ -76,7 +93,7 @@ la incluye en `total`. El detalle correspondiente se devuelve en
 | Method | Path | Qué hace | Disparado por |
 |--------|------|----------|---------------|
 | `GET` | `/cron/activar-cierre-periodos` | Encola contratos vencidos, marca `POR_VENCER`, dispara la cola vía `after()` | Vercel Cron, `0 6 1 * *` (`vercel.json`) |
-| `POST` | `/cron/procesar-cola-cierre` | Procesa UNA fila de `outbox_cierre_periodo`; si queda trabajo, se re-dispara a sí mismo vía `after()` | Encadenado desde el cron de arriba, o manualmente |
+| `POST` | `/cron/procesar-cola-cierre` | Procesa UNA fila; puede detener el catch-up en un `AJUSTE_PENDIENTE` sin consumir retry; si queda trabajo técnico se re-dispara vía `after()` | Encadenado desde el cron de arriba, o manualmente |
 
 `/cron/*` está explícitamente exceptuado del auth de sesión en `proxy.ts` (`pathname.startsWith("/api/v1/cron/")`) — la única protección es `CRON_SECRET`.
 
@@ -87,7 +104,7 @@ El login y logout usan los clientes SSR de Supabase. `/auth/confirm` acepta sola
 ## Dependencias externas
 
 Supabase provee PostgreSQL como dependencia externa. No hay otras APIs de terceros,
-colas de mensajería ni caché externo (Redis/KVS).
+colas de mensajería ni caché externo (Redis/KVS). En particular, la primera versión de ajustes **no** consulta APIs de ICL/IPC: el operador carga el nuevo monto manualmente.
 
 ## Recursos de plataforma
 
