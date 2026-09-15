@@ -53,12 +53,12 @@ export function DetalleLiquidacion({
   ];
 
   return (
-    <div className="space-y-10 print:space-y-6">
+    <div className="space-y-10">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {resumen.map((item) => (
           <div
             key={item.label}
-            className={`print-keep-together rounded-2xl border border-border bg-card p-4 ${
+            className={`rounded-2xl border border-border bg-card p-4 ${
               item.destacado ? "ring-1 ring-primary/25" : ""
             }`}
           >
@@ -262,7 +262,7 @@ export function DetalleLiquidacion({
         </TableCard>
       </section>
 
-      <div className="print-keep-together rounded-2xl border border-border bg-card p-5 text-right">
+      <div className="rounded-2xl border border-border bg-card p-5 text-right">
         <p className="text-sm text-muted-foreground">
           {fmt(liquidacion.monto_bruto.toString())} − {fmt(desglose.comisiones.toString())} −{" "}
           {fmt(desglose.gastos.toString())} − {fmt(desglose.adelantos.toString())}

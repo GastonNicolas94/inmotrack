@@ -70,18 +70,3 @@ test("deriva el porcentaje histórico desde los importes sellados de la liquidac
   assert.equal(calcularPorcentajeComision!("123456.78", "12345.68").toFixed(2), "10.00");
   assert.equal(calcularPorcentajeComision!("0", "0").toFixed(2), "0.00");
 });
-
-test("delega la impresión del detalle al diálogo nativo del navegador", async () => {
-  const modulo = await import("../../lib/liquidacion-detalle.ts");
-  const imprimirDetalle = modulo.imprimirDetalle as
-    | ((imprimir: () => void) => void)
-    | undefined;
-  let llamadas = 0;
-
-  assert.equal(typeof imprimirDetalle, "function");
-  imprimirDetalle!(() => {
-    llamadas += 1;
-  });
-
-  assert.equal(llamadas, 1);
-});

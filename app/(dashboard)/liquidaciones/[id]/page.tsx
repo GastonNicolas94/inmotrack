@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { buttonVariants } from "@/components/ui/button";
 import { BadgeEstadoLiquidacion } from "@/components/features/liquidaciones/BadgeEstadoLiquidacion";
 import { DetalleLiquidacion } from "@/components/features/liquidaciones/DetalleLiquidacion";
-import { BotonImprimirLiquidacion } from "@/components/features/liquidaciones/BotonImprimirLiquidacion";
+import { BotonDescargarPdfLiquidacion } from "@/components/features/liquidaciones/BotonDescargarPdfLiquidacion";
 import { formatFechaLocal } from "@/lib/fecha";
 
 export default async function LiquidacionDetallePage({
@@ -22,14 +22,14 @@ export default async function LiquidacionDetallePage({
   if (!liquidacion) notFound();
 
   return (
-    <div className="liquidacion-print">
+    <div>
       <PageHeader
         eyebrow={`Liquidación #${liquidacion.id}`}
         title={liquidacion.propietario.nombre}
         description={`Período liquidado: ${formatFechaLocal(liquidacion.fecha_desde)} al ${formatFechaLocal(liquidacion.fecha_hasta)}`}
         action={
-          <div className="flex flex-wrap items-center justify-end gap-2 print:hidden">
-            <BotonImprimirLiquidacion />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <BotonDescargarPdfLiquidacion id={liquidacion.id} />
             <Link
               href="/liquidaciones"
               className={buttonVariants({ variant: "outline", size: "sm" })}
