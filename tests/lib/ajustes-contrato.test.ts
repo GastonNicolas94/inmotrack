@@ -12,8 +12,8 @@ function requiere(params: {
   return requiereAjuste({
     fechaInicio: new Date(params.fechaInicio ?? "2026-01-01T00:00:00.000Z"),
     fechaUltimoAjuste: params.fechaUltimoAjuste ? new Date(`${params.fechaUltimoAjuste}T00:00:00.000Z`) : null,
-    mesesActualizacion: params.meses ?? 3,
-    indiceActualizacion: params.indice ?? "ICL",
+    mesesActualizacion: params.meses === undefined ? 3 : params.meses,
+    indiceActualizacion: params.indice === undefined ? "ICL" : params.indice,
     periodoObjetivo: params.periodo,
   });
 }
