@@ -63,6 +63,18 @@ function globalConfigStore(env: EnvLike, fetchImpl: FetchLike): TestClockStore {
     return { writeUrl: writeUrl.toString(), writeToken };
   }
 
+  async function getStoredDate() {
+    const url = readUrl();
+    if (!url) return { configured: false, value: null as string | null };
+
+    const response = await fetchImpl(url, { cache: "no-store" });
+    if (response.status === 404) return { configured: false, value: null as string | null };
+    if (!response.ok) throw new Error(`No se pudo leer el reloj global (${response.status}).`);
+
+    const stored = await response.json();
+    return { configured: true, value: typeof stored === "string" ? stored : null };
+  }
+
   async function mutate(items: Array<Record<string, unknown>>) {
     const { writeUrl, writeToken } = writeConfig();
     const response = await fetchImpl(writeUrl, {
@@ -75,29 +87,30 @@ function globalConfigStore(env: EnvLike, fetchImpl: FetchLike): TestClockStore {
     });
 
     if (!response.ok) {
-      const detail = (await response.text()).trim();
-      throw new Error(
-        `No se pudo actualizar el reloj global (${response.status})${detail ? `: ${detail}` : "."}`,
-      );
+      const body = await response.text().catch(() => "");
+      const suffix = body ? `: ${body}` : "";
+      throw new Error(`No se pudo actualizar el reloj global (${response.status})${suffix}`);
     }
   }
 
   return {
     async get() {
-      const url = readUrl();
-      if (!url) return null;
-
-      const response = await fetchImpl(url, { cache: "no-store" });
-      if (response.status === 404) return null;
-      if (!response.ok) throw new Error(`No se pudo leer el reloj global (${response.status}).`);
-
-      const stored = await response.json();
-      return typeof stored === "string" ? stored : null;
+      const stored = await getStoredDate();
+      return stored.value;
     },
     async set(fecha) {
-      await mutate([{ operation: "upsert", key: CLOCK_KEY, value: fecha }]);
+      const stored = await getStoredDate();
+      await mutate([
+        {
+          operation: stored.configured ? "update" : "create",
+          key: CLOCK_KEY,
+          value: fecha,
+        },
+      ]);
     },
     async clear() {
+      const stored = await getStoredDate();
+      if (!stored.configured) return;
       await mutate([{ operation: "delete", key: CLOCK_KEY }]);
     },
   };
