@@ -27,13 +27,7 @@ function globalConfigStore(env: EnvLike, fetchImpl: FetchLike): TestClockStore {
     const readToken = env.INMOTRACK_TEST_CLOCK_READ_TOKEN;
     const writeToken = env.INMOTRACK_TEST_CLOCK_VERCEL_TOKEN;
     const teamId = env.INMOTRACK_TEST_CLOCK_TEAM_ID;
-
-    if (!configId || !readToken || !writeToken || !teamId) {
-      throw new Error(
-        "Reloj de pruebas sin configurar: faltan variables de Global Config de Vercel.",
-      );
-    }
-
+    if (!configId || !readToken || !writeToken || !teamId) return null;
     return {
       readUrl: `https://global-config.vercel.com/${configId}/item/${CLOCK_KEY}?token=${encodeURIComponent(readToken)}`,
       writeUrl: `https://api.vercel.com/v1/global-config/${configId}/items?teamId=${encodeURIComponent(teamId)}`,
@@ -41,35 +35,36 @@ function globalConfigStore(env: EnvLike, fetchImpl: FetchLike): TestClockStore {
     };
   }
 
+  function requireConfig() {
+    const value = config();
+    if (!value) throw new Error("Reloj de pruebas sin configurar: faltan variables de Global Config de Vercel.");
+    return value;
+  }
+
   return {
     async get() {
-      const { readUrl } = config();
-      const response = await fetchImpl(readUrl, { cache: "no-store" });
+      const value = config();
+      if (!value) return null;
+      const response = await fetchImpl(value.readUrl, { cache: "no-store" });
       if (response.status === 404) return null;
       if (!response.ok) throw new Error(`No se pudo leer el reloj global (${response.status}).`);
-      const value = await response.json();
-      return typeof value === "string" ? value : null;
+      const stored = await response.json();
+      return typeof stored === "string" ? stored : null;
     },
     async set(fecha) {
-      const { writeUrl, writeToken } = config();
+      const { writeUrl, writeToken } = requireConfig();
       const response = await fetchImpl(writeUrl, {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${writeToken}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${writeToken}`, "Content-Type": "application/json" },
         body: JSON.stringify({ items: [{ operation: "upsert", key: CLOCK_KEY, value: fecha }] }),
       });
       if (!response.ok) throw new Error(`No se pudo actualizar el reloj global (${response.status}).`);
     },
     async clear() {
-      const { writeUrl, writeToken } = config();
+      const { writeUrl, writeToken } = requireConfig();
       const response = await fetchImpl(writeUrl, {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${writeToken}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${writeToken}`, "Content-Type": "application/json" },
         body: JSON.stringify({ items: [{ operation: "delete", key: CLOCK_KEY }] }),
       });
       if (!response.ok) throw new Error(`No se pudo limpiar el reloj global (${response.status}).`);
