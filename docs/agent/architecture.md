@@ -1,7 +1,7 @@
 ---
 type: Architecture
-version: 4957633
-validated: 2026-09-14
+version: 8a23727
+validated: 2026-09-15
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
   - app
@@ -35,6 +35,7 @@ app/
   (dashboard)/                       → Layout con nav lateral (DashboardShell); una carpeta por sección
     contratos/, gastos/, inquilinos/, liquidaciones/, pagos/, propiedades/, propietarios/, transacciones/
     contratos/[id]/movimientos/      → Detalle de movimientos de un contrato puntual
+    liquidaciones/[id]/              → Detalle auditable de una liquidación puntual
   api/
     auth/confirm/                    → Valida la invitación y establece cookies
     auth/confirm/password/           → Pantalla autenticada para fijar contraseña

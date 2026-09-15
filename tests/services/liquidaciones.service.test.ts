@@ -561,6 +561,77 @@ describe("LiquidacionesService.listar", () => {
   });
 });
 
+describe("LiquidacionesService.obtenerDetalle", () => {
+  beforeEach(async () => {
+    await cleanDatabase();
+  });
+
+  it("devuelve los cobros, gastos y adelantos exactos incluidos en la liquidación", async () => {
+    const { propietario, propiedad, inquilino, contrato, usuario } =
+      await crearEscenarioBasico({ pct_comision: 10 });
+
+    await PagosService.registrar({
+      id_contrato: contrato.id,
+      monto_pagado: 100000,
+      idempotency_key: crypto.randomUUID(),
+      id_usuario_creador: usuario.id,
+    });
+
+    const gasto = await GastosService.crear({
+      id_propiedad: propiedad.id,
+      concepto: "Reparación de plomería",
+      monto: 15000,
+      tipo: "ARREGLO",
+      cargo_a: "PROPIETARIO",
+    });
+
+    const adelanto = await AdelantosService.registrar({
+      id_propietario: propietario.id,
+      monto: 20000,
+      id_usuario_creador: usuario.id,
+    });
+
+    const liquidacion = await LiquidacionesService.generarParaPropietario(
+      propietario.id,
+      diasDesdeAhora(1),
+      5000
+    );
+
+    const detalle = await LiquidacionesService.obtenerDetalle(liquidacion.id);
+
+    assert.ok(detalle);
+    assert.equal(detalle.propietario.nombre, propietario.nombre);
+    assert.equal(Number(detalle.monto_bruto), 100000);
+    assert.equal(Number(detalle.retenciones), 25000);
+    assert.equal(Number(detalle.adelantos_descontados), 5000);
+    assert.equal(Number(detalle.monto_neto), 70000);
+
+    const itemAlquiler = detalle.items.find((item) => item.id_periodo !== null);
+    assert.ok(itemAlquiler);
+    assert.equal(itemAlquiler.propiedad.direccion, propiedad.direccion);
+    assert.equal(itemAlquiler.periodo?.periodo, "2026-08");
+    assert.equal(itemAlquiler.periodo?.contrato.id, contrato.id);
+    assert.equal(itemAlquiler.periodo?.contrato.inquilino.nombre, inquilino.nombre);
+    assert.equal(itemAlquiler.aplicaciones.length, 1);
+    assert.equal(itemAlquiler.aplicaciones[0].cargo.tipo, "ALQUILER");
+    assert.equal(Number(itemAlquiler.aplicaciones[0].monto_aplicado), 100000);
+    assert.equal(itemAlquiler.aplicaciones[0].transaccion.tipo, "INGRESO_COBRO");
+
+    const itemGasto = detalle.items.find((item) => item.id_periodo === null);
+    assert.ok(itemGasto);
+    assert.equal(itemGasto.propiedad.direccion, propiedad.direccion);
+    assert.equal(itemGasto.gastos_item.length, 1);
+    assert.equal(itemGasto.gastos_item[0].id, gasto.id);
+    assert.equal(itemGasto.gastos_item[0].concepto, "Reparación de plomería");
+    assert.equal(Number(itemGasto.gastos_item[0].monto), 15000);
+
+    assert.equal(detalle.deducciones.length, 1);
+    assert.equal(detalle.deducciones[0].id_transaccion, adelanto.id);
+    assert.equal(Number(detalle.deducciones[0].monto_descontado), 5000);
+    assert.equal(Number(detalle.deducciones[0].transaccion.monto), -20000);
+  });
+});
+
 describe("LiquidacionesService.aprobar / confirmarPago", () => {
   beforeEach(async () => {
     await cleanDatabase();

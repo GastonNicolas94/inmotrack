@@ -15,6 +15,10 @@ type FindManyDelegate = {
   findMany: (args: unknown) => Promise<unknown>;
 };
 
+type FindUniqueDelegate = {
+  findUnique: (args: unknown) => Promise<unknown>;
+};
+
 async function withFindManyStub<T>(
   delegate: FindManyDelegate,
   rows: unknown,
@@ -31,6 +35,25 @@ async function withFindManyStub<T>(
     return await run(calls);
   } finally {
     delegate.findMany = originalFindMany;
+  }
+}
+
+async function withFindUniqueStub<T>(
+  delegate: FindUniqueDelegate,
+  row: unknown,
+  run: (args: unknown[]) => Promise<T>
+) {
+  const originalFindUnique = delegate.findUnique;
+  const calls: unknown[] = [];
+  delegate.findUnique = async (args: unknown) => {
+    calls.push(args);
+    return row;
+  };
+
+  try {
+    return await run(calls);
+  } finally {
+    delegate.findUnique = originalFindUnique;
   }
 }
 
@@ -263,6 +286,125 @@ describe("dashboard list query payloads", () => {
         monto_neto: true,
         estado: true,
         propietario: { select: { nombre: true } },
+      });
+    });
+  });
+
+  it("LiquidacionesService.obtenerDetalle returns the complete audit trail in one query", async () => {
+    const row = {
+      id: 40,
+      id_propietario: 4,
+      fecha_corrida: new Date("2026-09-12T12:00:00Z"),
+      fecha_desde: new Date("2026-09-01"),
+      fecha_hasta: new Date("2026-09-30"),
+      monto_bruto: "100000.00",
+      retenciones: "15000.00",
+      adelantos_descontados: "5000.00",
+      monto_neto: "80000.00",
+      estado: "PENDIENTE",
+      propietario: { id: 4, nombre: "Dueño" },
+      items: [],
+      deducciones: [],
+    };
+    const service = LiquidacionesService as typeof LiquidacionesService & {
+      obtenerDetalle: (id: number) => Promise<unknown>;
+    };
+
+    assert.equal(
+      typeof service.obtenerDetalle,
+      "function",
+      "el servicio debe exponer el detalle auditable de una liquidación"
+    );
+
+    await withFindUniqueStub(prisma.liquidacion as unknown as FindUniqueDelegate, row, async (calls) => {
+      const result = await service.obtenerDetalle(40);
+      assert.deepEqual(result, row);
+      assert.deepEqual(calls[0], {
+        where: { id: 40 },
+        select: {
+          id: true,
+          id_propietario: true,
+          fecha_corrida: true,
+          fecha_desde: true,
+          fecha_hasta: true,
+          monto_bruto: true,
+          retenciones: true,
+          adelantos_descontados: true,
+          monto_neto: true,
+          estado: true,
+          propietario: { select: { id: true, nombre: true } },
+          items: {
+            select: {
+              id: true,
+              id_periodo: true,
+              id_propiedad: true,
+              monto_bruto: true,
+              comision: true,
+              gastos: true,
+              monto_neto: true,
+              propiedad: { select: { id: true, direccion: true } },
+              periodo: {
+                select: {
+                  id: true,
+                  periodo: true,
+                  contrato: {
+                    select: {
+                      id: true,
+                      inquilino: { select: { id: true, nombre: true } },
+                    },
+                  },
+                },
+              },
+              aplicaciones: {
+                select: {
+                  id: true,
+                  monto_aplicado: true,
+                  transaccion: {
+                    select: { id: true, tipo: true, fecha_transaccion: true },
+                  },
+                  cargo: {
+                    select: {
+                      id: true,
+                      tipo: true,
+                      monto: true,
+                      descripcion: true,
+                    },
+                  },
+                },
+                orderBy: { id: "asc" },
+              },
+              gastos_item: {
+                select: {
+                  id: true,
+                  concepto: true,
+                  categoria_interno: true,
+                  tipo: true,
+                  monto: true,
+                  estado_pago: true,
+                  creado_en: true,
+                },
+                orderBy: { id: "asc" },
+              },
+            },
+            orderBy: [{ id_propiedad: "asc" }, { id: "asc" }],
+          },
+          deducciones: {
+            select: {
+              id: true,
+              id_transaccion: true,
+              monto_descontado: true,
+              transaccion: {
+                select: {
+                  id: true,
+                  monto: true,
+                  fecha_transaccion: true,
+                  comentario: true,
+                },
+              },
+            },
+            orderBy: { id: "asc" },
+          },
+        },
       });
     });
   });
