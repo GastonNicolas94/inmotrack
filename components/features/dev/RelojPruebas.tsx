@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 export function RelojPruebas({ initialFecha }: { initialFecha: string }) {
   const [fecha, setFecha] = useState(initialFecha);
@@ -95,8 +95,8 @@ export function RelojPruebas({ initialFecha }: { initialFecha: string }) {
           Probá enero → febrero → marzo → abril. En abril, si el contrato ajusta cada 3 meses, el cierre debe detenerse y aparecer el ajuste pendiente.
         </p>
         <div className="mt-4 flex gap-3">
-          <Button asChild variant="outline"><Link href="/contratos">Ir a Contratos</Link></Button>
-          <Button asChild variant="outline"><Link href="/">Ir al Dashboard</Link></Button>
+          <Link className={buttonVariants({ variant: "outline" })} href="/contratos">Ir a Contratos</Link>
+          <Link className={buttonVariants({ variant: "outline" })} href="/">Ir al Dashboard</Link>
         </div>
       </div>
     </div>
