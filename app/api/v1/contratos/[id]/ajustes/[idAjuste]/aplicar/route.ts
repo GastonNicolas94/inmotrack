@@ -4,7 +4,6 @@ import { aplicarAjusteContratoSchema } from "@/schemas/ajuste-contrato.schema";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { errorResponse } from "@/lib/errors";
-import { HttpError } from "@/lib/http-error";
 
 export async function POST(
   req: NextRequest,
@@ -52,7 +51,6 @@ export async function POST(
       },
     });
   } catch (error) {
-    if (error instanceof HttpError) return handleServiceError(error);
-    return errorResponse("AJUSTE_ERROR", error instanceof Error ? error.message : String(error), 400);
+    return handleServiceError(error);
   }
 }
