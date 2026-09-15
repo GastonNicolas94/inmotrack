@@ -4,6 +4,11 @@ import { aplicarAjusteContratoSchema } from "@/schemas/ajuste-contrato.schema";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { errorResponse } from "@/lib/errors";
+import {
+  relojPruebasHabilitado,
+  TEST_CLOCK_COOKIE,
+  TEST_CLOCK_HEADER,
+} from "@/lib/reloj-pruebas";
 
 export async function POST(
   req: NextRequest,
@@ -25,17 +30,19 @@ export async function POST(
       user.id,
     );
 
-    // Aplicar() deja una fila PENDIENTE en el outbox. El worker que había
-    // detectado el ajuste ya terminó su cadena al quedar bloqueado, por lo
-    // que esta mutación debe reactivar explícitamente el consumidor para
-    // continuar el catch-up sin esperar al cron mensual siguiente.
+    const fechaPrueba = relojPruebasHabilitado()
+      ? req.cookies.get(TEST_CLOCK_COOKIE)?.value
+      : undefined;
+
     after(async () => {
       const secret = process.env.CRON_SECRET;
       if (!secret) return;
       const url = new URL("/api/v1/cron/procesar-cola-cierre", req.url);
+      const headers: Record<string, string> = { Authorization: `Bearer ${secret}` };
+      if (fechaPrueba) headers[TEST_CLOCK_HEADER] = fechaPrueba;
       await fetch(url, {
         method: "POST",
-        headers: { Authorization: `Bearer ${secret}` },
+        headers,
       }).catch(() => {});
     });
 
