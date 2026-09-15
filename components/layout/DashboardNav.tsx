@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   FileText, Building2, UserRound, Users,
-  Wallet, Receipt, HandCoins, BookText, LayoutDashboard,
+  Wallet, Receipt, HandCoins, BookText, LayoutDashboard, Clock3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NavLinkPendingIndicator } from "@/components/layout/NavLinkPendingIndicator";
@@ -21,12 +21,21 @@ const NAV_ITEMS = [
   { href: "/transacciones", label: "Libro Diario", icon: BookText },
 ];
 
-export function DashboardNav({ onNavigate }: { onNavigate?: () => void }) {
+export function DashboardNav({
+  onNavigate,
+  showTestClock = false,
+}: {
+  onNavigate?: () => void;
+  showTestClock?: boolean;
+}) {
   const pathname = usePathname();
+  const items = showTestClock
+    ? [...NAV_ITEMS, { href: "/dev/reloj", label: "Reloj de pruebas", icon: Clock3 }]
+    : NAV_ITEMS;
 
   return (
     <nav className="flex-1 space-y-0.5 p-3">
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const active = item.href === "/" ? pathname === "/" : pathname?.startsWith(item.href);
         const Icon = item.icon;
         return (
