@@ -1,17 +1,30 @@
-import { test } from "node:test";
+import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import * as fecha from "@/lib/fecha";
+import { resolverFechaOperativa } from "@/lib/fecha";
+import { relojPruebasHabilitado } from "@/lib/reloj-pruebas";
 
-test("expone un resolver de fecha operativa explícita para el reloj de pruebas", () => {
-  assert.equal(typeof (fecha as Record<string, unknown>).resolverFechaOperativa, "function");
-});
+describe("reloj de pruebas", () => {
+  test("resuelve una fecha operativa explícita sin depender del reloj real", () => {
+    assert.deepEqual(resolverFechaOperativa("2026-04-15"), {
+      anio: 2026,
+      mes: 4,
+      dia: 15,
+    });
+  });
 
-test("el reloj de pruebas solo se habilita en local o preview, nunca en producción real", async () => {
-  const modulo = await import("@/lib/reloj-pruebas").catch(() => null);
-  assert.ok(modulo, "falta implementar el módulo del reloj de pruebas");
-  if (!modulo) return;
+  test("rechaza fechas calendarias imposibles", () => {
+    assert.throws(() => resolverFechaOperativa("2026-02-31"), /fuera de rango/i);
+  });
 
-  assert.equal(modulo.relojPruebasHabilitado({ NODE_ENV: "development" }), true);
-  assert.equal(modulo.relojPruebasHabilitado({ NODE_ENV: "production", VERCEL_ENV: "preview" }), true);
-  assert.equal(modulo.relojPruebasHabilitado({ NODE_ENV: "production", VERCEL_ENV: "production" }), false);
+  test("solo se habilita en local o preview, nunca en producción real", () => {
+    assert.equal(relojPruebasHabilitado({ NODE_ENV: "development" }), true);
+    assert.equal(
+      relojPruebasHabilitado({ NODE_ENV: "production", VERCEL_ENV: "preview" }),
+      true,
+    );
+    assert.equal(
+      relojPruebasHabilitado({ NODE_ENV: "production", VERCEL_ENV: "production" }),
+      false,
+    );
+  });
 });
