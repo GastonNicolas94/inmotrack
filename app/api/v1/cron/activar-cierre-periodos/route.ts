@@ -1,7 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { validarCronSecret } from "@/lib/cron-auth";
-import { CierrePeriodosClockService } from "@/services/cierre-periodos-clock.service";
-import { ContratosClockService } from "@/services/contratos-clock.service";
+import { CierrePeriodosService } from "@/services/cierre-periodos.service";
+import { ContratosService } from "@/services/contratos.service";
 import { errorResponse } from "@/lib/errors";
 
 export async function GET(req: Request) {
@@ -9,8 +9,8 @@ export async function GET(req: Request) {
     return errorResponse("UNAUTHORIZED", "Secret inválido.", 401);
   }
 
-  const { encolados, vencidos } = await CierrePeriodosClockService.encolarContratosVencidos();
-  const { marcados: por_vencer } = await ContratosClockService.marcarContratosPorVencer();
+  const { encolados, vencidos } = await CierrePeriodosService.encolarContratosVencidos();
+  const { marcados: por_vencer } = await ContratosService.marcarContratosPorVencer();
 
   after(async () => {
     const secret = process.env.CRON_SECRET;
