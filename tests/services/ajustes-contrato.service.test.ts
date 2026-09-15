@@ -37,6 +37,13 @@ async function crearEscenario() {
   return { usuario, contrato };
 }
 
+async function crearAjustePendiente(idContrato: number) {
+  return prisma.$transaction(async (tx) => {
+    const contratoTx = await tx.contrato.findUniqueOrThrow({ where: { id: idContrato } });
+    return AjustesContratoService.crearOReutilizarPendiente(tx, contratoTx, "2026-04");
+  });
+}
+
 describe("AjustesContratoService", () => {
   beforeEach(async () => {
     await cleanDatabase();
@@ -60,10 +67,7 @@ describe("AjustesContratoService", () => {
 
   it("aplica el nuevo monto y reencola el contrato en la misma operación", async () => {
     const { usuario, contrato } = await crearEscenario();
-    const ajuste = await prisma.$transaction(async (tx) => {
-      const contratoTx = await tx.contrato.findUniqueOrThrow({ where: { id: contrato.id } });
-      return AjustesContratoService.crearOReutilizarPendiente(tx, contratoTx, "2026-04");
-    });
+    const ajuste = await crearAjustePendiente(contrato.id);
 
     await AjustesContratoService.aplicar(
       contrato.id,
@@ -89,10 +93,7 @@ describe("AjustesContratoService", () => {
 
   it("rechaza aplicar dos veces el mismo ajuste", async () => {
     const { usuario, contrato } = await crearEscenario();
-    const ajuste = await prisma.$transaction(async (tx) => {
-      const contratoTx = await tx.contrato.findUniqueOrThrow({ where: { id: contrato.id } });
-      return AjustesContratoService.crearOReutilizarPendiente(tx, contratoTx, "2026-04");
-    });
+    const ajuste = await crearAjustePendiente(contrato.id);
 
     await AjustesContratoService.aplicar(contrato.id, ajuste.id, { monto_nuevo: 600000 }, usuario.id);
 
@@ -100,5 +101,39 @@ describe("AjustesContratoService", () => {
       () => AjustesContratoService.aplicar(contrato.id, ajuste.id, { monto_nuevo: 650000 }, usuario.id),
       /ya fue aplicado/i,
     );
+  });
+
+  it("ante dos aplicaciones concurrentes solo una gana y existe un único reencolado", async () => {
+    const { usuario, contrato } = await crearEscenario();
+    const ajuste = await crearAjustePendiente(contrato.id);
+
+    const resultados = await Promise.allSettled([
+      AjustesContratoService.aplicar(
+        contrato.id,
+        ajuste.id,
+        { monto_nuevo: 600000, observacion: "primer intento" },
+        usuario.id,
+      ),
+      AjustesContratoService.aplicar(
+        contrato.id,
+        ajuste.id,
+        { monto_nuevo: 650000, observacion: "segundo intento" },
+        usuario.id,
+      ),
+    ]);
+
+    assert.equal(resultados.filter((resultado) => resultado.status === "fulfilled").length, 1);
+    assert.equal(resultados.filter((resultado) => resultado.status === "rejected").length, 1);
+
+    const aplicado = await prisma.ajusteContrato.findUniqueOrThrow({ where: { id: ajuste.id } });
+    const contratoActualizado = await prisma.contrato.findUniqueOrThrow({ where: { id: contrato.id } });
+    const pendientesOutbox = await prisma.outboxCierrePeriodo.count({
+      where: { id_contrato: contrato.id, estado: "PENDIENTE" },
+    });
+
+    assert.equal(aplicado.estado, "APLICADO");
+    assert.ok([600000, 650000].includes(Number(aplicado.monto_nuevo)));
+    assert.equal(Number(contratoActualizado.monto_base), Number(aplicado.monto_nuevo));
+    assert.equal(pendientesOutbox, 1);
   });
 });
