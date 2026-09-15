@@ -4,15 +4,13 @@ import { handleServiceError } from "@/lib/api-error-handler";
 import { errorResponse } from "@/lib/errors";
 import { relojPruebasHabilitado } from "@/lib/reloj-pruebas";
 import { EditableTestClock } from "@/lib/app-clock";
-import { CierrePeriodosService } from "@/services/cierre-periodos.service";
+import { CierrePeriodosClockService } from "@/services/cierre-periodos-clock.service";
 
 const MAX_FILAS_POR_EJECUCION = 500;
 
 export async function GET() {
   try {
-    if (!relojPruebasHabilitado()) {
-      return errorResponse("NOT_FOUND", "Recurso no disponible.", 404);
-    }
+    if (!relojPruebasHabilitado()) return errorResponse("NOT_FOUND", "Recurso no disponible.", 404);
     await requireAdmin();
     return NextResponse.json({ fecha: await EditableTestClock.getDate() });
   } catch (error) {
@@ -22,9 +20,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    if (!relojPruebasHabilitado()) {
-      return errorResponse("NOT_FOUND", "Recurso no disponible.", 404);
-    }
+    if (!relojPruebasHabilitado()) return errorResponse("NOT_FOUND", "Recurso no disponible.", 404);
 
     await requireAdmin();
     const body = (await req.json()) as { fecha?: unknown; ejecutar?: unknown };
@@ -42,19 +38,14 @@ export async function POST(req: Request) {
     } | null = null;
 
     if (body.ejecutar === true) {
-      const { encolados, vencidos } = await CierrePeriodosService.encolarContratosVencidos();
+      const { encolados, vencidos } = await CierrePeriodosClockService.encolarContratosVencidos();
       let procesadas = 0;
       while (procesadas < MAX_FILAS_POR_EJECUCION) {
-        const { huboTrabajo } = await CierrePeriodosService.procesarUnaFilaDeCola();
+        const { huboTrabajo } = await CierrePeriodosClockService.procesarUnaFilaDeCola();
         if (!huboTrabajo) break;
         procesadas += 1;
       }
-      resultado = {
-        encolados,
-        vencidos,
-        procesadas,
-        limiteAlcanzado: procesadas === MAX_FILAS_POR_EJECUCION,
-      };
+      resultado = { encolados, vencidos, procesadas, limiteAlcanzado: procesadas === MAX_FILAS_POR_EJECUCION };
     }
 
     return NextResponse.json({ fecha: body.fecha, resultado });
@@ -65,9 +56,7 @@ export async function POST(req: Request) {
 
 export async function DELETE() {
   try {
-    if (!relojPruebasHabilitado()) {
-      return errorResponse("NOT_FOUND", "Recurso no disponible.", 404);
-    }
+    if (!relojPruebasHabilitado()) return errorResponse("NOT_FOUND", "Recurso no disponible.", 404);
     await requireAdmin();
     await EditableTestClock.clear();
     return NextResponse.json({ ok: true });
