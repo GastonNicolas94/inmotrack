@@ -7,16 +7,19 @@ import { createDashboardService } from "@/services/dashboard.service";
 
 const now = new Date("2026-09-15T15:00:00.000Z");
 const service = createDashboardService({ prisma, now: () => now });
+let fixtureSequence = 0;
 
 async function crearContratoConAjuste(params: { propia: boolean; direccion: string }) {
+  fixtureSequence += 1;
+  const suffix = String(fixtureSequence).padStart(2, "0");
   const propietario = await prisma.propietario.create({
-    data: { nombre: `Dueño ${params.direccion}`, cbu: String(Math.floor(Math.random() * 1e21)).padStart(22, "0").slice(0, 22) },
+    data: { nombre: `Dueño ${params.direccion}`, cbu: `00000000000000000000${suffix}` },
   });
   const propiedad = await prisma.propiedad.create({
     data: { id_propietario: propietario.id, direccion: params.direccion, es_propia: params.propia },
   });
   const inquilino = await prisma.inquilino.create({
-    data: { nombre: `Inquilino ${params.direccion}`, dni_cuit: `${Date.now()}${Math.floor(Math.random() * 1000)}`.slice(0, 20) },
+    data: { nombre: `Inquilino ${params.direccion}`, dni_cuit: `209999999${suffix}` },
   });
   const contrato = await prisma.contrato.create({
     data: {
@@ -44,6 +47,7 @@ async function crearContratoConAjuste(params: { propia: boolean; direccion: stri
 
 describe("DashboardService ajustes pendientes", () => {
   beforeEach(async () => {
+    fixtureSequence = 0;
     await cleanDatabase();
   });
 
