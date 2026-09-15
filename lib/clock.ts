@@ -49,7 +49,10 @@ export function createSystemClock(source: () => Date = () => new Date()): Clock 
   };
 }
 
-export function createTestClock(store: TestClockStore): MutableClock {
+export function createTestClock(
+  store: TestClockStore,
+  source: () => Date = () => new Date(),
+): MutableClock {
   return {
     async getDate() {
       return store.get();
@@ -63,13 +66,11 @@ export function createTestClock(store: TestClockStore): MutableClock {
     },
     async now() {
       const fecha = await store.get();
-      if (!fecha) throw new Error("El reloj de pruebas no tiene una fecha configurada.");
-      return simulatedNow(fecha);
+      return fecha ? simulatedNow(fecha) : new Date(source().getTime());
     },
     async today() {
       const fecha = await store.get();
-      if (!fecha) throw new Error("El reloj de pruebas no tiene una fecha configurada.");
-      return parseFechaCalendario(fecha);
+      return fecha ? parseFechaCalendario(fecha) : argentinaParts(source());
     },
   };
 }
@@ -80,6 +81,6 @@ export function createClock(
   source: () => Date = () => new Date(),
 ): Clock {
   return relojPruebasHabilitado(env)
-    ? createTestClock(store)
+    ? createTestClock(store, source)
     : createSystemClock(source);
 }
