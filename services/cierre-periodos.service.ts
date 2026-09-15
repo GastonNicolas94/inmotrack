@@ -10,14 +10,22 @@ interface FilaOutbox {
   intentos: number;
 }
 
+function validarIdContratoOpcional(idContrato?: number): void {
+  if (idContrato !== undefined && (!Number.isInteger(idContrato) || idContrato <= 0)) {
+    throw new Error("ID de contrato de prueba inválido.");
+  }
+}
+
 export const CierrePeriodosService = {
-  async encolarContratosVencidos(fechaOperativa?: string) {
+  async encolarContratosVencidos(fechaOperativa?: string, idContrato?: number) {
+    validarIdContratoOpcional(idContrato);
     const { anio, mes, dia } = resolverFechaOperativa(fechaOperativa);
     const mesActual = `${anio}-${String(mes).padStart(2, "0")}`;
     const hoyStr = `${anio}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
 
     const contratos = await prisma.contrato.findMany({
       where: {
+        ...(idContrato !== undefined ? { id: idContrato } : {}),
         estado: { in: ["ACTIVO", "MOROSO", "POR_VENCER"] },
         periodos_pago: {
           some: { estado_ciclo: "ABIERTO", periodo: { lt: mesActual } },
@@ -57,9 +65,11 @@ export const CierrePeriodosService = {
     return { encolados, vencidos };
   },
 
-  async procesarUnaFilaDeCola(fechaOperativa?: string): Promise<{ huboTrabajo: boolean }> {
+  async procesarUnaFilaDeCola(fechaOperativa?: string, idContrato?: number): Promise<{ huboTrabajo: boolean }> {
+    validarIdContratoOpcional(idContrato);
     const { anio: anioActual, mes: mesActual } = resolverFechaOperativa(fechaOperativa);
     const mesActualStr = `${anioActual}-${String(mesActual).padStart(2, "0")}`;
+    const filtroContrato = idContrato !== undefined ? `AND id_contrato = ${idContrato}` : "";
 
     const filas = await prisma.$queryRawUnsafe<FilaOutbox[]>(`
       UPDATE outbox_cierre_periodo
@@ -67,6 +77,7 @@ export const CierrePeriodosService = {
       WHERE id = (
         SELECT id FROM outbox_cierre_periodo
         WHERE estado = 'PENDIENTE'
+        ${filtroContrato}
         ORDER BY creado_en ASC
         LIMIT 1
         FOR UPDATE SKIP LOCKED
