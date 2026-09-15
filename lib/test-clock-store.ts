@@ -21,53 +21,78 @@ function localStore(): TestClockStore {
   };
 }
 
+function parseGlobalConfigConnection(raw: string | undefined) {
+  if (!raw) return null;
+
+  const url = new URL(raw);
+  const configId = url.pathname.split("/").filter(Boolean)[0];
+  if (!configId) return null;
+
+  return { url, configId };
+}
+
 function globalConfigStore(env: EnvLike, fetchImpl: FetchLike): TestClockStore {
-  function config() {
-    const configId = env.INMOTRACK_TEST_CLOCK_CONFIG_ID;
-    const readToken = env.INMOTRACK_TEST_CLOCK_READ_TOKEN;
-    const writeToken = env.INMOTRACK_TEST_CLOCK_VERCEL_TOKEN;
-    const teamId = env.INMOTRACK_TEST_CLOCK_TEAM_ID;
-    if (!configId || !readToken || !writeToken || !teamId) return null;
-    return {
-      readUrl: `https://global-config.vercel.com/${configId}/item/${CLOCK_KEY}?token=${encodeURIComponent(readToken)}`,
-      writeUrl: `https://api.vercel.com/v1/global-config/${configId}/items?teamId=${encodeURIComponent(teamId)}`,
-      writeToken,
-    };
+  function connection() {
+    return parseGlobalConfigConnection(env.GLOBAL_CONFIG);
   }
 
-  function requireConfig() {
-    const value = config();
-    if (!value) throw new Error("Reloj de pruebas sin configurar: faltan variables de Global Config de Vercel.");
-    return value;
+  function readUrl() {
+    const value = connection();
+    if (!value) return null;
+
+    const url = new URL(value.url.toString());
+    url.pathname = `/${value.configId}/item/${CLOCK_KEY}`;
+    return url.toString();
+  }
+
+  function writeConfig() {
+    const value = connection();
+    if (!value) {
+      throw new Error("Reloj de pruebas sin configurar: GLOBAL_CONFIG no está conectada al Preview.");
+    }
+
+    const writeToken = env.VERCEL_TOKEN;
+    if (!writeToken) {
+      throw new Error("Reloj de pruebas sin token de escritura: falta VERCEL_TOKEN en Preview.");
+    }
+
+    const writeUrl = new URL(`https://api.vercel.com/v1/global-config/${value.configId}/items`);
+    if (env.VERCEL_TEAM_ID) writeUrl.searchParams.set("teamId", env.VERCEL_TEAM_ID);
+
+    return { writeUrl: writeUrl.toString(), writeToken };
+  }
+
+  async function mutate(items: Array<Record<string, unknown>>) {
+    const { writeUrl, writeToken } = writeConfig();
+    const response = await fetchImpl(writeUrl, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${writeToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ items }),
+    });
+
+    if (!response.ok) throw new Error(`No se pudo actualizar el reloj global (${response.status}).`);
   }
 
   return {
     async get() {
-      const value = config();
-      if (!value) return null;
-      const response = await fetchImpl(value.readUrl, { cache: "no-store" });
+      const url = readUrl();
+      if (!url) return null;
+
+      const response = await fetchImpl(url, { cache: "no-store" });
       if (response.status === 404) return null;
       if (!response.ok) throw new Error(`No se pudo leer el reloj global (${response.status}).`);
+
       const stored = await response.json();
       return typeof stored === "string" ? stored : null;
     },
     async set(fecha) {
-      const { writeUrl, writeToken } = requireConfig();
-      const response = await fetchImpl(writeUrl, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${writeToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ items: [{ operation: "upsert", key: CLOCK_KEY, value: fecha }] }),
-      });
-      if (!response.ok) throw new Error(`No se pudo actualizar el reloj global (${response.status}).`);
+      await mutate([{ operation: "upsert", key: CLOCK_KEY, value: fecha }]);
     },
     async clear() {
-      const { writeUrl, writeToken } = requireConfig();
-      const response = await fetchImpl(writeUrl, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${writeToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ items: [{ operation: "delete", key: CLOCK_KEY }] }),
-      });
-      if (!response.ok) throw new Error(`No se pudo limpiar el reloj global (${response.status}).`);
+      await mutate([{ operation: "delete", key: CLOCK_KEY }]);
     },
   };
 }
