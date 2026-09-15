@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { AjustesContratoService } from "@/services/ajustes-contrato.service";
 import { aplicarAjusteContratoSchema } from "@/schemas/ajuste-contrato.schema";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
@@ -25,6 +25,20 @@ export async function POST(
       parsed.data,
       user.id,
     );
+
+    // Aplicar() deja una fila PENDIENTE en el outbox. El worker que había
+    // detectado el ajuste ya terminó su cadena al quedar bloqueado, por lo
+    // que esta mutación debe reactivar explícitamente el consumidor para
+    // continuar el catch-up sin esperar al cron mensual siguiente.
+    after(async () => {
+      const secret = process.env.CRON_SECRET;
+      if (!secret) return;
+      const url = new URL("/api/v1/cron/procesar-cola-cierre", req.url);
+      await fetch(url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${secret}` },
+      }).catch(() => {});
+    });
 
     return NextResponse.json({
       contrato: {
