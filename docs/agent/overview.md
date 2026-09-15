@@ -1,6 +1,6 @@
 ---
 type: Overview
-version: b0da4ff
+version: global-clock
 validated: 2026-09-15
 update_when: Purpose changes, new roles/actors added, or capability scope shifts
 scope:
@@ -47,13 +47,30 @@ No hay multi-sitio ni multi-tenant — un solo despliegue, tres roles fijos. `pr
 | `EMPLEADO` | Casi todo | Bloqueado en rutas `SOLO_ADMIN` (aprobar liquidación, contra-asiento, registrar adelanto — ver [contracts.md](contracts.md)) |
 | `AUDITOR` | Nada (solo `GET`) | Además, PII (email/DNI/CBU/teléfono) se enmascara en las respuestas que llaman `aplicarMasking` (`lib/masking.ts`) — no es automático en todas las rutas, hay que revisar cada una |
 
+## Reloj de aplicación
+
+Toda lógica que necesita conocer "ahora" o "hoy" debe depender de la interfaz `Clock` de `lib/clock.ts`, inyectada por factory en los services. El composition root `lib/app-clock.ts` selecciona la implementación:
+
+- **Producción (`VERCEL_ENV=production`)**: `SystemClock`, fecha/hora real de Argentina.
+- **Local / Preview**: `TestClock`; si no hay fecha simulada configurada cae a la fecha real, y si existe una fecha simulada todo consumidor del `AppClock` observa la misma fecha.
+- **Preview**: el estado del `TestClock` se guarda fuera de Postgres mediante Vercel Global Config (`lib/test-clock-store.ts`). La UI `/dev/reloj` modifica ese valor global; no usa cookies, headers ni scope por contrato.
+
+Variables requeridas en Preview para Global Config:
+
+- `INMOTRACK_TEST_CLOCK_CONFIG_ID`
+- `INMOTRACK_TEST_CLOCK_READ_TOKEN`
+- `INMOTRACK_TEST_CLOCK_VERCEL_TOKEN`
+- `INMOTRACK_TEST_CLOCK_TEAM_ID`
+
+No introducir `new Date()`/`Date.now()` como fuente de tiempo de negocio dentro de un service. Crear `Date` para convertir una fecha explícita o hacer aritmética calendaria sí es válido.
+
 ## Capability map
 
 | Capability | Code location |
 |-----------|--------------|
 | Contratos (alta, activación, wizard) | `services/contratos.service.ts`, `components/features/contratos/WizardContrato.tsx` |
 | Ajustes periódicos de alquiler (detección, historial, aplicación manual, reencolado) | `lib/ajustes-contrato.ts`, `services/ajustes-contrato.service.ts`, `components/features/contratos/ModalAjustesContrato.tsx` |
-| Reloj de pruebas para simular fecha operativa y ejecutar cierres en local/preview | `lib/reloj-pruebas.ts`, `app/(dashboard)/dev/reloj`, `app/api/v1/dev/reloj-pruebas/route.ts` |
+| Reloj global de aplicación y reloj de pruebas local/preview | `lib/clock.ts`, `lib/app-clock.ts`, `lib/test-clock-store.ts`, `app/(dashboard)/dev/reloj`, `app/api/v1/dev/reloj-pruebas/route.ts` |
 | Confección de contrato (Cargo cobrable, con punitorios, sin Gasto) | `services/contratos.service.ts`, `services/pagos.service.ts`, `lib/cargos.ts` |
 | Apertura/cierre automático de períodos (outbox + cron) | `services/cierre-periodos.service.ts`, `app/api/v1/cron/*` |
 | Registrar pagos (prelación punitorios→alquiler→gastos/confección) | `services/pagos.service.ts` |
@@ -63,7 +80,7 @@ No hay multi-sitio ni multi-tenant — un solo despliegue, tres roles fijos. `pr
 | Libro diario / transacciones / contra-asientos | `services/transacciones.service.ts` |
 | Liquidación a propietarios (selección por rango, grano dual) | `services/liquidaciones.service.ts` |
 | Adelantos a propietarios (registrar, descontar con prelación por antigüedad) | `services/adelantos.service.ts` |
-| Snapshot agregado del dashboard operativo/financiero | `services/dashboard.service.ts`, `lib/dashboard/{filters,metrics,types}.ts` |
+| Snapshot agregado del dashboard operativo/financiero | `services/dashboard.service.ts`, `services/dashboard-clock.service.ts`, `lib/dashboard/{filters,metrics,types}.ts` |
 | Estado de cobranza / liquidación de un Cargo (derivado, nunca cacheado) | `lib/estado-cobranza.ts`, `lib/saldos.ts` |
 | Auth y control de acceso por rol | `lib/supabase/{client,server,admin,proxy}.ts`, `lib/auth-context.ts`, `proxy.ts`, `services/usuarios.service.ts` |
 
