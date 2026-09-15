@@ -4,7 +4,7 @@ import { handleServiceError } from "@/lib/api-error-handler";
 import { errorResponse } from "@/lib/errors";
 import { relojPruebasHabilitado } from "@/lib/reloj-pruebas";
 import { EditableTestClock } from "@/lib/app-clock";
-import { CierrePeriodosClockService } from "@/services/cierre-periodos-clock.service";
+import { CierrePeriodosService } from "@/services/cierre-periodos.service";
 
 const MAX_FILAS_POR_EJECUCION = 500;
 
@@ -38,10 +38,10 @@ export async function POST(req: Request) {
     } | null = null;
 
     if (body.ejecutar === true) {
-      const { encolados, vencidos } = await CierrePeriodosClockService.encolarContratosVencidos();
+      const { encolados, vencidos } = await CierrePeriodosService.encolarContratosVencidos();
       let procesadas = 0;
       while (procesadas < MAX_FILAS_POR_EJECUCION) {
-        const { huboTrabajo } = await CierrePeriodosClockService.procesarUnaFilaDeCola();
+        const { huboTrabajo } = await CierrePeriodosService.procesarUnaFilaDeCola();
         if (!huboTrabajo) break;
         procesadas += 1;
       }
