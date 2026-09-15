@@ -24,7 +24,7 @@ describe("test clock store", () => {
     );
   });
 
-  test("preview sobrescribe la fecha usando el id de GLOBAL_CONFIG", async () => {
+  test("preview crea la fecha cuando la key todavía no existe", async () => {
     const requests: Array<{ url: string; init?: RequestInit }> = [];
     const store = createTestClockStore(
       {
@@ -36,23 +36,20 @@ describe("test clock store", () => {
       },
       (async (input, init) => {
         requests.push({ url: String(input), init });
+        if (!init?.method) return new Response(JSON.stringify({ error: "not found" }), { status: 404 });
         return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
       }) as typeof fetch,
     );
 
     await store.set("2026-04-15");
 
-    assert.equal(
-      requests[0]?.url,
-      "https://api.vercel.com/v1/global-config/ecfg_clock/items?teamId=team_clock",
-    );
-    assert.equal(requests[0]?.init?.method, "PATCH");
-    assert.deepEqual(JSON.parse(String(requests[0]?.init?.body)), {
-      items: [{ operation: "upsert", key: "inmotrack_test_date", value: "2026-04-15" }],
+    assert.equal(requests.length, 2);
+    assert.deepEqual(JSON.parse(String(requests[1]?.init?.body)), {
+      items: [{ operation: "create", key: "inmotrack_test_date", value: "2026-04-15" }],
     });
   });
 
-  test("preview usa VERCEL_ORG_ID del runtime para scopear escrituras cuando no hay VERCEL_TEAM_ID", async () => {
+  test("preview actualiza la fecha cuando la key ya existe", async () => {
     const requests: Array<{ url: string; init?: RequestInit }> = [];
     const store = createTestClockStore(
       {
@@ -64,6 +61,7 @@ describe("test clock store", () => {
       },
       (async (input, init) => {
         requests.push({ url: String(input), init });
+        if (!init?.method) return new Response(JSON.stringify("2026-04-01"), { status: 200 });
         return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
       }) as typeof fetch,
     );
@@ -71,9 +69,31 @@ describe("test clock store", () => {
     await store.set("2026-04-15");
 
     assert.equal(
-      requests[0]?.url,
+      requests[1]?.url,
       "https://api.vercel.com/v1/global-config/ecfg_clock/items?teamId=team_runtime",
     );
+    assert.deepEqual(JSON.parse(String(requests[1]?.init?.body)), {
+      items: [{ operation: "update", key: "inmotrack_test_date", value: "2026-04-15" }],
+    });
+  });
+
+  test("preview ignora clear cuando la key no existe", async () => {
+    const requests: Array<{ url: string; init?: RequestInit }> = [];
+    const store = createTestClockStore(
+      {
+        NODE_ENV: "production",
+        VERCEL_ENV: "preview",
+        GLOBAL_CONFIG: "https://global-config.vercel.com/ecfg_clock?token=read-token",
+        VERCEL_TOKEN: "write-token",
+      },
+      (async (input, init) => {
+        requests.push({ url: String(input), init });
+        return new Response(JSON.stringify(null), { status: 404 });
+      }) as typeof fetch,
+    );
+
+    await store.clear();
+    assert.equal(requests.length, 1);
   });
 
   test("preview puede leer pero rechaza escrituras si falta token de escritura", async () => {
