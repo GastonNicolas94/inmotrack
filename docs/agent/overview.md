@@ -35,7 +35,7 @@ Cuatro responsabilidades principales:
 | UI | shadcn/ui ("base-nova") + Tailwind v4, estilo editorial tipo apple.com |
 | Hosting objetivo | Vercel (cron jobs vía `vercel.json`) |
 | Arquetipo | Monolito Next.js — rutas API finas, lógica de negocio en `services/` |
-| Repo | Personal, un solo desarrollador — sin CI configurada (ver [runbook.md](runbook.md)) |
+| Repo | Personal, un solo desarrollador — CI con Supabase local en GitHub Actions (ver [runbook.md](runbook.md)) |
 
 ## Roles
 
@@ -53,6 +53,7 @@ No hay multi-sitio ni multi-tenant — un solo despliegue, tres roles fijos. `pr
 |-----------|--------------|
 | Contratos (alta, activación, wizard) | `services/contratos.service.ts`, `components/features/contratos/WizardContrato.tsx` |
 | Ajustes periódicos de alquiler (detección, historial, aplicación manual, reencolado) | `lib/ajustes-contrato.ts`, `services/ajustes-contrato.service.ts`, `components/features/contratos/ModalAjustesContrato.tsx` |
+| Reloj de pruebas para simular fecha operativa y ejecutar cierres en local/preview | `lib/reloj-pruebas.ts`, `app/(dashboard)/dev/reloj`, `app/api/v1/dev/reloj-pruebas/route.ts` |
 | Confección de contrato (Cargo cobrable, con punitorios, sin Gasto) | `services/contratos.service.ts`, `services/pagos.service.ts`, `lib/cargos.ts` |
 | Apertura/cierre automático de períodos (outbox + cron) | `services/cierre-periodos.service.ts`, `app/api/v1/cron/*` |
 | Registrar pagos (prelación punitorios→alquiler→gastos/confección) | `services/pagos.service.ts` |
