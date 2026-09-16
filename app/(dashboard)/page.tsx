@@ -5,7 +5,8 @@ import { FinancialDashboard } from "@/components/features/dashboard/FinancialDas
 import { OperationalDashboard } from "@/components/features/dashboard/OperationalDashboard";
 import { parseDashboardFilters } from "@/lib/dashboard/filters";
 import type { DashboardSearchParams, FinancialDashboardData, OperationalDashboardData } from "@/lib/dashboard/types";
-import { DashboardService } from "@/services/dashboard.service";
+import { DashboardClockService } from "@/services/dashboard-clock.service";
+import { AppClock } from "@/lib/app-clock";
 
 export const dynamic = "force-dynamic";
 
@@ -15,15 +16,13 @@ type DashboardPageProps = {
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const params = searchParams ? await searchParams : {};
-  const filters = parseDashboardFilters(params);
+  const filters = parseDashboardFilters(params, await AppClock.now());
   const dataPromise = filters.tab === "financiero"
-    ? DashboardService.getFinancialData(filters)
-    : DashboardService.getOperationalData(filters);
+    ? DashboardClockService.getFinancialData(filters)
+    : DashboardClockService.getOperationalData(filters);
 
-  // Keep the controls usable even if loading the property list or the selected
-  // dashboard fails independently.
   const [propertiesResult, dataResult] = await Promise.allSettled([
-    DashboardService.listPropertyOptions(),
+    DashboardClockService.listPropertyOptions(),
     dataPromise,
   ]);
   const properties = propertiesResult.status === "fulfilled" ? propertiesResult.value : [];

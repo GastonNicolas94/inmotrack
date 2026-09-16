@@ -11,8 +11,6 @@ export async function POST(req: Request) {
   const { huboTrabajo } = await CierrePeriodosService.procesarUnaFilaDeCola();
 
   if (huboTrabajo) {
-    // Se re-dispara a sí mismo sin esperar — la próxima invocación decide
-    // en su propio paso si queda más trabajo o si la cadena se apaga.
     after(async () => {
       const secret = process.env.CRON_SECRET;
       const url = new URL("/api/v1/cron/procesar-cola-cierre", req.url);

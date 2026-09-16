@@ -1,6 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["gru1"],
+  "git": {
+    "deploymentEnabled": false
+  },
   "crons": [
     {
       "path": "/api/v1/cron/activar-cierre-periodos",

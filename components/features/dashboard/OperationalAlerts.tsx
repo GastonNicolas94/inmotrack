@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowUpRight, CalendarClock, Receipt, WalletCards } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, CalendarClock, Receipt, RefreshCcw, WalletCards } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DashboardEmptyState } from "@/components/features/dashboard/DashboardStates";
@@ -7,12 +7,14 @@ import { formatFechaLocal } from "@/lib/fecha";
 import type { DashboardAlert, DashboardAlertKind } from "@/lib/dashboard/types";
 
 const KIND_LABEL: Record<DashboardAlertKind, string> = {
+  "ajuste-pendiente": "Ajuste",
   "contrato-por-vencer": "Contrato",
   "deuda-vencida": "Deuda",
   "gasto-pendiente": "Gasto",
   "liquidacion-pendiente": "Liquidación",
 };
 const KIND_ICON: Record<DashboardAlertKind, typeof AlertTriangle> = {
+  "ajuste-pendiente": RefreshCcw,
   "contrato-por-vencer": CalendarClock,
   "deuda-vencida": WalletCards,
   "gasto-pendiente": Receipt,

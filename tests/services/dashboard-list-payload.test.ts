@@ -87,6 +87,20 @@ describe("dashboard list query payloads", () => {
         fecha_fin: true,
         estado: true,
         monto_base: true,
+        indice_act: true,
+        meses_act: true,
+        ajustes: {
+          where: { estado: "PENDIENTE" },
+          select: {
+            id: true,
+            periodo_efectivo: true,
+            indice: true,
+            monto_anterior: true,
+            creado_en: true,
+          },
+          orderBy: [{ periodo_efectivo: "asc" }, { id: "asc" }],
+          take: 1,
+        },
         propiedad: { select: { direccion: true, propietario: { select: { nombre: true } } } },
         inquilino: { select: { nombre: true } },
       });
