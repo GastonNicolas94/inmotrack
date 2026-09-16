@@ -35,6 +35,20 @@ test("maps Prisma missing records to 404", async () => {
   assert.equal((await body(response)).error_code, "NOT_FOUND");
 });
 
+test("maps technical Prisma errors to 500 without exposing database details", async () => {
+  const response = handleServiceError(
+    new Prisma.PrismaClientKnownRequestError("relation public.secret_table does not exist", {
+      code: "P2021",
+      clientVersion: "test",
+    }),
+  );
+  assert.equal(response.status, 500);
+  assert.deepEqual(await body(response), {
+    error_code: "SERVER_ERROR",
+    message: "Error interno del servidor.",
+  });
+});
+
 test("maps other errors to business violations", async () => {
   const response = handleServiceError(new Error("invalid state"));
   assert.equal(response.status, 400);
@@ -44,11 +58,11 @@ test("maps other errors to business violations", async () => {
   });
 });
 
-test("maps non-Error throws to server errors", async () => {
+test("maps non-Error throws to generic server errors", async () => {
   const response = handleServiceError("broken");
   assert.equal(response.status, 500);
   assert.deepEqual(await body(response), {
     error_code: "SERVER_ERROR",
-    message: "broken",
+    message: "Error interno del servidor.",
   });
 });

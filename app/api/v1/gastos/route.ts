@@ -4,8 +4,9 @@ import { gastoSchema } from "@/schemas/gasto.schema";
 import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
+import { withObservability } from "@/lib/observability/with-observability";
 
-export async function GET() {
+async function getGastos() {
   try {
     await requireAuthenticatedUser();
     const gastos = await GastosService.listar();
@@ -15,7 +16,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function postGasto(req: NextRequest) {
   try {
     const user = await requireAuthenticatedUser();
     assertCanWrite(user);
@@ -33,3 +34,6 @@ export async function POST(req: NextRequest) {
     return handleServiceError(e);
   }
 }
+
+export const GET = withObservability(getGastos);
+export const POST = withObservability(postGasto);
