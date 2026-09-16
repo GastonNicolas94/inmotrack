@@ -95,3 +95,5 @@ Este repo usa el flujo `superpowers` (brainstorming → spec → implementación
 - Planes de implementación: [`docs/superpowers/plans/`](../superpowers/plans/)
 - Deuda técnica y hallazgos pendientes: [`docs/superpowers/plans/TODO.md`](../superpowers/plans/TODO.md) — **leer antes de asumir que algo "falta" es un bug nuevo**, puede que ya esté anotado con la razón por la que se dejó así.
 - Documento de arquitectura original (bootstrap del proyecto): [`SDD.md`](../../SDD.md)
+
+<!-- deploy-check: 2026-09-15T21:32-03:00 -->
