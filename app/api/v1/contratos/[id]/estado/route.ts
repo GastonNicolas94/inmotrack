@@ -6,6 +6,8 @@ import { handleServiceError } from "@/lib/api-error-handler";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
 import { HttpError } from "@/lib/http-error";
 import { withObservability } from "@/lib/observability/with-observability";
+import { logger } from "@/lib/observability/logger";
+import { DOMAIN_EVENTS } from "@/lib/observability/events";
 
 const estadoSchema = z.object({
   estado: z.enum(["BORRADOR", "ACTIVO", "MOROSO", "POR_VENCER", "VENCIDO", "RESCINDIDO"]),
@@ -26,7 +28,11 @@ async function patchEstadoContrato(
       return errorResponse("VALIDATION_ERROR", "Estado inválido.", 400);
     }
 
-    const contrato = await ContratosService.cambiarEstado(Number(id), parsed.data.estado);
+    const contractId = Number(id);
+    const contrato = await ContratosService.cambiarEstado(contractId, parsed.data.estado);
+    if (parsed.data.estado === "RESCINDIDO") {
+      logger.info(DOMAIN_EVENTS.CONTRACT_CANCELLED, { contractId });
+    }
     return NextResponse.json(contrato);
   } catch (e) {
     if (e instanceof HttpError) return handleServiceError(e);
