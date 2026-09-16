@@ -82,7 +82,8 @@ describe("test clock store", () => {
     });
   });
 
-  test("preview rechaza escrituras sin scope de team", async () => {
+  test("preview usa el team de InmoTrack cuando Vercel no expone variables de scope", async () => {
+    const requests: Array<{ url: string; init?: RequestInit }> = [];
     const store = createTestClockStore(
       {
         NODE_ENV: "production",
@@ -90,11 +91,20 @@ describe("test clock store", () => {
         GLOBAL_CONFIG: "https://global-config.vercel.com/ecfg_clock?token=read-token",
         VERCEL_TOKEN: "write-token",
       },
-      fetch,
-      async () => null,
+      (async (input, init) => {
+        requests.push({ url: String(input), init });
+        return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
+      }) as typeof fetch,
+      async () => "2026-04-01",
     );
 
-    await assert.rejects(() => store.set("2026-04-15"), /team/i);
+    await store.set("2026-04-15");
+
+    assert.equal(requests.length, 1);
+    assert.equal(
+      requests[0]?.url,
+      "https://api.vercel.com/v1/global-config/ecfg_clock/items?teamId=team_pSHI2gL7fkccZnt2ayzYTco7",
+    );
   });
 
   test("preview puede leer pero rechaza escrituras si falta token de escritura", async () => {
@@ -103,7 +113,6 @@ describe("test clock store", () => {
         NODE_ENV: "production",
         VERCEL_ENV: "preview",
         GLOBAL_CONFIG: "https://global-config.vercel.com/ecfg_clock?token=read-token",
-        VERCEL_TEAM_ID: "team_clock",
       },
       fetch,
       async () => null,
