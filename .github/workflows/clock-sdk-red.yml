@@ -1,0 +1,22 @@
+name: Clock SDK red-green
+
+on:
+  push:
+    branches:
+      - feat/contract-rent-adjustments
+
+permissions:
+  contents: read
+
+jobs:
+  clock-sdk-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --import tsx --conditions=react-server --test tests/lib/test-clock-store.test.ts
