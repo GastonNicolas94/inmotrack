@@ -5,8 +5,9 @@ import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
 import { aplicarMasking } from "@/lib/masking";
+import { withObservability } from "@/lib/observability/with-observability";
 
-export async function GET() {
+async function getInquilinos() {
   try {
     const user = await requireAuthenticatedUser();
     const data = await InquilinosService.listar();
@@ -16,7 +17,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function postInquilino(req: NextRequest) {
   try {
     const user = await requireAuthenticatedUser();
     assertCanWrite(user);
@@ -35,3 +36,6 @@ export async function POST(req: NextRequest) {
     return handleServiceError(e);
   }
 }
+
+export const GET = withObservability(getInquilinos);
+export const POST = withObservability(postInquilino);
