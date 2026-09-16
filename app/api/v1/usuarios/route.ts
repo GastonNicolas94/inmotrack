@@ -6,8 +6,9 @@ import { requireAdmin, requireAuthenticatedUser } from "@/lib/auth-context";
 import { UsuariosService } from "@/services/usuarios.service";
 import { invitarUsuarioSchema } from "@/schemas/usuario.schema";
 import { z } from "zod";
+import { withObservability } from "@/lib/observability/with-observability";
 
-export async function GET() {
+async function getUsuarios() {
   try {
     const actor = await requireAuthenticatedUser();
     const usuarios = await UsuariosService.listar(actor);
@@ -17,7 +18,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function postUsuario(req: NextRequest) {
   try {
     const actor = await requireAdmin();
     const body = await req.json();
@@ -38,10 +39,9 @@ const delegacionSchema = z.object({
   puede_aprobar: z.boolean(),
 });
 
-export async function PATCH(req: NextRequest) {
+async function patchUsuario(req: NextRequest) {
   try {
     await requireAdmin();
-
     const body = await req.json();
     const parsed = delegacionSchema.safeParse(body);
     if (!parsed.success) {
@@ -72,3 +72,7 @@ export async function PATCH(req: NextRequest) {
     return handleServiceError(e);
   }
 }
+
+export const GET = withObservability(getUsuarios);
+export const POST = withObservability(postUsuario);
+export const PATCH = withObservability(patchUsuario);

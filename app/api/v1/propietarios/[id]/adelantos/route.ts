@@ -4,8 +4,9 @@ import { registrarAdelantoSchema } from "@/schemas/adelanto.schema";
 import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { requireAdmin, requireAuthenticatedUser } from "@/lib/auth-context";
+import { withObservability } from "@/lib/observability/with-observability";
 
-export async function GET(
+async function getAdelantos(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -26,7 +27,7 @@ export async function GET(
   }
 }
 
-export async function POST(
+async function postAdelanto(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -51,3 +52,6 @@ export async function POST(
     return handleServiceError(e);
   }
 }
+
+export const GET = withObservability(getAdelantos);
+export const POST = withObservability(postAdelanto);
