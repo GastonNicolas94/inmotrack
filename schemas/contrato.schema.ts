@@ -24,6 +24,10 @@ export const contratoSchema = z
     message: "La fecha de fin debe ser posterior a la de inicio.",
     path: ["fecha_fin"],
   })
+  .refine((d) => !d.indice_act || d.meses_act != null, {
+    message: "Indicá cada cuántos meses se actualiza el contrato.",
+    path: ["meses_act"],
+  })
   .refine((d) => !d.cobra_confeccion || d.estrategia_confeccion, {
     message: "Elegí una estrategia de cálculo para la confección de contrato.",
     path: ["estrategia_confeccion"],
