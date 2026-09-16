@@ -4,8 +4,9 @@ import { pagoSchema } from "@/schemas/pago.schema";
 import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
+import { withObservability } from "@/lib/observability/with-observability";
 
-export async function GET() {
+async function getPagos() {
   try {
     await requireAuthenticatedUser();
     const pagos = await PagosService.listarRecientes();
@@ -15,7 +16,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function postPago(req: NextRequest) {
   try {
     const user = await requireAuthenticatedUser();
     assertCanWrite(user);
@@ -36,3 +37,6 @@ export async function POST(req: NextRequest) {
     return handleServiceError(e);
   }
 }
+
+export const GET = withObservability(getPagos);
+export const POST = withObservability(postPago);
