@@ -1,0 +1,25 @@
+name: Contrato schema TDD
+
+on:
+  push:
+    branches:
+      - feat/contract-rent-adjustments
+    paths:
+      - tests/schemas/contrato.schema.test.ts
+      - schemas/contrato.schema.ts
+      - .github/workflows/tmp-contrato-schema-tdd.yml
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --import tsx --test tests/schemas/contrato.schema.test.ts
