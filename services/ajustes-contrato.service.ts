@@ -114,13 +114,12 @@ export function createAjustesContratoService(deps: AjustesContratoDependencies) 
           where: { id_contrato: idContrato, estado: "PENDIENTE" },
           select: { id: true },
         });
-        if (!yaPendiente) {
-          await tx.outboxCierrePeriodo.create({
-            data: { id_contrato: idContrato, estado: "PENDIENTE", creado_en: aplicadoEn },
-          });
-        }
+        const outbox = yaPendiente ?? await tx.outboxCierrePeriodo.create({
+          data: { id_contrato: idContrato, estado: "PENDIENTE", creado_en: aplicadoEn },
+          select: { id: true },
+        });
 
-        return { contrato: contratoActualizado, ajuste: ajusteAplicado };
+        return { contrato: contratoActualizado, ajuste: ajusteAplicado, outboxId: outbox.id };
       });
     },
   };
