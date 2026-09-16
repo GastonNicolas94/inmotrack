@@ -47,8 +47,15 @@ function globalConfigStore(
       throw new Error("Reloj de pruebas sin token de escritura: falta VERCEL_TOKEN en Preview.");
     }
 
+    const teamId = env.VERCEL_TEAM_ID ?? env.VERCEL_ORG_ID;
+    if (!teamId) {
+      throw new Error(
+        "Reloj de pruebas sin scope de team: falta VERCEL_TEAM_ID/VERCEL_ORG_ID en Preview.",
+      );
+    }
+
     const writeUrl = new URL(`https://api.vercel.com/v1/global-config/${configId}/items`);
-    if (env.VERCEL_TEAM_ID) writeUrl.searchParams.set("teamId", env.VERCEL_TEAM_ID);
+    writeUrl.searchParams.set("teamId", teamId);
 
     return { writeUrl: writeUrl.toString(), writeToken };
   }
