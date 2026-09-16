@@ -24,13 +24,13 @@ describe("test clock store", () => {
     assert.deepEqual(reads, ["inmotrack_test_date"]);
   });
 
-  test("preview actualiza la fecha mediante la API oficial de Global Config", async () => {
+  test("preview escribe sobre el Global Config inmotrack-test-clock conocido", async () => {
     const requests: Array<{ url: string; init?: RequestInit }> = [];
     const store = createTestClockStore(
       {
         NODE_ENV: "production",
         VERCEL_ENV: "preview",
-        GLOBAL_CONFIG: "https://global-config.vercel.com/ecfg_clock?token=read-token",
+        GLOBAL_CONFIG: "https://global-config.vercel.com/ecfg_otro_store?token=read-token",
         VERCEL_TOKEN: "write-token",
         VERCEL_TEAM_ID: "team_clock",
       },
@@ -46,7 +46,7 @@ describe("test clock store", () => {
     assert.equal(requests.length, 1);
     assert.equal(
       requests[0]?.url,
-      "https://api.vercel.com/v1/global-config/ecfg_clock/items?teamId=team_clock",
+      "https://api.vercel.com/v1/global-config/ecfg_dgdcbruhamcqzsjkbtpelw41vkvg/items?teamId=team_clock",
     );
     assert.deepEqual(JSON.parse(String(requests[0]?.init?.body)), {
       items: [{ operation: "upsert", key: "inmotrack_test_date", value: "2026-04-15" }],
@@ -75,7 +75,7 @@ describe("test clock store", () => {
     assert.equal(requests.length, 1);
     assert.equal(
       requests[0]?.url,
-      "https://api.vercel.com/v1/global-config/ecfg_clock/items?teamId=team_runtime",
+      "https://api.vercel.com/v1/global-config/ecfg_dgdcbruhamcqzsjkbtpelw41vkvg/items?teamId=team_runtime",
     );
     assert.deepEqual(JSON.parse(String(requests[0]?.init?.body)), {
       items: [{ operation: "delete", key: "inmotrack_test_date" }],
@@ -103,7 +103,7 @@ describe("test clock store", () => {
     assert.equal(requests.length, 1);
     assert.equal(
       requests[0]?.url,
-      "https://api.vercel.com/v1/global-config/ecfg_clock/items?teamId=team_pSHI2gL7fkccZnt2ayzYTco7",
+      "https://api.vercel.com/v1/global-config/ecfg_dgdcbruhamcqzsjkbtpelw41vkvg/items?teamId=team_pSHI2gL7fkccZnt2ayzYTco7",
     );
   });
 
