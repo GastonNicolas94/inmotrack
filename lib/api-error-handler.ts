@@ -1,9 +1,9 @@
 import { Prisma } from "@prisma/client";
-import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 import { IdempotencyConflictError } from "@/lib/idempotency";
 import { errorResponse } from "@/lib/errors";
 import { HttpError } from "@/lib/http-error";
+import { captureException } from "@/lib/observability/sentry-runtime";
 
 /**
  * Traduce un error lanzado por la capa de servicio a una respuesta HTTP.
@@ -25,7 +25,7 @@ export function handleServiceError(e: unknown): NextResponse {
       return errorResponse("NOT_FOUND", "El recurso no existe.", 404);
     }
 
-    Sentry.captureException(e, {
+    captureException(e, {
       tags: {
         layer: "database",
         prisma_code: e.code,
@@ -36,6 +36,6 @@ export function handleServiceError(e: unknown): NextResponse {
   if (e instanceof Error) {
     return errorResponse("BUSINESS_RULE_VIOLATION", e.message, 400);
   }
-  Sentry.captureException(e, { tags: { layer: "service" } });
+  captureException(e, { tags: { layer: "service" } });
   return errorResponse("SERVER_ERROR", "Error interno del servidor.", 500);
 }
