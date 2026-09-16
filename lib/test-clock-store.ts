@@ -2,6 +2,7 @@ import { get as getGlobalConfigItem } from "@vercel/global-config";
 import type { TestClockStore } from "@/lib/clock";
 
 const CLOCK_KEY = "inmotrack_test_date";
+const INMOTRACK_VERCEL_TEAM_ID = "team_pSHI2gL7fkccZnt2ayzYTco7";
 
 type EnvLike = Record<string, string | undefined>;
 type FetchLike = typeof fetch;
@@ -47,13 +48,7 @@ function globalConfigStore(
       throw new Error("Reloj de pruebas sin token de escritura: falta VERCEL_TOKEN en Preview.");
     }
 
-    const teamId = env.VERCEL_TEAM_ID ?? env.VERCEL_ORG_ID;
-    if (!teamId) {
-      throw new Error(
-        "Reloj de pruebas sin scope de team: falta VERCEL_TEAM_ID/VERCEL_ORG_ID en Preview.",
-      );
-    }
-
+    const teamId = env.VERCEL_TEAM_ID ?? env.VERCEL_ORG_ID ?? INMOTRACK_VERCEL_TEAM_ID;
     const writeUrl = new URL(`https://api.vercel.com/v1/global-config/${configId}/items`);
     writeUrl.searchParams.set("teamId", teamId);
 
