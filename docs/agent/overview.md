@@ -53,17 +53,17 @@ Toda lógica que necesita conocer "ahora" o "hoy" debe depender de la interfaz `
 
 - **Producción (`VERCEL_ENV=production`)**: `SystemClock`, fecha/hora real de Argentina.
 - **Local / Preview**: `TestClock`; si no hay fecha simulada configurada cae a la fecha real, y si existe una fecha simulada todo consumidor del `AppClock` observa la misma fecha.
-- **Preview**: el estado del `TestClock` se guarda fuera de Postgres mediante Vercel Global Config (`lib/test-clock-store.ts`). La UI `/dev/reloj` modifica ese valor global; no usa cookies, headers ni scope por contrato.
+- **Preview**: el estado del `TestClock` se guarda fuera de Postgres mediante un Vercel Blob privado (`lib/test-clock-store.ts`). La UI `/dev/reloj` modifica ese valor global; no usa cookies, headers ni scope por contrato.
 
 Configuración de Preview:
 
-- `GLOBAL_CONFIG`: la crea Vercel automáticamente al adjuntar `inmotrack-test-clock` al proyecto; incluye la connection string de lectura al store (`https://global-config.vercel.com/<globalConfigId>?token=<read-token>`). Las lecturas se hacen con `@vercel/global-config`.
-- `VERCEL_TOKEN`: token de Vercel REST API con permisos de escritura sobre Global Config; se usa únicamente en el backend de Preview para que `/dev/reloj` pueda sobrescribir o borrar `inmotrack_test_date`.
-- Los writes van a `https://api.vercel.com/v1/global-config/<globalConfigId>/items` y, como el store pertenece al Team de Vercel, deben incluir siempre `?teamId=<teamId>`. El runtime usa `VERCEL_TEAM_ID` y cae a `VERCEL_ORG_ID` si esa es la variable expuesta por el entorno.
+- Conectar un **Vercel Blob privado** al proyecto `inmotrack` para el entorno Preview. Vercel inyecta las credenciales del store al runtime (`BLOB_READ_WRITE_TOKEN` o autenticación OIDC según la configuración del proyecto).
+- El reloj usa el pathname fijo `inmotrack/test-clock.json` con contenido `{ "fecha": "YYYY-MM-DD" }`.
+- Las escrituras usan `put(..., { access: "private", allowOverwrite: true })`.
+- Las lecturas usan `get(..., { access: "private", useCache: false })` para observar inmediatamente la última fecha escrita y no una copia cacheada.
+- Limpiar el reloj elimina ese Blob con `del(...)`.
 
-Cuando se agrega o cambia `VERCEL_TOKEN` en Vercel, hace falta un redeploy del Preview una sola vez para que las funciones nuevas reciban esa env. Después, cambiar la fecha desde `/dev/reloj` no requiere nuevos deploys.
-
-La fecha simulada **no** vive en una variable de entorno. Vive en la key mutable `inmotrack_test_date` de Global Config y se cambia en runtime desde `/dev/reloj`, sin redeploy.
+La fecha simulada **no** vive en una variable de entorno ni en PostgreSQL. Vive en el Blob privado mutable y se cambia en runtime desde `/dev/reloj`, sin redeploy.
 
 No introducir `new Date()`/`Date.now()` como fuente de tiempo de negocio dentro de un service. Crear `Date` para convertir una fecha explícita o hacer aritmética calendaria sí es válido.
 
