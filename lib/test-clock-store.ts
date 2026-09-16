@@ -2,6 +2,7 @@ import { get as getGlobalConfigItem } from "@vercel/global-config";
 import type { TestClockStore } from "@/lib/clock";
 
 const CLOCK_KEY = "inmotrack_test_date";
+const INMOTRACK_TEST_CLOCK_GLOBAL_CONFIG_ID = "ecfg_dgdcbruhamcqzsjkbtpelw41vkvg";
 const INMOTRACK_VERCEL_TEAM_ID = "team_pSHI2gL7fkccZnt2ayzYTco7";
 
 type EnvLike = Record<string, string | undefined>;
@@ -24,22 +25,13 @@ function localStore(): TestClockStore {
   };
 }
 
-function parseGlobalConfigId(raw: string | undefined) {
-  if (!raw) return null;
-
-  const url = new URL(raw);
-  const configId = url.pathname.split("/").filter(Boolean)[0];
-  return configId || null;
-}
-
 function globalConfigStore(
   env: EnvLike,
   fetchImpl: FetchLike,
   getItem: GlobalConfigGet,
 ): TestClockStore {
   function writeConfig() {
-    const configId = parseGlobalConfigId(env.GLOBAL_CONFIG);
-    if (!configId) {
+    if (!env.GLOBAL_CONFIG) {
       throw new Error("Reloj de pruebas sin configurar: GLOBAL_CONFIG no está conectada al Preview.");
     }
 
@@ -49,7 +41,9 @@ function globalConfigStore(
     }
 
     const teamId = env.VERCEL_TEAM_ID ?? env.VERCEL_ORG_ID ?? INMOTRACK_VERCEL_TEAM_ID;
-    const writeUrl = new URL(`https://api.vercel.com/v1/global-config/${configId}/items`);
+    const writeUrl = new URL(
+      `https://api.vercel.com/v1/global-config/${INMOTRACK_TEST_CLOCK_GLOBAL_CONFIG_ID}/items`,
+    );
     writeUrl.searchParams.set("teamId", teamId);
 
     return { writeUrl: writeUrl.toString(), writeToken };
