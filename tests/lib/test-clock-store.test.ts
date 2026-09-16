@@ -2,179 +2,114 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { createTestClockStore } from "@/lib/test-clock-store";
 
-const CONFIG_ID = "ecfg_dgdcbruhamcqzsjkbtpelw41vkvg";
-const ITEM_KEY = "inmotrack_test_date";
+const CLOCK_PATH = "inmotrack/test-clock.json";
+
+function blobBody(value: unknown) {
+  return new Response(JSON.stringify(value)).body!;
+}
 
 describe("test clock store", () => {
-  test("preview lee la fecha usando el SDK oficial de Global Config", async () => {
-    const reads: string[] = [];
+  test("preview lee la fecha desde Vercel Blob privado sin cache", async () => {
+    const calls: Array<{ pathname: string; options: unknown }> = [];
     const store = createTestClockStore(
+      { NODE_ENV: "production", VERCEL_ENV: "preview" },
       {
-        NODE_ENV: "production",
-        VERCEL_ENV: "preview",
-        GLOBAL_CONFIG: "https://global-config.vercel.com/ecfg_clock?token=read-token",
-      },
-      (async () => {
-        throw new Error("la lectura no debe usar fetch manual");
-      }) as typeof fetch,
-      async (key) => {
-        reads.push(key);
-        return "2026-04-15";
+        async get(pathname, options) {
+          calls.push({ pathname, options });
+          return {
+            statusCode: 200,
+            stream: blobBody({ fecha: "2026-04-15" }),
+          };
+        },
+        async put() {
+          throw new Error("no debe escribir");
+        },
+        async del() {
+          throw new Error("no debe borrar");
+        },
       },
     );
 
     assert.equal(await store.get(), "2026-04-15");
-    assert.deepEqual(reads, [ITEM_KEY]);
+    assert.deepEqual(calls, [
+      {
+        pathname: CLOCK_PATH,
+        options: { access: "private", useCache: false },
+      },
+    ]);
   });
 
-  test("preview verifica el item con la API de administracion antes de escribir", async () => {
-    const requests: Array<{ url: string; init?: RequestInit }> = [];
+  test("preview devuelve null cuando el Blob todavia no existe", async () => {
     const store = createTestClockStore(
+      { NODE_ENV: "production", VERCEL_ENV: "preview" },
       {
-        NODE_ENV: "production",
-        VERCEL_ENV: "preview",
-        GLOBAL_CONFIG: "https://global-config.vercel.com/ecfg_otro_store?token=read-token",
-        VERCEL_TOKEN: "write-token",
-        VERCEL_TEAM_ID: "team_clock",
+        async get() {
+          return null;
+        },
+        async put() {
+          throw new Error("no debe escribir");
+        },
+        async del() {
+          throw new Error("no debe borrar");
+        },
       },
-      (async (input, init) => {
-        requests.push({ url: String(input), init });
-        if (init?.method === "GET") {
-          return new Response(JSON.stringify({ key: ITEM_KEY, value: "2026-04-01" }), { status: 200 });
-        }
-        return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
-      }) as typeof fetch,
-      async () => "2026-04-01",
-    );
-
-    await store.set("2026-04-15");
-
-    assert.equal(requests.length, 2);
-    assert.equal(requests[0]?.init?.method, "GET");
-    assert.equal(
-      requests[0]?.url,
-      `https://api.vercel.com/v1/global-config/${CONFIG_ID}/item/${ITEM_KEY}?teamId=team_clock`,
-    );
-    assert.equal(requests[1]?.init?.method, "PATCH");
-    assert.equal(
-      requests[1]?.url,
-      `https://api.vercel.com/v1/global-config/${CONFIG_ID}/items?teamId=team_clock`,
-    );
-    assert.deepEqual(JSON.parse(String(requests[1]?.init?.body)), {
-      items: [{ operation: "upsert", key: ITEM_KEY, value: "2026-04-15" }],
-    });
-  });
-
-  test("preview corta antes del PATCH y expone el diagnostico si la API de administracion no ve el item", async () => {
-    const requests: Array<{ url: string; init?: RequestInit }> = [];
-    const store = createTestClockStore(
-      {
-        NODE_ENV: "production",
-        VERCEL_ENV: "preview",
-        GLOBAL_CONFIG: "https://global-config.vercel.com/ecfg_otro_store?token=read-token",
-        VERCEL_TOKEN: "write-token",
-        VERCEL_TEAM_ID: "team_clock",
-      },
-      (async (input, init) => {
-        requests.push({ url: String(input), init });
-        return new Response(
-          JSON.stringify({ error: { code: "not_found", message: "Edge Config Item not found." } }),
-          { status: 404 },
-        );
-      }) as typeof fetch,
-      async () => "2026-04-01",
-    );
-
-    await assert.rejects(
-      () => store.set("2026-04-15"),
-      /verificacion de item.*404.*Edge Config Item not found/i,
-    );
-
-    assert.equal(requests.length, 1);
-    assert.equal(requests[0]?.init?.method, "GET");
-  });
-
-  test("preview usa VERCEL_ORG_ID como teamId cuando VERCEL_TEAM_ID no esta disponible", async () => {
-    const requests: Array<{ url: string; init?: RequestInit }> = [];
-    const store = createTestClockStore(
-      {
-        NODE_ENV: "production",
-        VERCEL_ENV: "preview",
-        GLOBAL_CONFIG: "https://global-config.vercel.com/ecfg_clock?token=read-token",
-        VERCEL_TOKEN: "write-token",
-        VERCEL_ORG_ID: "team_runtime",
-      },
-      (async (input, init) => {
-        requests.push({ url: String(input), init });
-        if (init?.method === "GET") {
-          return new Response(JSON.stringify({ key: ITEM_KEY, value: "2026-04-15" }), { status: 200 });
-        }
-        return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
-      }) as typeof fetch,
-      async () => "2026-04-15",
-    );
-
-    await store.clear();
-
-    assert.equal(requests.length, 2);
-    assert.equal(
-      requests[0]?.url,
-      `https://api.vercel.com/v1/global-config/${CONFIG_ID}/item/${ITEM_KEY}?teamId=team_runtime`,
-    );
-    assert.equal(
-      requests[1]?.url,
-      `https://api.vercel.com/v1/global-config/${CONFIG_ID}/items?teamId=team_runtime`,
-    );
-    assert.deepEqual(JSON.parse(String(requests[1]?.init?.body)), {
-      items: [{ operation: "delete", key: ITEM_KEY }],
-    });
-  });
-
-  test("preview usa el team de InmoTrack cuando Vercel no expone variables de scope", async () => {
-    const requests: Array<{ url: string; init?: RequestInit }> = [];
-    const store = createTestClockStore(
-      {
-        NODE_ENV: "production",
-        VERCEL_ENV: "preview",
-        GLOBAL_CONFIG: "https://global-config.vercel.com/ecfg_clock?token=read-token",
-        VERCEL_TOKEN: "write-token",
-      },
-      (async (input, init) => {
-        requests.push({ url: String(input), init });
-        if (init?.method === "GET") {
-          return new Response(JSON.stringify({ key: ITEM_KEY, value: "2026-04-01" }), { status: 200 });
-        }
-        return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
-      }) as typeof fetch,
-      async () => "2026-04-01",
-    );
-
-    await store.set("2026-04-15");
-
-    assert.equal(requests.length, 2);
-    assert.equal(
-      requests[0]?.url,
-      `https://api.vercel.com/v1/global-config/${CONFIG_ID}/item/${ITEM_KEY}?teamId=team_pSHI2gL7fkccZnt2ayzYTco7`,
-    );
-    assert.equal(
-      requests[1]?.url,
-      `https://api.vercel.com/v1/global-config/${CONFIG_ID}/items?teamId=team_pSHI2gL7fkccZnt2ayzYTco7`,
-    );
-  });
-
-  test("preview puede leer pero rechaza escrituras si falta token de escritura", async () => {
-    const store = createTestClockStore(
-      {
-        NODE_ENV: "production",
-        VERCEL_ENV: "preview",
-        GLOBAL_CONFIG: "https://global-config.vercel.com/ecfg_clock?token=read-token",
-      },
-      fetch,
-      async () => null,
     );
 
     assert.equal(await store.get(), null);
-    await assert.rejects(() => store.set("2026-04-15"), /token de escritura/i);
+  });
+
+  test("preview sobrescribe la fecha en un Blob privado", async () => {
+    const calls: Array<{ pathname: string; body: string; options: unknown }> = [];
+    const store = createTestClockStore(
+      { NODE_ENV: "production", VERCEL_ENV: "preview" },
+      {
+        async get() {
+          return null;
+        },
+        async put(pathname, body, options) {
+          calls.push({ pathname, body: String(body), options });
+          return { url: "https://example.private.blob.vercel-storage.com/inmotrack/test-clock.json" };
+        },
+        async del() {
+          throw new Error("no debe borrar");
+        },
+      },
+    );
+
+    await store.set("2026-04-15");
+
+    assert.deepEqual(calls, [
+      {
+        pathname: CLOCK_PATH,
+        body: JSON.stringify({ fecha: "2026-04-15" }),
+        options: {
+          access: "private",
+          allowOverwrite: true,
+          contentType: "application/json",
+        },
+      },
+    ]);
+  });
+
+  test("preview borra el Blob al limpiar la fecha simulada", async () => {
+    const deleted: string[] = [];
+    const store = createTestClockStore(
+      { NODE_ENV: "production", VERCEL_ENV: "preview" },
+      {
+        async get() {
+          return null;
+        },
+        async put() {
+          throw new Error("no debe escribir");
+        },
+        async del(pathname) {
+          deleted.push(pathname);
+        },
+      },
+    );
+
+    await store.clear();
+    assert.deepEqual(deleted, [CLOCK_PATH]);
   });
 
   test("local mantiene una fecha simulada compartida en memoria", async () => {
