@@ -1,9 +1,11 @@
+import { get as getGlobalConfigItem } from "@vercel/global-config";
 import type { TestClockStore } from "@/lib/clock";
 
 const CLOCK_KEY = "inmotrack_test_date";
 
 type EnvLike = Record<string, string | undefined>;
 type FetchLike = typeof fetch;
+type GlobalConfigGet = (key: string) => Promise<unknown>;
 
 const globalClock = globalThis as typeof globalThis & { __inmotrackTestDate?: string | null };
 
@@ -21,33 +23,22 @@ function localStore(): TestClockStore {
   };
 }
 
-function parseGlobalConfigConnection(raw: string | undefined) {
+function parseGlobalConfigId(raw: string | undefined) {
   if (!raw) return null;
 
   const url = new URL(raw);
   const configId = url.pathname.split("/").filter(Boolean)[0];
-  if (!configId) return null;
-
-  return { url, configId };
+  return configId || null;
 }
 
-function globalConfigStore(env: EnvLike, fetchImpl: FetchLike): TestClockStore {
-  function connection() {
-    return parseGlobalConfigConnection(env.GLOBAL_CONFIG);
-  }
-
-  function readUrl() {
-    const value = connection();
-    if (!value) return null;
-
-    const url = new URL(value.url.toString());
-    url.pathname = `/${value.configId}/item/${CLOCK_KEY}`;
-    return url.toString();
-  }
-
+function globalConfigStore(
+  env: EnvLike,
+  fetchImpl: FetchLike,
+  getItem: GlobalConfigGet,
+): TestClockStore {
   function writeConfig() {
-    const value = connection();
-    if (!value) {
+    const configId = parseGlobalConfigId(env.GLOBAL_CONFIG);
+    if (!configId) {
       throw new Error("Reloj de pruebas sin configurar: GLOBAL_CONFIG no está conectada al Preview.");
     }
 
@@ -56,23 +47,15 @@ function globalConfigStore(env: EnvLike, fetchImpl: FetchLike): TestClockStore {
       throw new Error("Reloj de pruebas sin token de escritura: falta VERCEL_TOKEN en Preview.");
     }
 
-    const writeUrl = new URL(`https://api.vercel.com/v1/global-config/${value.configId}/items`);
-    const teamId = env.VERCEL_TEAM_ID ?? env.VERCEL_ORG_ID;
-    if (teamId) writeUrl.searchParams.set("teamId", teamId);
+    const writeUrl = new URL(`https://api.vercel.com/v1/global-config/${configId}/items`);
+    if (env.VERCEL_TEAM_ID) writeUrl.searchParams.set("teamId", env.VERCEL_TEAM_ID);
 
     return { writeUrl: writeUrl.toString(), writeToken };
   }
 
-  async function getStoredDate() {
-    const url = readUrl();
-    if (!url) return { configured: false, value: null as string | null };
-
-    const response = await fetchImpl(url, { cache: "no-store" });
-    if (response.status === 404) return { configured: false, value: null as string | null };
-    if (!response.ok) throw new Error(`No se pudo leer el reloj global (${response.status}).`);
-
-    const stored = await response.json();
-    return { configured: true, value: typeof stored === "string" ? stored : null };
+  async function readStoredDate() {
+    const stored = await getItem(CLOCK_KEY);
+    return typeof stored === "string" ? stored : null;
   }
 
   async function mutate(items: Array<Record<string, unknown>>) {
@@ -95,22 +78,19 @@ function globalConfigStore(env: EnvLike, fetchImpl: FetchLike): TestClockStore {
 
   return {
     async get() {
-      const stored = await getStoredDate();
-      return stored.value;
+      return readStoredDate();
     },
     async set(fecha) {
-      const stored = await getStoredDate();
       await mutate([
         {
-          operation: stored.configured ? "update" : "create",
+          operation: "upsert",
           key: CLOCK_KEY,
           value: fecha,
         },
       ]);
     },
     async clear() {
-      const stored = await getStoredDate();
-      if (!stored.configured) return;
+      if ((await readStoredDate()) === null) return;
       await mutate([{ operation: "delete", key: CLOCK_KEY }]);
     },
   };
@@ -119,6 +99,7 @@ function globalConfigStore(env: EnvLike, fetchImpl: FetchLike): TestClockStore {
 export function createTestClockStore(
   env: EnvLike = process.env,
   fetchImpl: FetchLike = fetch,
+  getItem: GlobalConfigGet = getGlobalConfigItem,
 ): TestClockStore {
-  return env.VERCEL_ENV === "preview" ? globalConfigStore(env, fetchImpl) : localStore();
+  return env.VERCEL_ENV === "preview" ? globalConfigStore(env, fetchImpl, getItem) : localStore();
 }
