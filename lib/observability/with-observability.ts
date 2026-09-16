@@ -1,5 +1,6 @@
 import "server-only";
 
+import * as Sentry from "@sentry/nextjs";
 import type { NextRequest } from "next/server";
 import { logger } from "@/lib/observability/logger";
 import { getObservabilityContext, runWithObservabilityContext } from "@/lib/observability/context";
@@ -55,6 +56,20 @@ function attachRequestId(response: Response, requestId: string): Response {
   return response;
 }
 
+function configureSentryScope(params: {
+  requestId: string;
+  method: string;
+  path: string;
+  status: number;
+  userId?: number;
+}) {
+  Sentry.setTag("request_id", params.requestId);
+  Sentry.setTag("http.method", params.method);
+  Sentry.setTag("http.route", params.path);
+  Sentry.setTag("http.status_code", String(params.status));
+  if (params.userId) Sentry.setUser({ id: String(params.userId) });
+}
+
 export function withObservability<TContext = unknown>(
   handler: RouteHandler<TContext>,
 ): RouteHandler<TContext> {
@@ -95,8 +110,19 @@ export function withObservability<TContext = unknown>(
               }),
             };
 
-            if (response.status >= 500) logger.error("http.request.failed", payload);
-            else logger.warn("http.request.failed", payload);
+            if (response.status >= 500) {
+              logger.error("http.request.failed", payload);
+              configureSentryScope({
+                requestId,
+                method: request.method,
+                path,
+                status: response.status,
+                userId: scoped?.userId,
+              });
+              Sentry.captureMessage(`HTTP ${response.status} ${request.method} ${path}`, "error");
+            } else {
+              logger.warn("http.request.failed", payload);
+            }
           } else if (durationMs > SLOW_REQUEST_THRESHOLD_MS) {
             logger.warn("http.request.slow", common);
           }
@@ -117,6 +143,14 @@ export function withObservability<TContext = unknown>(
                 ? { name: error.name, message: error.message, stack: error.stack }
                 : { message: String(error) },
           });
+          configureSentryScope({
+            requestId,
+            method: request.method,
+            path,
+            status: 500,
+            userId: scoped?.userId,
+          });
+          Sentry.captureException(error);
           throw error;
         }
       },
