@@ -65,11 +65,11 @@ describe("AjustesContratoService", () => {
     assert.equal(await prisma.ajusteContrato.count(), 1);
   });
 
-  it("aplica el nuevo monto y reencola el contrato en la misma operación", async () => {
+  it("aplica el nuevo monto y devuelve la outbox pendiente creada en la misma operación", async () => {
     const { usuario, contrato } = await crearEscenario();
     const ajuste = await crearAjustePendiente(contrato.id);
 
-    await AjustesContratoService.aplicar(
+    const resultado = await AjustesContratoService.aplicar(
       contrato.id,
       ajuste.id,
       { monto_nuevo: 600000, observacion: "ICL trimestral" },
@@ -78,7 +78,7 @@ describe("AjustesContratoService", () => {
 
     const actualizado = await prisma.contrato.findUniqueOrThrow({ where: { id: contrato.id } });
     const aplicado = await prisma.ajusteContrato.findUniqueOrThrow({ where: { id: ajuste.id } });
-    const pendientesOutbox = await prisma.outboxCierrePeriodo.count({
+    const outbox = await prisma.outboxCierrePeriodo.findFirstOrThrow({
       where: { id_contrato: contrato.id, estado: "PENDIENTE" },
     });
 
@@ -88,7 +88,7 @@ describe("AjustesContratoService", () => {
     assert.equal(Number(aplicado.monto_nuevo), 600000);
     assert.equal(aplicado.id_usuario_aplicador, usuario.id);
     assert.ok(aplicado.aplicado_en);
-    assert.equal(pendientesOutbox, 1);
+    assert.equal(resultado.outboxId, outbox.id);
   });
 
   it("rechaza aplicar dos veces el mismo ajuste", async () => {
