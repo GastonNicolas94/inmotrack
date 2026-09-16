@@ -1,6 +1,6 @@
 ---
 type: Overview
-version: global-clock-sdk
+version: global-clock
 validated: 2026-09-16
 update_when: Purpose changes, new roles/actors added, or capability scope shifts
 scope:
@@ -57,11 +57,9 @@ Toda lógica que necesita conocer "ahora" o "hoy" debe depender de la interfaz `
 
 Configuración de Preview:
 
-- `GLOBAL_CONFIG`: la crea Vercel automáticamente al adjuntar `inmotrack-test-clock` al proyecto; incluye la connection string del store.
-- Lecturas: se hacen con el SDK oficial `@vercel/global-config` (`get("inmotrack_test_date")`), que consume `GLOBAL_CONFIG` como documenta Vercel.
-- Escrituras: se hacen con la API oficial `PATCH /v1/global-config/{edgeConfigId}/items` usando `operation: "upsert"`; el `edgeConfigId` se obtiene de la connection string adjunta.
-- `VERCEL_TOKEN`: token de Vercel con permisos de escritura sobre Global Config; se usa únicamente en el backend de Preview para que `/dev/reloj` pueda sobrescribir o borrar `inmotrack_test_date` vía API.
-- `VERCEL_TEAM_ID`: opcional; solo si se configura explícitamente se agrega al request de escritura para scoping del team. No se infiere desde `VERCEL_ORG_ID`.
+- `GLOBAL_CONFIG`: la crea Vercel automáticamente al adjuntar `inmotrack-test-clock` al proyecto; incluye la connection string de lectura al store (`https://global-config.vercel.com/<globalConfigId>?token=<read-token>`). Las lecturas se hacen con `@vercel/global-config`.
+- `VERCEL_TOKEN`: token de Vercel REST API con permisos de escritura sobre Global Config; se usa únicamente en el backend de Preview para que `/dev/reloj` pueda sobrescribir o borrar `inmotrack_test_date`.
+- Los writes van a `https://api.vercel.com/v1/global-config/<globalConfigId>/items` y, como el store pertenece al Team de Vercel, deben incluir siempre `?teamId=<teamId>`. El runtime usa `VERCEL_TEAM_ID` y cae a `VERCEL_ORG_ID` si esa es la variable expuesta por el entorno.
 
 Cuando se agrega o cambia `VERCEL_TOKEN` en Vercel, hace falta un redeploy del Preview una sola vez para que las funciones nuevas reciban esa env. Después, cambiar la fecha desde `/dev/reloj` no requiere nuevos deploys.
 
@@ -97,3 +95,5 @@ Este repo usa el flujo `superpowers` (brainstorming → spec → implementación
 - Planes de implementación: [`docs/superpowers/plans/`](../superpowers/plans/)
 - Deuda técnica y hallazgos pendientes: [`docs/superpowers/plans/TODO.md`](../superpowers/plans/TODO.md) — **leer antes de asumir que algo "falta" es un bug nuevo**, puede que ya esté anotado con la razón por la que se dejó así.
 - Documento de arquitectura original (bootstrap del proyecto): [`SDD.md`](../../SDD.md)
+
+<!-- deploy-check: 2026-09-15T21:32-03:00 -->
