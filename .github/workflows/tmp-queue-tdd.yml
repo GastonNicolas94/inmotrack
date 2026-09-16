@@ -29,7 +29,7 @@ jobs:
       - run: npx --no-install supabase start
       - run: npm run db:reset:local
       - run: npx prisma generate
-      - name: Run queue-focused test
-        run: node --import tsx --conditions=react-server --test --test-concurrency=1 tests/services/ajustes-contrato.service.test.ts
+      - name: Run queue-focused tests
+        run: node --import tsx --conditions=react-server --test --test-concurrency=1 tests/services/ajustes-contrato.service.test.ts tests/services/cierre-periodos-ajustes.service.test.ts
       - if: always()
         run: npx --no-install supabase stop --no-backup
