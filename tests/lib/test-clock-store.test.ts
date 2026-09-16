@@ -2,6 +2,9 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { createTestClockStore } from "@/lib/test-clock-store";
 
+const CONFIG_ID = "ecfg_dgdcbruhamcqzsjkbtpelw41vkvg";
+const ITEM_KEY = "inmotrack_test_date";
+
 describe("test clock store", () => {
   test("preview lee la fecha usando el SDK oficial de Global Config", async () => {
     const reads: string[] = [];
@@ -21,10 +24,10 @@ describe("test clock store", () => {
     );
 
     assert.equal(await store.get(), "2026-04-15");
-    assert.deepEqual(reads, ["inmotrack_test_date"]);
+    assert.deepEqual(reads, [ITEM_KEY]);
   });
 
-  test("preview escribe sobre el Global Config inmotrack-test-clock conocido", async () => {
+  test("preview verifica el item con la API de administracion antes de escribir", async () => {
     const requests: Array<{ url: string; init?: RequestInit }> = [];
     const store = createTestClockStore(
       {
@@ -36,6 +39,9 @@ describe("test clock store", () => {
       },
       (async (input, init) => {
         requests.push({ url: String(input), init });
+        if (init?.method === "GET") {
+          return new Response(JSON.stringify({ key: ITEM_KEY, value: "2026-04-01" }), { status: 200 });
+        }
         return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
       }) as typeof fetch,
       async () => "2026-04-01",
@@ -43,14 +49,49 @@ describe("test clock store", () => {
 
     await store.set("2026-04-15");
 
-    assert.equal(requests.length, 1);
+    assert.equal(requests.length, 2);
+    assert.equal(requests[0]?.init?.method, "GET");
     assert.equal(
       requests[0]?.url,
-      "https://api.vercel.com/v1/global-config/ecfg_dgdcbruhamcqzsjkbtpelw41vkvg/items?teamId=team_clock",
+      `https://api.vercel.com/v1/global-config/${CONFIG_ID}/item/${ITEM_KEY}?teamId=team_clock`,
     );
-    assert.deepEqual(JSON.parse(String(requests[0]?.init?.body)), {
-      items: [{ operation: "upsert", key: "inmotrack_test_date", value: "2026-04-15" }],
+    assert.equal(requests[1]?.init?.method, "PATCH");
+    assert.equal(
+      requests[1]?.url,
+      `https://api.vercel.com/v1/global-config/${CONFIG_ID}/items?teamId=team_clock`,
+    );
+    assert.deepEqual(JSON.parse(String(requests[1]?.init?.body)), {
+      items: [{ operation: "upsert", key: ITEM_KEY, value: "2026-04-15" }],
     });
+  });
+
+  test("preview corta antes del PATCH y expone el diagnostico si la API de administracion no ve el item", async () => {
+    const requests: Array<{ url: string; init?: RequestInit }> = [];
+    const store = createTestClockStore(
+      {
+        NODE_ENV: "production",
+        VERCEL_ENV: "preview",
+        GLOBAL_CONFIG: "https://global-config.vercel.com/ecfg_otro_store?token=read-token",
+        VERCEL_TOKEN: "write-token",
+        VERCEL_TEAM_ID: "team_clock",
+      },
+      (async (input, init) => {
+        requests.push({ url: String(input), init });
+        return new Response(
+          JSON.stringify({ error: { code: "not_found", message: "Edge Config Item not found." } }),
+          { status: 404 },
+        );
+      }) as typeof fetch,
+      async () => "2026-04-01",
+    );
+
+    await assert.rejects(
+      () => store.set("2026-04-15"),
+      /verificacion de item.*404.*Edge Config Item not found/i,
+    );
+
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0]?.init?.method, "GET");
   });
 
   test("preview usa VERCEL_ORG_ID como teamId cuando VERCEL_TEAM_ID no esta disponible", async () => {
@@ -65,6 +106,9 @@ describe("test clock store", () => {
       },
       (async (input, init) => {
         requests.push({ url: String(input), init });
+        if (init?.method === "GET") {
+          return new Response(JSON.stringify({ key: ITEM_KEY, value: "2026-04-15" }), { status: 200 });
+        }
         return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
       }) as typeof fetch,
       async () => "2026-04-15",
@@ -72,13 +116,17 @@ describe("test clock store", () => {
 
     await store.clear();
 
-    assert.equal(requests.length, 1);
+    assert.equal(requests.length, 2);
     assert.equal(
       requests[0]?.url,
-      "https://api.vercel.com/v1/global-config/ecfg_dgdcbruhamcqzsjkbtpelw41vkvg/items?teamId=team_runtime",
+      `https://api.vercel.com/v1/global-config/${CONFIG_ID}/item/${ITEM_KEY}?teamId=team_runtime`,
     );
-    assert.deepEqual(JSON.parse(String(requests[0]?.init?.body)), {
-      items: [{ operation: "delete", key: "inmotrack_test_date" }],
+    assert.equal(
+      requests[1]?.url,
+      `https://api.vercel.com/v1/global-config/${CONFIG_ID}/items?teamId=team_runtime`,
+    );
+    assert.deepEqual(JSON.parse(String(requests[1]?.init?.body)), {
+      items: [{ operation: "delete", key: ITEM_KEY }],
     });
   });
 
@@ -93,6 +141,9 @@ describe("test clock store", () => {
       },
       (async (input, init) => {
         requests.push({ url: String(input), init });
+        if (init?.method === "GET") {
+          return new Response(JSON.stringify({ key: ITEM_KEY, value: "2026-04-01" }), { status: 200 });
+        }
         return new Response(JSON.stringify({ status: "ok" }), { status: 200 });
       }) as typeof fetch,
       async () => "2026-04-01",
@@ -100,10 +151,14 @@ describe("test clock store", () => {
 
     await store.set("2026-04-15");
 
-    assert.equal(requests.length, 1);
+    assert.equal(requests.length, 2);
     assert.equal(
       requests[0]?.url,
-      "https://api.vercel.com/v1/global-config/ecfg_dgdcbruhamcqzsjkbtpelw41vkvg/items?teamId=team_pSHI2gL7fkccZnt2ayzYTco7",
+      `https://api.vercel.com/v1/global-config/${CONFIG_ID}/item/${ITEM_KEY}?teamId=team_pSHI2gL7fkccZnt2ayzYTco7`,
+    );
+    assert.equal(
+      requests[1]?.url,
+      `https://api.vercel.com/v1/global-config/${CONFIG_ID}/items?teamId=team_pSHI2gL7fkccZnt2ayzYTco7`,
     );
   });
 
