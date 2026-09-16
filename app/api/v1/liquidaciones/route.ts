@@ -4,8 +4,9 @@ import { generarLiquidacionSchema } from "@/schemas/liquidacion.schema";
 import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
+import { withObservability } from "@/lib/observability/with-observability";
 
-export async function GET(req: NextRequest) {
+async function getLiquidaciones(req: NextRequest) {
   try {
     await requireAuthenticatedUser();
     const idPropietario = req.nextUrl.searchParams.get("id_propietario");
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function postLiquidacion(req: NextRequest) {
   try {
     const user = await requireAuthenticatedUser();
     assertCanWrite(user);
@@ -40,3 +41,6 @@ export async function POST(req: NextRequest) {
     return handleServiceError(e);
   }
 }
+
+export const GET = withObservability(getLiquidaciones);
+export const POST = withObservability(postLiquidacion);
