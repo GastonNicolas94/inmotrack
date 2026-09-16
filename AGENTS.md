@@ -13,6 +13,7 @@ Antes de tocar código, leer en este orden — es el contexto de agente mantenid
 3. `docs/agent/contracts.md` — rutas HTTP, acceso por rol, recursos de plataforma
 4. `docs/agent/runbook.md` — comandos de dev/test/build/migraciones, Definition of Done
 5. `docs/agent/traps.md` — gotchas no obvios ya encontrados — leer antes de asumir que algo raro es un bug nuevo
+6. `docs/agent/observability.md` — request correlation, logging estructurado, thresholds, eventos de dominio y diagnóstico DB
 
 **Regla de mantenimiento:** quien cambie código (humano o agente) actualiza la guía de `docs/agent/` correspondiente en el mismo cambio — bump de `version` (SHA corto de HEAD) y `validated` (fecha) en el frontmatter — y agrega una entrada a `traps.md` si descubre un comportamiento no obvio. No hay gate de CI que lo fuerce (este repo no tiene CI) — es disciplina manual.
 
@@ -21,7 +22,7 @@ Antes de tocar código, leer en este orden — es el contexto de agente mantenid
 El frontend sigue una dirección visual deliberada inspirada en apple.com. Cualquier UI nueva debe respetarla, no reinventarla.
 
 **Tokens — todo vive en `app/globals.css`, nunca hardcodear.**
-- Paleta: fondo blanco puro (`--background: #fff`), texto casi negro (`--foreground: #1d1d1f`), texto secundario `--muted-foreground: #6e6e73`, acento único azul `--primary: #0071e3`, bordes hairline `--border: #d2d2d7`.
+- Paleta: fondo blanco puro (`--background: #fff`), texto casi negro (`--foreground: #1d1d1f`), texto secundario `--muted-foreground: #6e6e73`, acento único azul (`--primary: #0071e3`), bordes hairline (`--border: #d2d2d7`).
 - Estados semánticos: usar siempre `bg-status-{success,warning,danger,neutral}-bg` + `text-status-{success,warning,danger,neutral}` (definidos en `@theme inline`). **Prohibido** usar clases de color crudas de Tailwind (`bg-green-100`, `text-red-700`, `bg-yellow-100`, etc.) para estados de negocio — si un estado nuevo no encaja en los 4 semánticos existentes, agregar el token en `globals.css`, no improvisar un color Tailwind suelto.
 - Tipografía: `-apple-system, BlinkMacSystemFont` primero en el font-stack (SF Pro real en Mac/iPhone), Geist como fallback. No agregar otra fuente sin necesidad real.
 - Radios: generosos (`--radius: 1rem` base). Contenedores de card/tabla usan `rounded-2xl`, diálogos y overlays `rounded-xl`.
