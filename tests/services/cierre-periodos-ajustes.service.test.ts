@@ -58,7 +58,7 @@ describe("CierrePeriodosService con ajustes pendientes", () => {
     else process.env.NODE_ENV = originalNodeEnv;
   });
 
-  it("se detiene en el primer ajuste sin consumir retry y continúa después de aplicarlo", async () => {
+  it("se detiene en el primer ajuste y luego procesa exactamente la outbox reencolada", async () => {
     const { usuario, contrato } = await escenario();
 
     await CierrePeriodosService.procesarUnaFilaDeCola();
@@ -83,7 +83,7 @@ describe("CierrePeriodosService con ajustes pendientes", () => {
     const ajuste = await prisma.ajusteContrato.findFirstOrThrow({
       where: { id_contrato: contrato.id, periodo_efectivo: "2026-04", estado: "PENDIENTE" },
     });
-    await AjustesContratoService.aplicar(
+    const aplicado = await AjustesContratoService.aplicar(
       contrato.id,
       ajuste.id,
       { monto_nuevo: 600000, observacion: "Ajuste trimestral" },
@@ -94,7 +94,11 @@ describe("CierrePeriodosService con ajustes pendientes", () => {
       where: { id_contrato: contrato.id, estado: "PENDIENTE" },
     }), 1);
 
-    await CierrePeriodosService.procesarUnaFilaDeCola();
+    const procesado = await CierrePeriodosService.procesarFilaDeCola(aplicado.outboxId);
+    assert.equal(procesado.huboTrabajo, true);
+
+    const duplicado = await CierrePeriodosService.procesarFilaDeCola(aplicado.outboxId);
+    assert.equal(duplicado.huboTrabajo, false);
 
     const periodosDespues = await prisma.periodoPago.findMany({
       where: { id_contrato: contrato.id },
