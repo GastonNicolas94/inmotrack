@@ -5,6 +5,8 @@ import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
 import { withObservability } from "@/lib/observability/with-observability";
+import { logger } from "@/lib/observability/logger";
+import { DOMAIN_EVENTS } from "@/lib/observability/events";
 
 async function getContratos(req: NextRequest) {
   try {
@@ -39,6 +41,7 @@ async function postContrato(req: NextRequest) {
     }
 
     const contrato = await ContratosService.crear(parsed.data);
+    logger.info(DOMAIN_EVENTS.CONTRACT_CREATED, { contractId: contrato.id });
     return NextResponse.json(contrato, { status: 201 });
   } catch (e) {
     return handleServiceError(e);

@@ -5,6 +5,8 @@ import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
 import { withObservability } from "@/lib/observability/with-observability";
+import { logger } from "@/lib/observability/logger";
+import { DOMAIN_EVENTS } from "@/lib/observability/events";
 
 async function getPagos() {
   try {
@@ -28,12 +30,17 @@ async function postPago(req: NextRequest) {
       });
     }
 
+    const contractId = parsed.data.id_contrato;
     const resultado = await PagosService.registrar({
       ...parsed.data,
       id_usuario_creador: user.id,
     });
+    logger.info(DOMAIN_EVENTS.PAYMENT_CREATED, { contractId });
     return NextResponse.json(resultado, { status: 201 });
   } catch (e) {
+    logger.error(DOMAIN_EVENTS.PAYMENT_FAILED, {
+      error: e instanceof Error ? { name: e.name, message: e.message } : { message: String(e) },
+    });
     return handleServiceError(e);
   }
 }
