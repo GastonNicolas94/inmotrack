@@ -1,11 +1,11 @@
 import "server-only";
 
-import * as Sentry from "@sentry/nextjs";
 import type { NextRequest } from "next/server";
 import { logger } from "@/lib/observability/logger";
 import { getObservabilityContext, runWithObservabilityContext } from "@/lib/observability/context";
 import { getOrCreateRequestId } from "@/lib/observability/request-id";
 import { sanitizeForLogging } from "@/lib/observability/sanitizer";
+import { captureException, captureMessage, setTag, setUser } from "@/lib/observability/sentry-runtime";
 
 const SLOW_REQUEST_THRESHOLD_MS = Number(process.env.SLOW_REQUEST_THRESHOLD_MS ?? 2000);
 
@@ -63,11 +63,11 @@ function configureSentryScope(params: {
   status: number;
   userId?: number;
 }) {
-  Sentry.setTag("request_id", params.requestId);
-  Sentry.setTag("http.method", params.method);
-  Sentry.setTag("http.route", params.path);
-  Sentry.setTag("http.status_code", String(params.status));
-  if (params.userId) Sentry.setUser({ id: String(params.userId) });
+  setTag("request_id", params.requestId);
+  setTag("http.method", params.method);
+  setTag("http.route", params.path);
+  setTag("http.status_code", String(params.status));
+  if (params.userId) setUser({ id: String(params.userId) });
 }
 
 export function withObservability<TContext = unknown>(
@@ -119,7 +119,7 @@ export function withObservability<TContext = unknown>(
                 status: response.status,
                 userId: scoped?.userId,
               });
-              Sentry.captureMessage(`HTTP ${response.status} ${request.method} ${path}`, "error");
+              captureMessage(`HTTP ${response.status} ${request.method} ${path}`, "error");
             } else {
               logger.warn("http.request.failed", payload);
             }
@@ -150,7 +150,7 @@ export function withObservability<TContext = unknown>(
             status: 500,
             userId: scoped?.userId,
           });
-          Sentry.captureException(error);
+          captureException(error);
           throw error;
         }
       },
