@@ -80,6 +80,8 @@ export function sanitizeForLogging(
 
   const sanitized = redact(value, new WeakSet<object>());
   const serialized = JSON.stringify(sanitized);
+  if (serialized === undefined) return sanitized;
+
   const originalSize = Buffer.byteLength(serialized, "utf8");
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
 
