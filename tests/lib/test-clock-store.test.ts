@@ -53,7 +53,7 @@ describe("test clock store", () => {
     });
   });
 
-  test("preview borra la fecha mediante la API oficial", async () => {
+  test("preview usa VERCEL_ORG_ID como teamId cuando VERCEL_TEAM_ID no esta disponible", async () => {
     const requests: Array<{ url: string; init?: RequestInit }> = [];
     const store = createTestClockStore(
       {
@@ -73,9 +73,28 @@ describe("test clock store", () => {
     await store.clear();
 
     assert.equal(requests.length, 1);
+    assert.equal(
+      requests[0]?.url,
+      "https://api.vercel.com/v1/global-config/ecfg_clock/items?teamId=team_runtime",
+    );
     assert.deepEqual(JSON.parse(String(requests[0]?.init?.body)), {
       items: [{ operation: "delete", key: "inmotrack_test_date" }],
     });
+  });
+
+  test("preview rechaza escrituras sin scope de team", async () => {
+    const store = createTestClockStore(
+      {
+        NODE_ENV: "production",
+        VERCEL_ENV: "preview",
+        GLOBAL_CONFIG: "https://global-config.vercel.com/ecfg_clock?token=read-token",
+        VERCEL_TOKEN: "write-token",
+      },
+      fetch,
+      async () => null,
+    );
+
+    await assert.rejects(() => store.set("2026-04-15"), /team/i);
   });
 
   test("preview puede leer pero rechaza escrituras si falta token de escritura", async () => {
@@ -84,6 +103,7 @@ describe("test clock store", () => {
         NODE_ENV: "production",
         VERCEL_ENV: "preview",
         GLOBAL_CONFIG: "https://global-config.vercel.com/ecfg_clock?token=read-token",
+        VERCEL_TEAM_ID: "team_clock",
       },
       fetch,
       async () => null,
