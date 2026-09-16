@@ -41,12 +41,20 @@ function globalConfigStore(
     }
 
     const teamId = env.VERCEL_TEAM_ID ?? env.VERCEL_ORG_ID ?? INMOTRACK_VERCEL_TEAM_ID;
+    const itemUrl = new URL(
+      `https://api.vercel.com/v1/global-config/${INMOTRACK_TEST_CLOCK_GLOBAL_CONFIG_ID}/item/${CLOCK_KEY}`,
+    );
     const writeUrl = new URL(
       `https://api.vercel.com/v1/global-config/${INMOTRACK_TEST_CLOCK_GLOBAL_CONFIG_ID}/items`,
     );
+    itemUrl.searchParams.set("teamId", teamId);
     writeUrl.searchParams.set("teamId", teamId);
 
-    return { writeUrl: writeUrl.toString(), writeToken };
+    return {
+      itemUrl: itemUrl.toString(),
+      writeUrl: writeUrl.toString(),
+      writeToken,
+    };
   }
 
   async function readStoredDate() {
@@ -55,13 +63,28 @@ function globalConfigStore(
   }
 
   async function mutate(items: Array<Record<string, unknown>>) {
-    const { writeUrl, writeToken } = writeConfig();
+    const { itemUrl, writeUrl, writeToken } = writeConfig();
+    const headers = {
+      Authorization: `Bearer ${writeToken}`,
+      "Content-Type": "application/json",
+    };
+
+    const verification = await fetchImpl(itemUrl, {
+      method: "GET",
+      headers,
+    });
+
+    if (!verification.ok) {
+      const body = await verification.text().catch(() => "");
+      const suffix = body ? `: ${body}` : "";
+      throw new Error(
+        `Fallo en verificacion de item Global Config (${verification.status})${suffix}`,
+      );
+    }
+
     const response = await fetchImpl(writeUrl, {
       method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${writeToken}`,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({ items }),
     });
 
