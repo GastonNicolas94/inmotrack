@@ -22,7 +22,7 @@
     },
     {
       "path": "/api/v1/cron/recuperar-cola-cierre",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 6 * * *"
     }
   ]
 }
