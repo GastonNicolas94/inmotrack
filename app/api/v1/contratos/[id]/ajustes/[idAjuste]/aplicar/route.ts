@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse, after } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { AjustesContratoService } from "@/services/ajustes-contrato.service";
+import { CierrePeriodosQueueService } from "@/services/cierre-periodos-queue.service";
 import { aplicarAjusteContratoSchema } from "@/schemas/ajuste-contrato.schema";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
 import { handleServiceError } from "@/lib/api-error-handler";
@@ -26,15 +27,14 @@ export async function POST(
       user.id,
     );
 
-    after(async () => {
-      const secret = process.env.CRON_SECRET;
-      if (!secret) return;
-      const url = new URL("/api/v1/cron/procesar-cola-cierre", req.url);
-      await fetch(url, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${secret}` },
-      }).catch(() => {});
-    });
+    try {
+      await CierrePeriodosQueueService.publicar(resultado.outboxId);
+    } catch (error) {
+      console.error("No se pudo publicar el cierre de período en Vercel Queue", {
+        outboxId: resultado.outboxId,
+        error,
+      });
+    }
 
     return NextResponse.json({
       contrato: {
