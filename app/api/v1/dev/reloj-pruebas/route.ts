@@ -10,8 +10,8 @@ const MAX_FILAS_POR_EJECUCION = 500;
 
 export async function GET() {
   try {
-    if (!relojPruebasHabilitado()) return errorResponse("NOT_FOUND", "Recurso no disponible.", 404);
     await requireAdmin();
+    if (!relojPruebasHabilitado()) return errorResponse("NOT_FOUND", "Recurso no disponible.", 404);
     return NextResponse.json({ fecha: await EditableTestClock.getDate() });
   } catch (error) {
     return handleServiceError(error);
@@ -20,9 +20,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    await requireAdmin();
     if (!relojPruebasHabilitado()) return errorResponse("NOT_FOUND", "Recurso no disponible.", 404);
 
-    await requireAdmin();
     const body = (await req.json()) as { fecha?: unknown; ejecutar?: unknown };
     if (typeof body.fecha !== "string") {
       return errorResponse("FECHA_INVALIDA", "Debe indicar una fecha en formato YYYY-MM-DD.", 400);
@@ -56,8 +56,8 @@ export async function POST(req: Request) {
 
 export async function DELETE() {
   try {
-    if (!relojPruebasHabilitado()) return errorResponse("NOT_FOUND", "Recurso no disponible.", 404);
     await requireAdmin();
+    if (!relojPruebasHabilitado()) return errorResponse("NOT_FOUND", "Recurso no disponible.", 404);
     await EditableTestClock.clear();
     return NextResponse.json({ ok: true });
   } catch (error) {
