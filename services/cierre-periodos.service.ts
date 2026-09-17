@@ -62,14 +62,14 @@ export function createCierrePeriodosService(deps: Dependencies) {
 
       await deps.prisma.outboxCierrePeriodo.update({
         where: { id: fila.id },
-        data: { estado: "COMPLETADO", procesado_en: procesadoEn },
+        data: { estado: "COMPLETADO", procesado_en: procesadoEn, error: null },
       });
     } catch (e) {
       const intentos = fila.intentos + 1;
       if (intentos < MAX_INTENTOS) {
         await deps.prisma.outboxCierrePeriodo.update({
           where: { id: fila.id },
-          data: { estado: "PENDIENTE", intentos },
+          data: { estado: "PENDIENTE", intentos, error: String(e) },
         });
       } else {
         await deps.prisma.outboxCierrePeriodo.update({
@@ -98,12 +98,14 @@ export function createCierrePeriodosService(deps: Dependencies) {
           },
         },
         include: {
-          outbox_cierre_periodo: { where: { estado: "PENDIENTE" } },
+          outbox_cierre_periodo: { where: { estado: "PENDIENTE" }, select: { id: true } },
         },
       });
 
       let encolados = 0;
       let vencidos = 0;
+      const outboxIds: number[] = [];
+
       for (const contrato of contratos) {
         const { anio: finAnio, mes: finMes, dia: finDia } = partesFechaUTC(contrato.fecha_fin);
         const finStr = `${finAnio}-${String(finMes).padStart(2, "0")}-${String(finDia).padStart(2, "0")}`;
@@ -117,14 +119,33 @@ export function createCierrePeriodosService(deps: Dependencies) {
           continue;
         }
 
-        if (contrato.outbox_cierre_periodo.length > 0) continue;
-        await deps.prisma.outboxCierrePeriodo.create({
+        const pendienteExistente = contrato.outbox_cierre_periodo[0];
+        if (pendienteExistente) {
+          outboxIds.push(pendienteExistente.id);
+          continue;
+        }
+
+        const outbox = await deps.prisma.outboxCierrePeriodo.create({
           data: { id_contrato: contrato.id, estado: "PENDIENTE", creado_en: ahora },
+          select: { id: true },
         });
+        outboxIds.push(outbox.id);
         encolados++;
       }
 
-      return { encolados, vencidos };
+      return { encolados, vencidos, outboxIds };
+    },
+
+    async listarPendientesParaRecuperar(antesDe: Date, limit = 100) {
+      return deps.prisma.outboxCierrePeriodo.findMany({
+        where: {
+          estado: "PENDIENTE",
+          creado_en: { lte: antesDe },
+        },
+        select: { id: true },
+        orderBy: [{ creado_en: "asc" }, { id: "asc" }],
+        take: limit,
+      });
     },
 
     async procesarFilaDeCola(outboxId: number): Promise<{ huboTrabajo: boolean }> {
