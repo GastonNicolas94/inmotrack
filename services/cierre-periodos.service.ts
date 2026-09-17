@@ -77,7 +77,6 @@ export function createCierrePeriodosService(deps: Dependencies) {
           data: { estado: "ERROR", intentos, error: String(e) },
         });
       }
-      throw e;
     }
 
     return { huboTrabajo: true };
