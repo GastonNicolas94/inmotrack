@@ -4,10 +4,25 @@
   "git": {
     "deploymentEnabled": false
   },
+  "functions": {
+    "app/api/queues/cierre-periodos/route.ts": {
+      "experimentalTriggers": [
+        {
+          "type": "queue/v2beta",
+          "topic": "cierre-periodos",
+          "retryAfterSeconds": 60
+        }
+      ]
+    }
+  },
   "crons": [
     {
       "path": "/api/v1/cron/activar-cierre-periodos",
       "schedule": "0 6 1 * *"
+    },
+    {
+      "path": "/api/v1/cron/recuperar-cola-cierre",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
