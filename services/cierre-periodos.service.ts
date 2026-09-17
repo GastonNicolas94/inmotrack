@@ -16,6 +16,73 @@ interface FilaOutbox {
 type Dependencies = { prisma: PrismaClient; clock: Clock };
 
 export function createCierrePeriodosService(deps: Dependencies) {
+  async function procesarFila(fila: FilaOutbox): Promise<{ huboTrabajo: boolean }> {
+    const { anio: anioActual, mes: mesActual } = await deps.clock.today();
+    const procesadoEn = await deps.clock.now();
+    const mesActualStr = `${anioActual}-${String(mesActual).padStart(2, "0")}`;
+
+    try {
+      let periodoAbierto = await deps.prisma.periodoPago.findFirst({
+        where: {
+          id_contrato: fila.id_contrato,
+          estado_ciclo: "ABIERTO",
+          contrato: { estado: { in: ["ACTIVO", "MOROSO", "POR_VENCER"] } },
+        },
+        orderBy: { periodo: "asc" },
+      });
+
+      while (periodoAbierto && periodoAbierto.periodo < mesActualStr) {
+        const [anioP, mesP] = periodoAbierto.periodo.split("-").map(Number);
+        let anioSiguiente = anioP;
+        let mesSiguiente = mesP + 1;
+        if (mesSiguiente > 12) {
+          mesSiguiente = 1;
+          anioSiguiente += 1;
+        }
+        const nuevoPeriodo = `${anioSiguiente}-${String(mesSiguiente).padStart(2, "0")}`;
+        const vencimiento = calcularVencimientoPeriodo(anioSiguiente, mesSiguiente);
+
+        const resultado = await ContratosService.avanzarPeriodo(
+          fila.id_contrato,
+          nuevoPeriodo,
+          vencimiento,
+        );
+
+        if (resultado.estado === "AJUSTE_PENDIENTE") break;
+
+        periodoAbierto = await deps.prisma.periodoPago.findFirst({
+          where: {
+            id_contrato: fila.id_contrato,
+            estado_ciclo: "ABIERTO",
+            contrato: { estado: { in: ["ACTIVO", "MOROSO", "POR_VENCER"] } },
+          },
+          orderBy: { periodo: "asc" },
+        });
+      }
+
+      await deps.prisma.outboxCierrePeriodo.update({
+        where: { id: fila.id },
+        data: { estado: "COMPLETADO", procesado_en: procesadoEn },
+      });
+    } catch (e) {
+      const intentos = fila.intentos + 1;
+      if (intentos < MAX_INTENTOS) {
+        await deps.prisma.outboxCierrePeriodo.update({
+          where: { id: fila.id },
+          data: { estado: "PENDIENTE", intentos },
+        });
+      } else {
+        await deps.prisma.outboxCierrePeriodo.update({
+          where: { id: fila.id },
+          data: { estado: "ERROR", intentos, error: String(e) },
+        });
+      }
+      throw e;
+    }
+
+    return { huboTrabajo: true };
+  }
+
   return {
     async encolarContratosVencidos() {
       const { anio, mes, dia } = await deps.clock.today();
@@ -60,11 +127,22 @@ export function createCierrePeriodosService(deps: Dependencies) {
       return { encolados, vencidos };
     },
 
-    async procesarUnaFilaDeCola(): Promise<{ huboTrabajo: boolean }> {
-      const { anio: anioActual, mes: mesActual } = await deps.clock.today();
-      const procesadoEn = await deps.clock.now();
-      const mesActualStr = `${anioActual}-${String(mesActual).padStart(2, "0")}`;
+    async procesarFilaDeCola(outboxId: number): Promise<{ huboTrabajo: boolean }> {
+      const filas = await deps.prisma.$queryRaw<FilaOutbox[]>`
+        UPDATE outbox_cierre_periodo
+        SET estado = 'PROCESANDO'
+        WHERE id = ${outboxId}
+          AND estado = 'PENDIENTE'
+        RETURNING id, id_contrato, intentos
+      `;
 
+      const fila = filas[0];
+      if (!fila) return { huboTrabajo: false };
+
+      return procesarFila(fila);
+    },
+
+    async procesarUnaFilaDeCola(): Promise<{ huboTrabajo: boolean }> {
       const filas = await deps.prisma.$queryRawUnsafe<FilaOutbox[]>(`
         UPDATE outbox_cierre_periodo
         SET estado = 'PROCESANDO'
@@ -82,65 +160,7 @@ export function createCierrePeriodosService(deps: Dependencies) {
       const fila = filas[0];
       if (!fila) return { huboTrabajo: false };
 
-      try {
-        let periodoAbierto = await deps.prisma.periodoPago.findFirst({
-          where: {
-            id_contrato: fila.id_contrato,
-            estado_ciclo: "ABIERTO",
-            contrato: { estado: { in: ["ACTIVO", "MOROSO", "POR_VENCER"] } },
-          },
-          orderBy: { periodo: "asc" },
-        });
-
-        while (periodoAbierto && periodoAbierto.periodo < mesActualStr) {
-          const [anioP, mesP] = periodoAbierto.periodo.split("-").map(Number);
-          let anioSiguiente = anioP;
-          let mesSiguiente = mesP + 1;
-          if (mesSiguiente > 12) {
-            mesSiguiente = 1;
-            anioSiguiente += 1;
-          }
-          const nuevoPeriodo = `${anioSiguiente}-${String(mesSiguiente).padStart(2, "0")}`;
-          const vencimiento = calcularVencimientoPeriodo(anioSiguiente, mesSiguiente);
-
-          const resultado = await ContratosService.avanzarPeriodo(
-            fila.id_contrato,
-            nuevoPeriodo,
-            vencimiento,
-          );
-
-          if (resultado.estado === "AJUSTE_PENDIENTE") break;
-
-          periodoAbierto = await deps.prisma.periodoPago.findFirst({
-            where: {
-              id_contrato: fila.id_contrato,
-              estado_ciclo: "ABIERTO",
-              contrato: { estado: { in: ["ACTIVO", "MOROSO", "POR_VENCER"] } },
-            },
-            orderBy: { periodo: "asc" },
-          });
-        }
-
-        await deps.prisma.outboxCierrePeriodo.update({
-          where: { id: fila.id },
-          data: { estado: "COMPLETADO", procesado_en: procesadoEn },
-        });
-      } catch (e) {
-        const intentos = fila.intentos + 1;
-        if (intentos < MAX_INTENTOS) {
-          await deps.prisma.outboxCierrePeriodo.update({
-            where: { id: fila.id },
-            data: { estado: "PENDIENTE", intentos },
-          });
-        } else {
-          await deps.prisma.outboxCierrePeriodo.update({
-            where: { id: fila.id },
-            data: { estado: "ERROR", intentos, error: String(e) },
-          });
-        }
-      }
-
-      return { huboTrabajo: true };
+      return procesarFila(fila);
     },
   };
 }
