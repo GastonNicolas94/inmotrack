@@ -1,7 +1,7 @@
 ---
 type: Observability
-version: observability-after-rent-adjustments
-validated: 2026-09-17
+version: 11c92fe
+validated: 2026-09-18
 update_when: Cambian logging, tracing, thresholds, Sentry/Vercel integration o diagnóstico de base de datos
 scope:
   - lib/observability
@@ -31,6 +31,30 @@ El wrapper:
 9. no emite un log completo para requests exitosos normales.
 
 `requireAuthenticatedUser()` agrega `userId` al contexto request-scoped. Los logs emitidos dentro de ese request heredan automáticamente `requestId`, `method`, `path` y `userId`.
+
+## Distributed tracing en Sentry
+
+Sentry es la vista única para investigar una request individual de punta a punta. Con tracing habilitado, el trace conserva la jerarquía:
+
+```text
+HTTP request
+├─ auth.requireAuthenticatedUser
+├─ XxxService.metodo
+│  ├─ prisma.modelo.operacion
+│  └─ prisma.modelo.operacion
+└─ resto del handler
+```
+
+La instrumentación es sistémica:
+
+- `lib/auth-context.ts` crea el span `auth.requireAuthenticatedUser`;
+- los singletons exportados de `services/*.ts` se envuelven con `traceServiceObject()`, por lo que cada método público genera un span `service`;
+- `lib/db.ts` extiende el Prisma Client global con `$allOperations`, por lo que cada operación ORM genera un span `db.prisma`;
+- los spans heredan el trace activo de `@sentry/nextjs` y agregan `requestId`, route, method y user id técnico cuando existe.
+
+Los spans Prisma incluyen únicamente modelo y operación. **Nunca** incluir `args`, bind values, SQL parametrizado completo ni resultados en atributos de tracing: pueden contener PII o secretos.
+
+`pg_stat_statements` se mantiene como diagnóstico agregado de PostgreSQL, pero no es necesario consultarlo para reconstruir una request individual: esa investigación se hace íntegramente en Sentry.
 
 ## Seguridad de logs
 
