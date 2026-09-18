@@ -5,8 +5,11 @@ import { aplicarAjusteContratoSchema } from "@/schemas/ajuste-contrato.schema";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { errorResponse } from "@/lib/errors";
+import { withObservability } from "@/lib/observability/with-observability";
+import { logger } from "@/lib/observability/logger";
+import { DOMAIN_EVENTS } from "@/lib/observability/events";
 
-export async function POST(
+async function postAplicarAjuste(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; idAjuste: string }> },
 ) {
@@ -15,6 +18,7 @@ export async function POST(
     assertCanWrite(user);
     const { id, idAjuste } = await params;
     const idContrato = Number(id);
+    const ajusteId = Number(idAjuste);
     const parsed = aplicarAjusteContratoSchema.safeParse(await req.json());
     if (!parsed.success) {
       return errorResponse("AJUSTE_INVALIDO", parsed.error.issues[0]?.message ?? "Datos inválidos.", 400);
@@ -22,17 +26,26 @@ export async function POST(
 
     const resultado = await AjustesContratoService.aplicar(
       idContrato,
-      Number(idAjuste),
+      ajusteId,
       parsed.data,
       user.id,
     );
 
+    logger.info(DOMAIN_EVENTS.CONTRACT_ADJUSTMENT_APPLIED, {
+      contractId: idContrato,
+      adjustmentId: ajusteId,
+      outboxId: resultado.outboxId,
+    });
+
     try {
       await CierrePeriodosQueueService.publicar(resultado.outboxId);
     } catch (error) {
-      console.error("No se pudo publicar el cierre de período en Vercel Queue", {
+      logger.error("queue.publish.failed", {
         outboxId: resultado.outboxId,
-        error,
+        source: "contract.adjustment_applied",
+        error: error instanceof Error
+          ? { name: error.name, message: error.message }
+          : { message: String(error) },
       });
     }
 
@@ -51,3 +64,5 @@ export async function POST(
     return handleServiceError(error);
   }
 }
+
+export const POST = withObservability(postAplicarAjuste);
