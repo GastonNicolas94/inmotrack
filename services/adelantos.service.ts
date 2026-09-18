@@ -3,6 +3,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type { Clock } from "@/lib/clock";
 import { AppClock } from "@/lib/app-clock";
+import { traceServiceObject } from "@/lib/observability/tracing";
 
 export type AdelantoPendiente = {
   id_transaccion: number;
@@ -66,4 +67,4 @@ export function createAdelantosService(deps: Dependencies) {
   };
 }
 
-export const AdelantosService = createAdelantosService({ prisma, clock: AppClock });
+export const AdelantosService = traceServiceObject("AdelantosService", createAdelantosService({ prisma, clock: AppClock }));
