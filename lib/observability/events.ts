@@ -3,6 +3,7 @@ export const DOMAIN_EVENTS = {
   CONTRACT_ACTIVATED: "contract.activated",
   CONTRACT_CANCELLED: "contract.cancelled",
   CONTRACT_ACTIVATION_FAILED: "contract.activation_failed",
+  CONTRACT_ADJUSTMENT_APPLIED: "contract.adjustment_applied",
   PAYMENT_CREATED: "payment.created",
   PAYMENT_REVERSED: "payment.reversed",
   PAYMENT_FAILED: "payment.failed",
