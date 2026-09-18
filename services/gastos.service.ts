@@ -5,6 +5,7 @@ import type { Clock } from "@/lib/clock";
 import { AppClock } from "@/lib/app-clock";
 import { aplicarCreditoDisponible } from "@/services/creditos.service";
 import type { GastoInput } from "@/schemas/gasto.schema";
+import { traceServiceObject } from "@/lib/observability/tracing";
 
 type Dependencies = { prisma: PrismaClient; clock: Clock };
 
@@ -110,4 +111,4 @@ export function createGastosService(deps: Dependencies) {
   };
 }
 
-export const GastosService = createGastosService({ prisma, clock: AppClock });
+export const GastosService = traceServiceObject("GastosService", createGastosService({ prisma, clock: AppClock }));

@@ -4,8 +4,9 @@ import { propiedadSchema } from "@/schemas/propiedad.schema";
 import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
+import { withObservability } from "@/lib/observability/with-observability";
 
-export async function GET(req: NextRequest) {
+async function getPropiedades(req: NextRequest) {
   try {
     await requireAuthenticatedUser();
     const { searchParams } = req.nextUrl;
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function postPropiedad(req: NextRequest) {
   try {
     const user = await requireAuthenticatedUser();
     assertCanWrite(user);
@@ -39,3 +40,6 @@ export async function POST(req: NextRequest) {
     return handleServiceError(e);
   }
 }
+
+export const GET = withObservability(getPropiedades);
+export const POST = withObservability(postPropiedad);

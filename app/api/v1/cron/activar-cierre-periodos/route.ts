@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { validarCronSecret } from "@/lib/cron-auth";
 import { CierrePeriodosService } from "@/services/cierre-periodos.service";
 import { CierrePeriodosQueueService } from "@/services/cierre-periodos-queue.service";
 import { ContratosService } from "@/services/contratos.service";
 import { errorResponse } from "@/lib/errors";
+import { withObservability } from "@/lib/observability/with-observability";
+import { logger } from "@/lib/observability/logger";
 
-export async function GET(req: Request) {
+async function getActivarCierrePeriodos(req: NextRequest) {
   if (!validarCronSecret(req)) {
     return errorResponse("UNAUTHORIZED", "Secret inválido.", 401);
   }
@@ -19,7 +21,7 @@ export async function GET(req: Request) {
   const publicaciones_fallidas = publicaciones.filter((resultado) => resultado.status === "rejected").length;
 
   if (publicaciones_fallidas > 0) {
-    console.error("No se pudieron publicar algunas filas de cierre en Vercel Queue", {
+    logger.error("queue.publish.failed", {
       total: outboxIds.length,
       publicaciones_fallidas,
     });
@@ -33,3 +35,5 @@ export async function GET(req: Request) {
     publicaciones_fallidas,
   });
 }
+
+export const GET = withObservability(getActivarCierrePeriodos);

@@ -87,6 +87,13 @@ type RouteMethod = { method: string; body: ts.Block };
 function routeMethods(source: string, file: string): RouteMethod[] {
   const parsed = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   const methods: RouteMethod[] = [];
+  const localFunctions = new Map<string, ts.Block>();
+
+  for (const statement of parsed.statements) {
+    if (ts.isFunctionDeclaration(statement) && statement.name && statement.body) {
+      localFunctions.set(statement.name.text, statement.body);
+    }
+  }
 
   for (const statement of parsed.statements) {
     if (ts.isExportDeclaration(statement) && statement.exportClause && ts.isNamedExports(statement.exportClause)) {
@@ -112,17 +119,31 @@ function routeMethods(source: string, file: string): RouteMethod[] {
 
     if (!ts.isVariableStatement(statement) || !isExported(statement)) continue;
     for (const declaration of statement.declarationList.declarations) {
+      if (!ts.isIdentifier(declaration.name) || !HTTP_METHODS.has(declaration.name.text) || !declaration.initializer) {
+        continue;
+      }
+
       if (
-        ts.isIdentifier(declaration.name) &&
-        HTTP_METHODS.has(declaration.name.text) &&
-        declaration.initializer &&
         (ts.isArrowFunction(declaration.initializer) || ts.isFunctionExpression(declaration.initializer)) &&
         ts.isBlock(declaration.initializer.body)
       ) {
-        methods.push({
-          method: declaration.name.text,
-          body: declaration.initializer.body,
-        });
+        methods.push({ method: declaration.name.text, body: declaration.initializer.body });
+        continue;
+      }
+
+      if (
+        ts.isCallExpression(declaration.initializer) &&
+        ts.isIdentifier(declaration.initializer.expression) &&
+        declaration.initializer.expression.text === "withObservability" &&
+        declaration.initializer.arguments.length === 1 &&
+        ts.isIdentifier(declaration.initializer.arguments[0])
+      ) {
+        const body = localFunctions.get(declaration.initializer.arguments[0].text);
+        assert.ok(
+          body,
+          `${file}: withObservability debe envolver un handler local auditable.`,
+        );
+        methods.push({ method: declaration.name.text, body });
       }
     }
   }
@@ -149,6 +170,16 @@ test("rejects aliased HTTP exports that cannot be audited in place", () => {
     () => routeMethods("const handler = async () => {}; export { handler as POST };", "route.ts"),
     /handlers HTTP deben declararse directamente/,
   );
+});
+
+test("accepts withObservability only when it wraps an auditable local handler", () => {
+  const methods = routeMethods(
+    `async function post(req: Request) { try { await requireAuthenticatedUser(); assertCanWrite({}); return new Response(); } catch (e) { return handleServiceError(e); } }\nexport const POST = withObservability(post);`,
+    "route.ts",
+  );
+  assert.equal(methods.length, 1);
+  assert.equal(methods[0].method, "POST");
+  assert.equal(methods[0].body.statements.length, 1);
 });
 
 test("every non-cron route method declares an authoritative auth guard and error adapter", () => {

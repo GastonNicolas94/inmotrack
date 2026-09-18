@@ -8,6 +8,7 @@ import { calcularPendiente } from "@/lib/saldos";
 import { calcularInteresAcumulado } from "@/lib/punitorios";
 import { formatFechaLocal } from "@/lib/fecha";
 import { admitePunitorio } from "@/lib/cargos";
+import { traceServiceObject } from "@/lib/observability/tracing";
 
 type Dependencies = { prisma: PrismaClient; clock: Clock };
 
@@ -93,4 +94,4 @@ export function createPunitoriosService(deps: Dependencies) {
   };
 }
 
-export const PunitoriosService = createPunitoriosService({ prisma, clock: AppClock });
+export const PunitoriosService = traceServiceObject("PunitoriosService", createPunitoriosService({ prisma, clock: AppClock }));

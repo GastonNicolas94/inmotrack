@@ -4,8 +4,11 @@ import { gastoSchema } from "@/schemas/gasto.schema";
 import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
+import { withObservability } from "@/lib/observability/with-observability";
+import { logger } from "@/lib/observability/logger";
+import { DOMAIN_EVENTS } from "@/lib/observability/events";
 
-export async function GET() {
+async function getGastos() {
   try {
     await requireAuthenticatedUser();
     const gastos = await GastosService.listar();
@@ -15,7 +18,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function postGasto(req: NextRequest) {
   try {
     const user = await requireAuthenticatedUser();
     assertCanWrite(user);
@@ -28,8 +31,12 @@ export async function POST(req: NextRequest) {
     }
 
     const gasto = await GastosService.crear(parsed.data);
+    logger.info(DOMAIN_EVENTS.EXPENSE_CREATED, { expenseId: gasto.id });
     return NextResponse.json(gasto, { status: 201 });
   } catch (e) {
     return handleServiceError(e);
   }
 }
+
+export const GET = withObservability(getGastos);
+export const POST = withObservability(postGasto);

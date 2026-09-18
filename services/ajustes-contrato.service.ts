@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import type { Clock } from "@/lib/clock";
 import { AppClock } from "@/lib/app-clock";
 import { fechaPeriodo } from "@/lib/ajustes-contrato";
+import { traceServiceObject } from "@/lib/observability/tracing";
 
 export type AplicarAjusteInput = {
   monto_nuevo: number;
@@ -125,4 +126,4 @@ export function createAjustesContratoService(deps: AjustesContratoDependencies) 
   };
 }
 
-export const AjustesContratoService = createAjustesContratoService({ prisma, clock: AppClock });
+export const AjustesContratoService = traceServiceObject("AjustesContratoService", createAjustesContratoService({ prisma, clock: AppClock }));

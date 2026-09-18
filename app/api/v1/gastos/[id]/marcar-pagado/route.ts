@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { GastosService } from "@/services/gastos.service";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
+import { withObservability } from "@/lib/observability/with-observability";
 
-export async function PATCH(
+async function patchMarcarGastoPagado(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -17,3 +18,5 @@ export async function PATCH(
     return handleServiceError(e);
   }
 }
+
+export const PATCH = withObservability(patchMarcarGastoPagado);

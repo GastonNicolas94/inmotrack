@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import type { Clock } from "@/lib/clock";
 import { AppClock } from "@/lib/app-clock";
 import { AdelantosService } from "@/services/adelantos.service";
+import { traceServiceObject } from "@/lib/observability/tracing";
 
 type Dependencies = { prisma: PrismaClient; clock: Clock };
 
@@ -409,7 +410,7 @@ export function createLiquidacionesService(deps: Dependencies) {
   };
 }
 
-export const LiquidacionesService = createLiquidacionesService({ prisma, clock: AppClock });
+export const LiquidacionesService = traceServiceObject("LiquidacionesService", createLiquidacionesService({ prisma, clock: AppClock }));
 
 export type LiquidacionDetalle = NonNullable<
   Awaited<ReturnType<typeof LiquidacionesService.obtenerDetalle>>

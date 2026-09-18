@@ -4,6 +4,7 @@ import type { Clock } from "@/lib/clock";
 import { AppClock } from "@/lib/app-clock";
 import { calcularVencimientoPeriodo, partesFechaUTC } from "@/lib/fecha";
 import { ContratosService } from "@/services/contratos.service";
+import { traceServiceObject } from "@/lib/observability/tracing";
 
 const MAX_INTENTOS = 3;
 
@@ -185,4 +186,4 @@ export function createCierrePeriodosService(deps: Dependencies) {
   };
 }
 
-export const CierrePeriodosService = createCierrePeriodosService({ prisma, clock: AppClock });
+export const CierrePeriodosService = traceServiceObject("CierrePeriodosService", createCierrePeriodosService({ prisma, clock: AppClock }));

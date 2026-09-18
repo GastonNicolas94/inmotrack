@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/db";
 import { calcularPendiente } from "@/lib/saldos";
 import type { InquilinoInput } from "@/schemas/inquilino.schema";
+import { traceServiceObject } from "@/lib/observability/tracing";
 
-export const InquilinosService = {
+export const InquilinosService = traceServiceObject("InquilinosService", {
   async listar() {
     return prisma.inquilino.findMany({
       select: {
@@ -91,4 +92,4 @@ export const InquilinosService = {
       })),
     };
   },
-};
+});

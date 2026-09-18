@@ -5,6 +5,7 @@ import { HttpError } from "@/lib/http-error";
 import { readAppUrl } from "@/lib/supabase/env";
 import { invitarUsuarioSchema, type InvitarUsuarioInput } from "@/schemas/usuario.schema";
 import type { AuthenticatedUser } from "@/lib/auth-context";
+import { traceServiceObject } from "@/lib/observability/tracing";
 
 type InviteUserResult = {
   data: { user: { id: string } | null } | null;
@@ -223,4 +224,4 @@ export function createUsuariosService(
   };
 }
 
-export const UsuariosService = createUsuariosService();
+export const UsuariosService = traceServiceObject("UsuariosService", createUsuariosService());

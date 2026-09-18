@@ -1,0 +1,18 @@
+{
+  "name": "InmoTrack production 5xx rate",
+  "alertTypes": [
+    { "type": "custom_alert" }
+  ],
+  "customAlert": {
+    "queryJsonString": "{\"event\":\"incomingRequest\",\"rollups\":{\"errors\":{\"measure\":\"count\",\"aggregation\":\"sum\",\"filter\":\"httpStatus ge 500\"},\"requests\":{\"measure\":\"count\",\"aggregation\":\"sum\"}},\"granularity\":{\"minutes\":5}}",
+    "triggerType": "threshold",
+    "triggerOperator": "gt",
+    "triggerThreshold": 0.05,
+    "formula": {
+      "operator": "divide",
+      "left": "errors",
+      "right": "requests"
+    },
+    "minThreshold": 20
+  }
+}

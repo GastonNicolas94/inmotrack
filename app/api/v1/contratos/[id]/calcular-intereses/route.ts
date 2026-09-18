@@ -4,8 +4,9 @@ import { calcularInteresesSchema } from "@/schemas/calcular-intereses.schema";
 import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
+import { withObservability } from "@/lib/observability/with-observability";
 
-export async function POST(
+async function postCalcularIntereses(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -34,3 +35,5 @@ export async function POST(
     return handleServiceError(e);
   }
 }
+
+export const POST = withObservability(postCalcularIntereses);
