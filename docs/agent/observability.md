@@ -1,6 +1,6 @@
 ---
 type: Observability
-version: 11c92fe
+version: 5b8553b
 validated: 2026-09-18
 update_when: Cambian logging, tracing, thresholds, Sentry/Vercel integration o diagnóstico de base de datos
 scope:
@@ -46,6 +46,8 @@ HTTP request
 ```
 
 La instrumentación es sistémica:
+
+- el store request-scoped vive en `context-store.ts` sin el guard `server-only`, para que `lib/db.ts` siga siendo importable por CLI/seed; `context.ts` conserva el guard para consumidores Next;
 
 - `lib/auth-context.ts` crea el span `auth.requireAuthenticatedUser`;
 - los singletons exportados de `services/*.ts` se envuelven con `traceServiceObject()`, por lo que cada método público genera un span `service`;
