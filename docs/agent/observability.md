@@ -1,7 +1,7 @@
 ---
 type: Observability
-version: metrics-alerting
-validated: 2026-09-15
+version: observability-after-rent-adjustments
+validated: 2026-09-17
 update_when: Cambian logging, tracing, thresholds, Sentry/Vercel integration o diagnóstico de base de datos
 scope:
   - lib/observability
@@ -52,6 +52,7 @@ Eventos iniciales instrumentados:
 - `contract.activated`
 - `contract.cancelled`
 - `contract.activation_failed`
+- `contract.adjustment_applied`
 - `payment.created`
 - `payment.failed`
 - `settlement.generated`
@@ -162,3 +163,14 @@ Las alertas de p95, pool > 80% y queries lentas se activan después de obtener b
 - debug narrativo permanente: prohibido.
 
 Una búsqueda del código base no debe introducir `console.log/debug/info` narrativos fuera de tooling puntual; todo log de aplicación debe pasar por la abstracción estructurada.
+
+## Superficies añadidas por ajustes de contratos
+
+Los cambios incorporados por la épica de ajustes periódicos también quedan dentro del alcance de observabilidad:
+
+- `/api/v1/contratos/[id]/ajustes` usa `withObservability`;
+- `/api/v1/contratos/[id]/ajustes/[idAjuste]/aplicar` usa `withObservability`, emite `contract.adjustment_applied` y registra fallos de publicación a Queue;
+- `/api/v1/dev/reloj-pruebas` queda envuelto por `withObservability`;
+- `/api/v1/cron/recuperar-cola-cierre` registra fallos de republicación con logger estructurado;
+- el callback `/api/queues/cierre-periodos` no usa `withObservability` porque está administrado por `@vercel/queue`; registra explícitamente mensajes inválidos y errores de procesamiento antes de relanzarlos para conservar la semántica de retry;
+- los crons de cierre conservan Vercel Queue y logging estructurado tras sincronizar la rama épica con `develop`.
