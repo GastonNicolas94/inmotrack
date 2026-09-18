@@ -1,7 +1,5 @@
-import "server-only";
-
 import * as Sentry from "@sentry/nextjs";
-import { getObservabilityContext } from "@/lib/observability/context";
+import { getObservabilityContext } from "@/lib/observability/context-store";
 
 type SpanOptions = Parameters<typeof Sentry.startSpan>[0];
 
