@@ -1,13 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { validarCronSecret } from "@/lib/cron-auth";
 import { AppClock } from "@/lib/app-clock";
 import { errorResponse } from "@/lib/errors";
 import { CierrePeriodosService } from "@/services/cierre-periodos.service";
 import { CierrePeriodosQueueService } from "@/services/cierre-periodos-queue.service";
+import { withObservability } from "@/lib/observability/with-observability";
+import { logger } from "@/lib/observability/logger";
 
 const ANTIGUEDAD_MINIMA_MS = 60_000;
 
-export async function GET(req: Request) {
+async function getRecuperarColaCierre(req: NextRequest) {
   if (!validarCronSecret(req)) {
     return errorResponse("UNAUTHORIZED", "Secret inválido.", 401);
   }
@@ -22,7 +24,7 @@ export async function GET(req: Request) {
   const fallidas = publicaciones.filter((resultado) => resultado.status === "rejected").length;
 
   if (fallidas > 0) {
-    console.error("Falló la republicación de filas pendientes en Vercel Queue", {
+    logger.error("queue.republish.failed", {
       pendientes: pendientes.length,
       fallidas,
     });
@@ -34,3 +36,5 @@ export async function GET(req: Request) {
     fallidas,
   });
 }
+
+export const GET = withObservability(getRecuperarColaCierre);
