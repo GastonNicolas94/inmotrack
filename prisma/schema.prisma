@@ -17,7 +17,8 @@ model Usuario {
   id_propietario               Int?
   propietario    Propietario? @relation(fields: [id_propietario], references: [id])
 
-  transacciones Transaccion[] @relation("UsuarioCreador")
+  transacciones     Transaccion[]   @relation("UsuarioCreador")
+  ajustes_aplicados AjusteContrato[] @relation("UsuarioAjusteAplicador")
 
   @@map("usuarios")
 }
@@ -86,6 +87,7 @@ model Contrato {
   gastos                Gasto[]
   transacciones         Transaccion[]
   outbox_cierre_periodo OutboxCierrePeriodo[]
+  ajustes               AjusteContrato[]
 
   @@map("contratos")
 }
@@ -108,6 +110,31 @@ enum EstadoOutboxCierre {
   PROCESANDO
   COMPLETADO
   ERROR
+}
+
+model AjusteContrato {
+  id                    Int                  @id @default(autoincrement())
+  id_contrato           Int
+  contrato              Contrato             @relation(fields: [id_contrato], references: [id])
+  periodo_efectivo      String                @db.VarChar(7)
+  indice                IndiceActualizacion
+  monto_anterior        Decimal               @db.Decimal(15, 2)
+  monto_nuevo           Decimal?              @db.Decimal(15, 2)
+  estado                EstadoAjusteContrato  @default(PENDIENTE)
+  observacion           String?
+  creado_en             DateTime              @default(now())
+  aplicado_en           DateTime?
+  id_usuario_aplicador  Int?
+  usuario_aplicador     Usuario?              @relation("UsuarioAjusteAplicador", fields: [id_usuario_aplicador], references: [id])
+
+  @@unique([id_contrato, periodo_efectivo])
+  @@index([estado])
+  @@map("ajustes_contrato")
+}
+
+enum EstadoAjusteContrato {
+  PENDIENTE
+  APLICADO
 }
 
 // ─── Entidades Contables ─────────────────────────────────────────────────────

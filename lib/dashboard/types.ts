@@ -24,6 +24,7 @@ export type DashboardPropertyOption = {
 };
 
 export type DashboardAlertKind =
+  | "ajuste-pendiente"
   | "contrato-por-vencer"
   | "deuda-vencida"
   | "gasto-pendiente"
@@ -44,6 +45,7 @@ export type DashboardAlert = {
 
 export type OperationalDashboardData = {
   generatedAt: Date;
+  ajustesPendientes: number;
   metrics: {
     contratosVigentes: number;
     contratosPorVencer: number;

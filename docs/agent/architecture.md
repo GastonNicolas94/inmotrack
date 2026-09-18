@@ -1,7 +1,7 @@
 ---
 type: Architecture
-version: 8a23727
-validated: 2026-09-15
+version: contract-rent-adjustments-queue
+validated: 2026-09-17
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
   - app
@@ -24,130 +24,124 @@ Next.js App Router monolito, con una separación de capas informal pero consiste
 | Rutas (entrypoint HTTP) | `app/api/v1/**/route.ts` | Solo parsea `req`, valida con zod, llama UN método de un `services/*.ts`, traduce el resultado/error a `NextResponse`. Nunca lógica de negocio ni Prisma directo. |
 | Validación | `schemas/*.schema.ts` | Zod schemas, uno por recurso. Los usan tanto las rutas API como los forms de React Hook Form del lado cliente. |
 | Servicios (lógica de negocio) | `services/*.ts` | Toda regla de negocio y toda llamada a Prisma vive acá. Exporta un objeto `XxxService` con métodos async. Operaciones multi-tabla van dentro de `prisma.$transaction`. |
-| Helpers puros | `lib/*.ts` | Funciones sin I/O (cálculos de fecha, saldos, prelación, punitorios) o wrappers finos sobre un recurso externo (`lib/db.ts`, `lib/auth-context.ts`, `lib/supabase/*`). Se testean sin base de datos. |
+| Helpers puros | `lib/*.ts` | Funciones sin I/O (cálculos de fecha, saldos, prelación, punitorios, calendario de ajustes) o wrappers finos sobre un recurso externo (`lib/db.ts`, `lib/auth-context.ts`, `lib/supabase/*`). Se testean sin base de datos. |
 | UI | `components/**`, `app/(dashboard)/**`, `app/(auth)/**` | Server Components para listar (`TablaXxx.tsx`, fetch directo al service), Client Components (`"use client"`) para todo lo que tiene estado/submit (`ModalXxx.tsx`, `DialogXxx.tsx`, `WizardXxx.tsx`). |
 
 ## Folder layout
 
-```
+```text
 app/
   (auth)/login/                      → Página de login, fuera del dashboard shell
-  (dashboard)/                       → Layout con nav lateral (DashboardShell); una carpeta por sección
+  (dashboard)/                       → Layout con nav lateral (DashboardShell)
     contratos/, gastos/, inquilinos/, liquidaciones/, pagos/, propiedades/, propietarios/, transacciones/
     contratos/[id]/movimientos/      → Detalle de movimientos de un contrato puntual
     liquidaciones/[id]/              → Detalle auditable de una liquidación puntual
+    dev/reloj/                       → Reloj global de pruebas (solo ADMIN, no producción)
   api/
     auth/confirm/                    → Valida la invitación y establece cookies
-    auth/confirm/password/           → Pantalla autenticada para fijar contraseña
-    v1/                              → API REST — ver contracts.md para la lista completa de rutas
-      contratos/, gastos/, inquilinos/, liquidaciones/, pagos/, propiedades/, propietarios/, transacciones/, usuarios/
-      cron/                          → Endpoints invocados por Vercel Cron (auth propia, no de sesión — ver traps.md)
-  layout.tsx                        → Root layout — ÚNICO lugar donde se monta <Toaster /> (ver traps.md)
-  globals.css                        → Tokens del sistema de diseño (--primary, --radius, colores de estado) — ver AGENTS.md del repo
+    v1/                              → API REST — ver contracts.md
+      cron/                          → Endpoints de Vercel Cron con `CRON_SECRET`
+    queues/cierre-periodos/          → Subscriber de Vercel Queue
+  layout.tsx                         → Root layout
+  globals.css                        → Tokens del sistema de diseño
 
 components/
-  ui/                                → Primitivos shadcn ("base-nova") — sin lógica de dominio
-  layout/                            → PageHeader, DashboardNav, DashboardShell, TableCard — patrones transversales
-  features/<dominio>/                → Un dominio por carpeta (contratos, gastos, inquilinos, liquidaciones, pagos, propiedades, propietarios, transacciones)
-  features/shared/                   → Compartido entre 2+ dominios (BadgeEstadoPeriodo, PeriodoResumenRow, FiltroRangoFecha, EstadoAsyncModal)
+  ui/                                → Primitivos shadcn
+  layout/                            → Componentes transversales
+  features/<dominio>/                → Componentes por dominio
+  features/shared/                   → Compartidos
 
-services/                            → Un archivo por agregado de negocio (ver overview.md → Capability map), más `dashboard.service.ts` para snapshots agregados server-only
-lib/                                 → fecha.ts, saldos.ts, cargos.ts, prelacion.ts, punitorios.ts, masking.ts, serialize.ts,
-                                        estado-cobranza.ts, confeccion-contrato.ts, idempotency.ts, cron-auth.ts, db.ts, auth.ts, errors.ts, api-error-handler.ts
-  dashboard/                         → public DTO contracts (`types.ts`), URL filters/date ranges (`filters.ts`),
-                                        decimal-safe financial calculations and chart view models (`metrics.ts`)
-schemas/                             → Un *.schema.ts por recurso (zod)
-tests/
-  lib/, services/, db/, helpers/     → node:test — ver runbook.md
-prisma/
-  schema.prisma                      → Modelo de datos completo (fuente de verdad)
-  seed.ts                            → Datos de demo
-supabase/
-  config.toml                        → Configuración de Supabase local (Postgres en 54322)
-  migrations/                         → Única historia ejecutable; aplicada por `npx supabase db reset`/push
-docs/archive/prisma-migrations/       → Historia Prisma heredada, solo referencia no ejecutable
-proxy.ts                             → Renueva cookies Supabase y bloquea identidad ausente; deja `/login`, el callback exacto `/auth/confirm` y `/api/v1/cron/*` públicos
-lib/auth-context.ts                  → Resuelve identidad Supabase + perfil `usuarios` y autoriza por rol en el servidor
-services/usuarios.service.ts         → Invitaciones Admin, creación de perfil y compensación de identidades Auth
+services/                            → Servicios de dominio y adaptadores de Queue
+lib/                                 → Helpers puros, clock, auth y wrappers externos
+schemas/                             → Zod
+prisma/schema.prisma                 → Modelo completo
+supabase/migrations/                 → Historia ejecutable de esquema
+docs/archive/prisma-migrations/      → Historia heredada, solo referencia
+proxy.ts                             → Gate grueso de identidad; cron exceptuado por path
 ```
 
 ## Request / data flow
 
-```
+```text
 Request del browser
          ↓
-proxy.ts (runtime compatible con el proxy de Next.js)
-  — sin identidad → 401/redirect a /login
-  — renueva cookies con `getClaims`; no decide roles
+proxy.ts
          ↓
 app/api/v1/**/route.ts
-  — resuelve `requireAuthenticatedUser`/`requireAdmin`, parsea body/params, valida con schemas/*.schema.ts (zod)
          ↓
 services/*.ts
-  — lógica de negocio; para operaciones multi-tabla, todo dentro de prisma.$transaction
-  — locks pesimistas explícitos (`SELECT ... FOR UPDATE` / `FOR UPDATE SKIP LOCKED`) donde hay
-    concurrencia real (pagos, liquidaciones, cierre de períodos, punitorios) — Prisma no da
-    locking optimista/pesimista de forma nativa acá, se hace con $queryRawUnsafe
          ↓
-Prisma Client (adapter-pg) → PostgreSQL
+Prisma Client → PostgreSQL
 ```
 
-En local, PostgreSQL lo provee Supabase en `127.0.0.1:54322/postgres` y requiere
-Docker Desktop (o un daemon compatible). La aplicación usa `DATABASE_URL`; Prisma
-CLI usa `DIRECT_URL` desde `prisma.config.ts`. En una instalación remota pueden ser
-endpoints distintos (pooler para runtime y conexión directa para migraciones), pero
-ningún test destructivo debe apuntar allí.
+Los handlers resuelven autorización dentro de su `try/catch`. Las operaciones multi-tabla usan `prisma.$transaction`; los puntos de concurrencia real usan locks explícitos (`FOR UPDATE` / `FOR UPDATE SKIP LOCKED`).
 
-Para las páginas del dashboard (no-API), el flujo es más corto: el Server Component (`TablaXxx.tsx`) llama al `service` directamente (sin pasar por HTTP), y los componentes cliente (`ModalXxx.tsx`) hacen `fetch()` a las mismas rutas `/api/v1/*` que usaría un cliente externo.
+En local, PostgreSQL lo provee Supabase en `127.0.0.1:54322/postgres`. Ningún test destructivo debe apuntar a una base remota.
 
-El segmento `app/(dashboard)/` define `loading.tsx` como fallback de navegación. Next.js lo
-anida dentro de `DashboardShell`, por lo que el sidebar y el header compartidos permanecen
-montados mientras el Server Component de la página resuelve sus datos. El fallback vive en
-`components/layout/DashboardLoadingSkeleton.tsx`: es un Server Component accesible (`role="status"`)
-con un header y seis filas, y usa exclusivamente los tokens de `globals.css` para su superficie,
-borde y animación.
+Para páginas del dashboard, los Server Components llaman services directamente; componentes cliente usan `/api/v1/*` para mutaciones y lecturas interactivas.
 
-Cada listado del dashboard coloca su `Tabla*` dentro de un límite `Suspense` propio, con
-`components/layout/TableLoadingSkeleton.tsx` como fallback compartido. Así el `PageHeader` y
-los filtros se pueden enviar antes de que termine la consulta Prisma, mientras la tarjeta de
-tabla conserva su superficie, borde y seis filas de estado de carga. La página de contratos
-mantiene además un límite independiente en la acción del header: `ContratosWizardData` resuelve
-las propiedades e inquilinos disponibles y recién entonces renderiza `WizardContrato`, sin
-cambiar sus props ni sus permisos.
+El detalle de liquidación ofrece un PDF A4 vertical generado en servidor desde la misma consulta sellada. El emisor visible es `Macchieraldo Villarruel — Estudio Contable & Inmobiliaria`; el nombre técnico del sistema no forma parte del documento entregado.
 
-El detalle de liquidación ofrece un PDF A4 vertical generado en servidor desde la misma consulta
-sellada. El endpoint autenticado `/api/v1/liquidaciones/[id]/pdf` fuerza runtime Node.js, responde
-como archivo no cacheable y mantiene una maquetación formal multipágina separada de la UI web.
-El documento omite el estado y cualquier sección sin movimientos asociados.
-El emisor visible y los metadatos identifican a `Macchieraldo Villarruel — Estudio Contable &
-Inmobiliaria`; el nombre técnico del sistema no forma parte del documento entregado.
+## Ajustes periódicos de contratos
 
-Los métodos de listado que alimentan estas tablas usan `select` explícito y relaciones anidadas
-mínimas. El shape de cada consulta se mantiene alineado con los campos leídos por su `Tabla*`;
-las relaciones de `TransaccionesService.listar` que necesita la UI (`contra_asientos` y
-`usuario_creador.email`) se conservan explícitamente.
+`lib/ajustes-contrato.ts` decide si el próximo período requiere actualización. La fecha base es `fecha_ultimo_ajuste ?? fecha_inicio`; si faltan `indice_act` o `meses_act`, no se bloquea el cierre.
 
-## Outbox pattern (cierre de períodos)
+`services/ajustes-contrato.service.ts` administra `ajustes_contrato`. La restricción única `(id_contrato, periodo_efectivo)` hace idempotente la detección. Aplicar un ajuste toma locks `FOR UPDATE`, actualiza `Contrato.monto_base` y `fecha_ultimo_ajuste`, marca el ajuste `APLICADO` y garantiza una outbox `PENDIENTE` dentro de la misma transacción.
 
-`services/cierre-periodos.service.ts` es el único lugar del repo con un patrón outbox real:
+`ContratosService.avanzarPeriodo()` evalúa la regla **antes de cerrar** el período abierto. Ante `AJUSTE_PENDIENTE`, el período actual sigue `ABIERTO` y el siguiente no existe todavía. Una actualización ordinaria cambia `monto_base`; no crea un `Cargo AJUSTE`.
 
-1. `encolarContratosVencidos()` (cron mensual) encuentra contratos con un período `ABIERTO` vencido y los encola en `outbox_cierre_periodo` (`PENDIENTE`) — o los pasa directo a `VENCIDO` si `fecha_fin` ya pasó.
-2. `procesarUnaFilaDeCola()` (cron frecuente) reclama UNA fila con `UPDATE ... WHERE id = (SELECT ... FOR UPDATE SKIP LOCKED) RETURNING`, la procesa (avanza el período, generando el `Cargo ALQUILER` del mes siguiente), y la marca `COMPLETADO`. Reintenta hasta 3 veces antes de marcarla `ERROR`.
+## Outbox + Vercel Queue para cierre de períodos
 
-No hay un worker/cola real — el "consumidor" es el propio cron de Vercel llamando al endpoint repetidamente.
+PostgreSQL es la fuente durable del trabajo y Vercel Queue es el mecanismo de entrega/ejecución:
+
+```text
+transacción de negocio
+  └─ INSERT/garantía outbox PENDIENTE
+COMMIT
+  ↓
+send("cierre-periodos", { outboxId })
+  ↓
+Vercel Queue
+  ↓
+app/api/queues/cierre-periodos/route.ts
+  ↓
+CierrePeriodosService.procesarFilaDeCola(outboxId)
+  ↓
+claim atómico PENDIENTE → PROCESANDO
+  ↓
+COMPLETADO / PENDIENTE con retry / ERROR
+```
+
+`procesarFilaDeCola(outboxId)` reclama únicamente el id recibido con `UPDATE ... WHERE id = ? AND estado = 'PENDIENTE' RETURNING`. Una entrega duplicada encuentra cero filas y termina como no-op. Los errores técnicos incrementan `intentos`; hasta el tercer intento la fila vuelve a `PENDIENTE`, y luego pasa a `ERROR`.
+
+`encolarContratosVencidos()` devuelve los ids de las outboxes nuevas o ya pendientes. El cron mensual publica esos ids directamente a Queue.
+
+La publicación ocurre después del commit, por lo que existe una ventana `COMMIT OK / send falló`. Para cubrirla, `/api/v1/cron/recuperar-cola-cierre` corre cada 5 minutos, busca `PENDIENTE` antiguas y republica sus `outboxId`. Así una falla de Queue no pierde el trabajo durable.
+
+**Este flujo no usa `after()` ni self-fetch HTTP.** El endpoint legado `/api/v1/cron/procesar-cola-cierre` procesa una fila manualmente pero ya no encadena llamadas.
+
+## Reloj de aplicación
+
+Toda lógica temporal de negocio depende de `Clock` (`lib/clock.ts`) mediante `AppClock`:
+
+- Producción: `SystemClock`, tiempo real.
+- Local/Preview: `TestClock` cuando está habilitado.
+- Preview: la fecha mutable vive en Vercel Blob privado (`inmotrack/test-clock.json`).
+
+La UI `/dev/reloj` y su API son solo ADMIN. No introducir `new Date()`/`Date.now()` como fuente de tiempo de negocio dentro de services; convertir fechas explícitas o hacer aritmética calendaria sí es válido.
 
 ## Autenticación y perfiles
 
-Supabase Auth es la única autoridad de credenciales y sesiones. `lib/supabase/server.ts` usa el adaptador SSR para leer/escribir cookies; `proxy.ts` renueva la sesión sin autorizar roles. `lib/auth-context.ts` valida la identidad con `getClaims` y consulta `public.usuarios` por `auth_user_id` en cada entrypoint protegido. `public.usuarios` no guarda contraseñas.
+Supabase Auth es la autoridad de credenciales y sesiones. `lib/auth-context.ts` resuelve identidad + perfil de dominio en cada entrypoint protegido. `public.usuarios` no guarda contraseñas.
 
-El flujo de invitación es server-only: `POST /api/v1/usuarios` exige ADMIN, llama a `inviteUserByEmail` con `${APP_URL}/auth/confirm` y crea el perfil. Si Prisma falla, elimina la identidad recién creada. `/auth/confirm` valida `token_hash` con `verifyOtp({ type: "invite" })`, persiste cookies y redirige a `/auth/confirm/password`; esa pantalla ejecuta `updateUser({ password })` y entra al dashboard.
+El flujo de invitación es server-only: ADMIN invita por Supabase Auth y se crea el perfil; si Prisma falla, se compensa eliminando la identidad recién creada.
 
 ## Low-signal / generated areas
 
 | Path | Nature | Note |
 |------|--------|------|
-| `.superpowers/sdd/` | Notas de trabajo del flujo superpowers | Autoexcluido por su propio `.gitignore` (`*`) — nunca se commitea |
-| `.superpowers/*.md` | Reportes de tareas de subagentes | Historial de construcción, no documentación de producto |
-| `supabase/migrations/` | Historia ejecutable de migraciones SQL | No editar una migración ya aplicada — ver runbook.md |
-| `docs/archive/prisma-migrations/` | Historia Prisma heredada | Solo referencia; nunca la ejecute Prisma o Supabase |
-| `components/ui/` | Componentes shadcn generados por el CLI | Ajustar tema/variantes ahí está bien; no meter lógica de dominio |
+| `.superpowers/sdd/` | Notas de trabajo | Autoexcluido por `.gitignore` |
+| `.superpowers/*.md` | Reportes de agentes | Historial de construcción, no producto |
+| `supabase/migrations/` | Historia ejecutable | No editar una migración ya aplicada |
+| `docs/archive/prisma-migrations/` | Historia Prisma heredada | Solo referencia |
+| `components/ui/` | Componentes shadcn | Sin lógica de dominio |

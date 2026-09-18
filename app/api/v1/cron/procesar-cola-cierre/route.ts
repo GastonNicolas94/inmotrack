@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse, after } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { validarCronSecret } from "@/lib/cron-auth";
 import { CierrePeriodosService } from "@/services/cierre-periodos.service";
 import { errorResponse } from "@/lib/errors";
@@ -10,18 +10,6 @@ async function postProcesarColaCierre(req: NextRequest) {
   }
 
   const { huboTrabajo } = await CierrePeriodosService.procesarUnaFilaDeCola();
-
-  if (huboTrabajo) {
-    after(async () => {
-      const secret = process.env.CRON_SECRET;
-      const url = new URL("/api/v1/cron/procesar-cola-cierre", req.url);
-      await fetch(url, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${secret}` },
-      }).catch(() => {});
-    });
-  }
-
   return NextResponse.json({ huboTrabajo });
 }
 

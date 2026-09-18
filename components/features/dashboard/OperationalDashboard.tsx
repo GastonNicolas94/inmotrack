@@ -1,4 +1,4 @@
-import { AlertCircle, ClipboardList, FileCheck2, Receipt, WalletCards } from "lucide-react";
+import { AlertCircle, ClipboardList, FileCheck2, Receipt, RefreshCcw, WalletCards } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardMetricCard } from "@/components/features/dashboard/DashboardMetricCard";
@@ -19,6 +19,7 @@ export function OperationalDashboard({ data }: { data: OperationalDashboardData 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <DashboardMetricCard label="Contratos vigentes" value={metrics.contratosVigentes} icon={FileCheck2} />
           <DashboardMetricCard label="Por vencer" value={metrics.contratosPorVencer} description="Próximos vencimientos" icon={AlertCircle} />
+          <DashboardMetricCard label="Ajustes pendientes" value={data.ajustesPendientes} description="Bloquean el avance del período" icon={RefreshCcw} />
           <DashboardMetricCard label="Cuotas vencidas" value={metrics.cuotasVencidas} icon={WalletCards} />
           <DashboardMetricCard label="Monto vencido" value={money(metrics.montoVencido)} icon={WalletCards} />
           <DashboardMetricCard label="Gastos pendientes" value={money(metrics.gastosPendientes.monto)} description={String(metrics.gastosPendientes.cantidad) + " registros"} icon={Receipt} />

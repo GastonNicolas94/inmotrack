@@ -20,19 +20,19 @@ export function DashboardShell({
   email,
   rol,
   onLogout,
+  showTestClock,
   children,
 }: {
   email: string;
   rol: AuthenticatedUser["rol"];
   onLogout: (formData: FormData) => void | Promise<void>;
+  showTestClock?: boolean;
   children: ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Restaurar preferencia de colapso (desktop) — después del mount, para no romper el HTML del servidor.
   useEffect(() => {
-    // Intencional: leer localStorage sólo después de hidratar evita mismatch SSR.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (localStorage.getItem(STORAGE_KEY) === "1") setCollapsed(true);
   }, []);
@@ -47,7 +47,6 @@ export function DashboardShell({
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Backdrop del drawer en mobile */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/30 md:hidden"
@@ -56,7 +55,6 @@ export function DashboardShell({
         />
       )}
 
-      {/* Sidebar: drawer deslizable en mobile, columna estática y colapsable en desktop */}
       <aside
         data-collapsed={collapsed}
         className={cn(
@@ -83,7 +81,7 @@ export function DashboardShell({
           </button>
         </div>
 
-        <DashboardNav onNavigate={() => setMobileOpen(false)} />
+        <DashboardNav onNavigate={() => setMobileOpen(false)} showTestClock={showTestClock} />
 
         <div className="space-y-3 border-t border-border p-4 md:group-data-[collapsed=true]/aside:px-2">
           <div className="flex items-center justify-between gap-2 md:group-data-[collapsed=true]/aside:hidden">
@@ -125,7 +123,6 @@ export function DashboardShell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Header mobile: solo botón de menú, visible por debajo de md */}
         <header className="relative flex items-center justify-center border-b border-border px-4 py-3 md:hidden">
           <button
             type="button"

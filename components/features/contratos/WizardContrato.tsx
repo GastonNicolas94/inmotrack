@@ -269,6 +269,37 @@ export function WizardContrato({
                 )}
               />
 
+              {form.watch("indice_act") && (
+                <FormField
+                  control={form.control}
+                  name="meses_act"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Frecuencia de actualización</FormLabel>
+                      <Select
+                        value={field.value != null ? String(field.value) : undefined}
+                        onValueChange={(value) => field.onChange(Number(value))}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Cada cuántos meses">
+                              {(value: string | null) => value ? `Cada ${value} meses` : null}
+                            </SelectValue>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="3">Cada 3 meses</SelectItem>
+                          <SelectItem value="4">Cada 4 meses</SelectItem>
+                          <SelectItem value="6">Cada 6 meses</SelectItem>
+                          <SelectItem value="12">Cada 12 meses</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
               <FormField
                 control={form.control}
                 name="cobra_confeccion"

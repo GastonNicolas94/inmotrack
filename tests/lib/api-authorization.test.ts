@@ -188,6 +188,9 @@ test("every non-cron route method declares an authoritative auth guard and error
   assert.ok(files.length > 0);
 
   const adminOnly = new Set([
+    "app/api/v1/dev/reloj-pruebas/route.ts:GET",
+    "app/api/v1/dev/reloj-pruebas/route.ts:POST",
+    "app/api/v1/dev/reloj-pruebas/route.ts:DELETE",
     "app/api/v1/liquidaciones/[id]/confirmar-pago/route.ts:POST",
     "app/api/v1/propietarios/[id]/adelantos/route.ts:POST",
     "app/api/v1/transacciones/contra-asiento/route.ts:POST",
