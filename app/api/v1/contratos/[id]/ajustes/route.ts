@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { AjustesContratoService } from "@/services/ajustes-contrato.service";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { requireAuthenticatedUser } from "@/lib/auth-context";
+import { withObservability } from "@/lib/observability/with-observability";
 
-export async function GET(
+async function getAjustesContrato(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -22,3 +23,5 @@ export async function GET(
     return handleServiceError(error);
   }
 }
+
+export const GET = withObservability(getAjustesContrato);
