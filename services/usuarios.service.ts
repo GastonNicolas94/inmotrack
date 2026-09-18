@@ -224,4 +224,4 @@ export function createUsuariosService(
   };
 }
 
-export const UsuariosService = createUsuariosService();
+export const UsuariosService = traceServiceObject("UsuariosService", createUsuariosService());
