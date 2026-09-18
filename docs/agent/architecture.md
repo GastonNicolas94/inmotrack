@@ -1,7 +1,7 @@
 ---
 type: Architecture
-version: contract-rent-adjustments-queue
-validated: 2026-09-17
+version: 11c92fe
+validated: 2026-09-18
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
   - app
@@ -67,11 +67,15 @@ Request del browser
          ↓
 proxy.ts
          ↓
-app/api/v1/**/route.ts
+app/api/v1/**/route.ts        ← Sentry HTTP trace
          ↓
-services/*.ts
+auth-context.ts               ← span auth
          ↓
-Prisma Client → PostgreSQL
+services/*.ts                 ← span por método público
+         ↓
+Prisma Client                 ← span por operación ORM
+         ↓
+PostgreSQL
 ```
 
 Los handlers resuelven autorización dentro de su `try/catch`. Las operaciones multi-tabla usan `prisma.$transaction`; los puntos de concurrencia real usan locks explícitos (`FOR UPDATE` / `FOR UPDATE SKIP LOCKED`).
