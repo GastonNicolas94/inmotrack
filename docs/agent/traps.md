@@ -1,7 +1,7 @@
 ---
 type: Traps
-version: 4957633
-validated: 2026-09-14
+version: 11c92fe
+validated: 2026-09-18
 update_when: cuando se descubre un gotcha no obvio, agregarlo acá en el mismo cambio
 scope:
   - services
@@ -221,3 +221,10 @@ registrar el token en logs o URLs posteriores.
 construye `${APP_URL}/auth/confirm`; la allowlist de Supabase debe contener esa URL exacta. La
 plantilla local vive en `supabase/templates/invite.html` y usa `TokenHash`/`RedirectTo`; en un
 proyecto hosted se debe copiar esa plantilla al editor de Email Templates antes de invitar.
+
+---
+
+## Los spans Prisma nunca llevan `args` ni bind values
+
+El tracing distribuido envuelve el Prisma Client global en `lib/db.ts` mediante `$extends({ query: { $allModels: { $allOperations }}})`. El nombre del span identifica modelo + operación (por ejemplo `prisma.contrato.findUnique`) y alcanza para correlacionar latencia dentro del trace. No agregar `args`, valores de filtros, payloads, SQL completo ni resultados como atributos: pueden contener DNI, email, CBU, tokens u otra PII. Para investigar una query concreta usar el nombre/latencia del span y, si hace falta análisis agregado, `pg_stat_statements`.
+
