@@ -3,8 +3,9 @@ import { LiquidacionesService } from "@/services/liquidaciones.service";
 import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
+import { withObservability } from "@/lib/observability/with-observability";
 
-export async function GET(
+async function getLiquidacion(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -27,3 +28,5 @@ export async function GET(
     return handleServiceError(e);
   }
 }
+
+export const GET = withObservability(getLiquidacion);

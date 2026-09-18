@@ -1,6 +1,7 @@
 import "server-only";
 
 import { HttpError } from "@/lib/http-error";
+import { setObservabilityUser } from "@/lib/observability/context";
 
 export type AuthenticatedUser = {
   id: number;
@@ -105,6 +106,7 @@ export async function requireAuthenticatedUser(
 ): Promise<AuthenticatedUser> {
   const user = await getAuthenticatedUser(dependencies);
   if (!user) throw new HttpError("UNAUTHORIZED", "No autenticado.", 401);
+  setObservabilityUser(user.id);
   return user;
 }
 

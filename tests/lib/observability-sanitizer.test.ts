@@ -47,3 +47,7 @@ test("sanitizeForLogging truncates oversized payloads", () => {
   assert.equal((result as { truncated: boolean }).truncated, true);
   assert.ok((result as { originalSize: number }).originalSize > 32);
 });
+
+test("sanitizeForLogging preserves undefined payloads", () => {
+  assert.equal(sanitizeForLogging(undefined), undefined);
+});

@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { TransaccionesService } from "@/services/transacciones.service";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { requireAuthenticatedUser } from "@/lib/auth-context";
+import { withObservability } from "@/lib/observability/with-observability";
 
-export async function GET(req: NextRequest) {
+async function getTransacciones(req: NextRequest) {
   try {
     await requireAuthenticatedUser();
     const { searchParams } = req.nextUrl;
@@ -21,3 +22,5 @@ export async function GET(req: NextRequest) {
     return handleServiceError(e);
   }
 }
+
+export const GET = withObservability(getTransacciones);

@@ -1,3 +1,4 @@
+import { getObservabilityContext } from "./context";
 import type { LogContext, LogLevel, StructuredLog } from "./types";
 
 function environment(): string {
@@ -5,11 +6,13 @@ function environment(): string {
 }
 
 function emit(level: LogLevel, event: string, context: LogContext = {}): void {
+  const scoped = getObservabilityContext();
   const payload: StructuredLog = {
     timestamp: new Date().toISOString(),
     level,
     event,
     environment: environment(),
+    ...(scoped ?? {}),
     ...context,
   };
 

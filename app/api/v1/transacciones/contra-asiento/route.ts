@@ -4,8 +4,9 @@ import { contraAsientoSchema } from "@/schemas/transaccion.schema";
 import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { requireAdmin } from "@/lib/auth-context";
+import { withObservability } from "@/lib/observability/with-observability";
 
-export async function POST(req: NextRequest) {
+async function postContraAsiento(req: NextRequest) {
   try {
     const user = await requireAdmin();
     const body = await req.json();
@@ -25,3 +26,5 @@ export async function POST(req: NextRequest) {
     return handleServiceError(e);
   }
 }
+
+export const POST = withObservability(postContraAsiento);

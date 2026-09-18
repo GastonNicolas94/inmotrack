@@ -5,12 +5,13 @@ import { z } from "zod";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
 import { HttpError } from "@/lib/http-error";
+import { withObservability } from "@/lib/observability/with-observability";
 
 const estadoSchema = z.object({
   estado: z.enum(["BORRADOR", "ACTIVO", "MOROSO", "POR_VENCER", "VENCIDO", "RESCINDIDO"]),
 });
 
-export async function PATCH(
+async function patchEstadoContrato(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -32,3 +33,5 @@ export async function PATCH(
     return errorResponse("CONTRATO_ERROR", String(e), 400);
   }
 }
+
+export const PATCH = withObservability(patchEstadoContrato);

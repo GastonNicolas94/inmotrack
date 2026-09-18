@@ -4,8 +4,9 @@ import { propietarioSchema } from "@/schemas/propietario.schema";
 import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
+import { withObservability } from "@/lib/observability/with-observability";
 
-export async function GET(
+async function getPropietario(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -20,7 +21,7 @@ export async function GET(
   }
 }
 
-export async function PATCH(
+async function patchPropietario(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -43,3 +44,6 @@ export async function PATCH(
     return handleServiceError(e);
   }
 }
+
+export const GET = withObservability(getPropietario);
+export const PATCH = withObservability(patchPropietario);

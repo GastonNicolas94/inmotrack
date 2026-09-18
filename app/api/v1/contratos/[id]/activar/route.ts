@@ -4,8 +4,9 @@ import { errorResponse } from "@/lib/errors";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { assertCanWrite, requireAuthenticatedUser } from "@/lib/auth-context";
 import { HttpError } from "@/lib/http-error";
+import { withObservability } from "@/lib/observability/with-observability";
 
-export async function POST(
+async function postActivarContrato(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -20,3 +21,5 @@ export async function POST(
     return errorResponse("CONTRATO_ERROR", String(e), 400);
   }
 }
+
+export const POST = withObservability(postActivarContrato);
