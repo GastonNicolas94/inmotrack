@@ -40,6 +40,27 @@ export function calcularVencimientoPeriodo(anio: number, mes: number): Date {
   return vencimiento;
 }
 
+export function parseFechaCalendario(fecha: string): { anio: number; mes: number; dia: number } {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha);
+  if (!match) {
+    throw new Error(`Fecha inválida: "${fecha}" (esperado "YYYY-MM-DD").`);
+  }
+
+  const anio = Number(match[1]);
+  const mes = Number(match[2]);
+  const dia = Number(match[3]);
+  const candidata = new Date(Date.UTC(anio, mes - 1, dia));
+  if (
+    candidata.getUTCFullYear() !== anio ||
+    candidata.getUTCMonth() + 1 !== mes ||
+    candidata.getUTCDate() !== dia
+  ) {
+    throw new Error(`Fecha fuera de rango: "${fecha}".`);
+  }
+
+  return { anio, mes, dia };
+}
+
 /**
  * Año, mes y día de HOY, en hora de Argentina — nunca del timezone del
  * proceso (Vercel corre las funciones serverless en UTC por default; usar
@@ -47,12 +68,9 @@ export function calcularVencimientoPeriodo(anio: number, mes: number): Date {
  * Argentina del último día de cada mes, que en UTC ya es el día siguiente).
  *
  * Override para pruebas/demos: si `FECHA_SIMULADA` (formato "YYYY-MM-DD")
- * está seteada, se devuelve esa fecha en vez de la real — pensado para
- * probar el cierre de períodos sin esperar meses reales ni insertar datos
- * ya atrasados a mano. Nunca en producción: si `NODE_ENV === "production"`
- * y la variable está seteada, tira en vez de aceptarla en silencio — un
- * override de "hoy" mal limpiado en el entorno productivo podría manipular
- * cuándo el sistema considera vencido un período.
+ * está seteada, se devuelve esa fecha en vez de la real. Se mantiene para
+ * ejecución local; el reloj visual usa resolverFechaOperativa() y no muta
+ * variables globales del proceso.
  */
 export function hoyEnArgentina(): { anio: number; mes: number; dia: number } {
   const fechaSimulada = process.env.FECHA_SIMULADA;
@@ -62,21 +80,19 @@ export function hoyEnArgentina(): { anio: number; mes: number; dia: number } {
         "FECHA_SIMULADA no puede estar seteada en producción — revisar la configuración del entorno."
       );
     }
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fechaSimulada);
-    if (!match) {
+    try {
+      return parseFechaCalendario(fechaSimulada);
+    } catch (error) {
+      const mensaje = error instanceof Error ? error.message : String(error);
+      if (mensaje.includes("esperado")) {
+        throw new Error(
+          `FECHA_SIMULADA tiene un formato inválido: "${fechaSimulada}" (esperado "YYYY-MM-DD").`
+        );
+      }
       throw new Error(
-        `FECHA_SIMULADA tiene un formato inválido: "${fechaSimulada}" (esperado "YYYY-MM-DD").`
+        `FECHA_SIMULADA tiene una fecha fuera de rango: "${fechaSimulada}".`
       );
     }
-    const anio = Number(match[1]);
-    const mes = Number(match[2]);
-    const dia = Number(match[3]);
-    if (mes < 1 || mes > 12 || dia < 1 || dia > 31) {
-      throw new Error(
-        `FECHA_SIMULADA tiene una fecha fuera de rango: "${fechaSimulada}" (mes debe ser 01-12, día 01-31).`
-      );
-    }
-    return { anio, mes, dia };
   }
 
   const partes = new Intl.DateTimeFormat("en-CA", {
@@ -85,6 +101,15 @@ export function hoyEnArgentina(): { anio: number; mes: number; dia: number } {
   }).formatToParts(new Date());
   const get = (tipo: string) => Number(partes.find((p) => p.type === tipo)!.value);
   return { anio: get("year"), mes: get("month"), dia: get("day") };
+}
+
+/**
+ * Resuelve la fecha operativa de una ejecución. El argumento explícito se
+ * usa únicamente desde herramientas de prueba controladas; si no existe,
+ * conserva exactamente el comportamiento normal del sistema.
+ */
+export function resolverFechaOperativa(fecha?: string): { anio: number; mes: number; dia: number } {
+  return fecha ? parseFechaCalendario(fecha) : hoyEnArgentina();
 }
 
 /**

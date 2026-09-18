@@ -19,6 +19,7 @@ export async function cleanDatabase() {
       gastos,
       idempotency_keys,
       periodos_pago,
+      ajustes_contrato,
       outbox_cierre_periodo,
       contratos,
       inquilinos,
