@@ -1,6 +1,6 @@
 ---
 type: Architecture
-version: 11c92fe
+version: 5b8553b
 validated: 2026-09-18
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
