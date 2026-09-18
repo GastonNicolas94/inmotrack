@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import type { PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getArgentinaMonthRange } from "@/lib/dashboard/filters";
+import { traceServiceObject } from "@/lib/observability/tracing";
 import {
   calculateSignedFinancials,
   groupByLabel,
@@ -579,4 +580,4 @@ export function createDashboardService(
   };
 }
 
-export const DashboardService = createDashboardService({ prisma, now: () => new Date() });
+export const DashboardService = traceServiceObject("DashboardService", createDashboardService({ prisma, now: () => new Date() }));
