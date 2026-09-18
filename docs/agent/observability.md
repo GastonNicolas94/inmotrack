@@ -1,6 +1,6 @@
 ---
 type: Observability
-version: 5b8553b
+version: bde0a16
 validated: 2026-09-18
 update_when: Cambian logging, tracing, thresholds, Sentry/Vercel integration o diagnóstico de base de datos
 scope:
@@ -51,7 +51,7 @@ La instrumentación es sistémica:
 
 - `lib/auth-context.ts` crea el span `auth.requireAuthenticatedUser`;
 - los singletons exportados de `services/*.ts` se envuelven con `traceServiceObject()`, por lo que cada método público genera un span `service`;
-- `lib/db.ts` extiende el Prisma Client global con `$allOperations`, por lo que cada operación ORM genera un span `db.prisma`;
+- `lib/db.ts` extiende el Prisma Client global con `$allOperations`, por lo que cada operación ORM genera un span `db.prisma`; el singleton se expone tipado como `PrismaClient` porque Prisma 7 estrecha el tipo de `$extends` y omite APIs de lifecycle como `$on` aunque el wrapper solo intercepte queries en runtime;
 - los spans heredan el trace activo de `@sentry/nextjs` y agregan `requestId`, route, method y user id técnico cuando existe.
 
 Los spans Prisma incluyen únicamente modelo y operación. **Nunca** incluir `args`, bind values, SQL parametrizado completo ni resultados en atributos de tracing: pueden contener PII o secretos.
