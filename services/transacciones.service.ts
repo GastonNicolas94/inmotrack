@@ -3,6 +3,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type { Clock } from "@/lib/clock";
 import { AppClock } from "@/lib/app-clock";
+import { traceServiceObject } from "@/lib/observability/tracing";
 
 async function revertirTransaccion(
   tx: Prisma.TransactionClient,
@@ -137,4 +138,4 @@ export function createTransaccionesService(deps: Dependencies) {
   };
 }
 
-export const TransaccionesService = createTransaccionesService({ prisma, clock: AppClock });
+export const TransaccionesService = traceServiceObject("TransaccionesService", createTransaccionesService({ prisma, clock: AppClock }));

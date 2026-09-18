@@ -1,7 +1,7 @@
 ---
 type: Traps
-version: 4957633
-validated: 2026-09-14
+version: bde0a16
+validated: 2026-09-18
 update_when: cuando se descubre un gotcha no obvio, agregarlo acá en el mismo cambio
 scope:
   - services
@@ -221,3 +221,22 @@ registrar el token en logs o URLs posteriores.
 construye `${APP_URL}/auth/confirm`; la allowlist de Supabase debe contener esa URL exacta. La
 plantilla local vive en `supabase/templates/invite.html` y usa `TokenHash`/`RedirectTo`; en un
 proyecto hosted se debe copiar esa plantilla al editor de Email Templates antes de invitar.
+
+---
+
+## Los spans Prisma nunca llevan `args` ni bind values
+
+El tracing distribuido envuelve el Prisma Client global en `lib/db.ts` mediante `$extends({ query: { $allModels: { $allOperations }}})`. El nombre del span identifica modelo + operación (por ejemplo `prisma.contrato.findUnique`) y alcanza para correlacionar latencia dentro del trace. No agregar `args`, valores de filtros, payloads, SQL completo ni resultados como atributos: pueden contener DNI, email, CBU, tokens u otra PII. Para investigar una query concreta usar el nombre/latencia del span y, si hace falta análisis agregado, `pg_stat_statements`.
+
+---
+
+## `lib/db.ts` también corre fuera de Next — tracing no puede arrastrar `server-only`
+
+`prisma/seed.ts` y otros scripts CLI importan el Prisma singleton de `lib/db.ts`. Si el tracing global de DB importa directa o indirectamente un módulo con `import "server-only"`, esos scripts fallan antes de ejecutar una sola query. Por eso el estado de `AsyncLocalStorage` vive en `lib/observability/context-store.ts` (Node puro) y `context.ts` es solo la fachada protegida para código Next.
+
+---
+
+## Prisma 7 `$extends` estrecha el tipo y deja de ser asignable a `PrismaClient`
+
+El wrapper global de tracing usa `client.$extends({ query: ... })`. En Prisma 7.8 el tipo devuelto por `$extends` omite APIs de lifecycle como `$on`, por lo que deja de ser asignable a funciones/services cuyo dependency contract es `PrismaClient`, aunque el comportamiento runtime requerido siga intacto. No propagar ese tipo extendido por toda la capa de services: `lib/db.ts` debe conservar el singleton público tipado como `PrismaClient` y mantener la extensión como detalle interno de ejecución.
+

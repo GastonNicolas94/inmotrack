@@ -6,6 +6,7 @@ import type { Clock } from "@/lib/clock";
 import { AppClock } from "@/lib/app-clock";
 import { checkIdempotencyKey, persistIdempotencyKey } from "@/lib/idempotency";
 import { calcularPendiente } from "@/lib/saldos";
+import { traceServiceObject } from "@/lib/observability/tracing";
 
 export type ResultadoPago = {
   procesado: true;
@@ -232,4 +233,4 @@ export function createPagosService(deps: Dependencies) {
   };
 }
 
-export const PagosService = createPagosService({ prisma, clock: AppClock });
+export const PagosService = traceServiceObject("PagosService", createPagosService({ prisma, clock: AppClock }));

@@ -2,6 +2,7 @@ import "server-only";
 
 import { HttpError } from "@/lib/http-error";
 import { setObservabilityUser } from "@/lib/observability/context";
+import { traceAttributes, traceSpan } from "@/lib/observability/tracing";
 
 export type AuthenticatedUser = {
   id: number;
@@ -104,10 +105,19 @@ export async function getAuthenticatedUser(
 export async function requireAuthenticatedUser(
   dependencies?: AuthContextDependencies,
 ): Promise<AuthenticatedUser> {
-  const user = await getAuthenticatedUser(dependencies);
-  if (!user) throw new HttpError("UNAUTHORIZED", "No autenticado.", 401);
-  setObservabilityUser(user.id);
-  return user;
+  return traceSpan(
+    {
+      name: "auth.requireAuthenticatedUser",
+      op: "auth",
+      attributes: traceAttributes(),
+    },
+    async () => {
+      const user = await getAuthenticatedUser(dependencies);
+      if (!user) throw new HttpError("UNAUTHORIZED", "No autenticado.", 401);
+      setObservabilityUser(user.id);
+      return user;
+    },
+  );
 }
 
 export async function requireAdmin(

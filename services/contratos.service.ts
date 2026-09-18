@@ -11,6 +11,7 @@ import { requiereAjuste } from "@/lib/ajustes-contrato";
 import { aplicarCreditoDisponible } from "@/services/creditos.service";
 import { AjustesContratoService } from "@/services/ajustes-contrato.service";
 import type { ContratoInput } from "@/schemas/contrato.schema";
+import { traceServiceObject } from "@/lib/observability/tracing";
 
 async function abrirPeriodo(
   tx: Prisma.TransactionClient,
@@ -383,4 +384,4 @@ export function createContratosService(deps: Dependencies) {
   };
 }
 
-export const ContratosService = createContratosService({ prisma, clock: AppClock });
+export const ContratosService = traceServiceObject("ContratosService", createContratosService({ prisma, clock: AppClock }));

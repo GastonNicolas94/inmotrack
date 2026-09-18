@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/db";
 import type { PropiedadInput } from "@/schemas/propiedad.schema";
+import { traceServiceObject } from "@/lib/observability/tracing";
 
-export const PropiedadesService = {
+export const PropiedadesService = traceServiceObject("PropiedadesService", {
   async listar(id_propietario?: number) {
     return prisma.propiedad.findMany({
       where: id_propietario ? { id_propietario } : undefined,
@@ -57,4 +58,4 @@ export const PropiedadesService = {
   async actualizar(id: number, data: Partial<PropiedadInput>) {
     return prisma.propiedad.update({ where: { id }, data });
   },
-};
+});
