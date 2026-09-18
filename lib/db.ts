@@ -16,7 +16,7 @@ function createPrismaClient() {
     process.env.NODE_ENV === "production" ? ["error"] : ["error", "warn"];
   const client = new PrismaClient({ adapter, log });
 
-  return client.$extends({
+  const tracedClient = client.$extends({
     query: {
       $allModels: {
         async $allOperations({ model, operation, args, query }) {
@@ -38,12 +38,16 @@ function createPrismaClient() {
       },
     },
   });
+
+  // Prisma $extends returns a narrower client type that omits lifecycle APIs
+  // such as $on from its TypeScript surface. InmoTrack services depend on the
+  // standard PrismaClient contract, while the extension only intercepts query
+  // execution at runtime, so keep the public singleton typed as PrismaClient.
+  return tracedClient as unknown as PrismaClient;
 }
 
-type InmoTrackPrismaClient = ReturnType<typeof createPrismaClient>;
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-const globalForPrisma = globalThis as unknown as { prisma?: InmoTrackPrismaClient };
-
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+export const prisma: PrismaClient = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
