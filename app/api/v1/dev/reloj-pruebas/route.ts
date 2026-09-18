@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth-context";
 import { handleServiceError } from "@/lib/api-error-handler";
 import { errorResponse } from "@/lib/errors";
 import { relojPruebasHabilitado } from "@/lib/reloj-pruebas";
 import { EditableTestClock } from "@/lib/app-clock";
 import { CierrePeriodosService } from "@/services/cierre-periodos.service";
+import { withObservability } from "@/lib/observability/with-observability";
 
 const MAX_FILAS_POR_EJECUCION = 500;
 
-export async function GET() {
+async function getRelojPruebas(_req: NextRequest) {
   try {
     await requireAdmin();
     if (!relojPruebasHabilitado()) return errorResponse("NOT_FOUND", "Recurso no disponible.", 404);
@@ -18,7 +19,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+async function postRelojPruebas(req: NextRequest) {
   try {
     await requireAdmin();
     if (!relojPruebasHabilitado()) return errorResponse("NOT_FOUND", "Recurso no disponible.", 404);
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE() {
+async function deleteRelojPruebas(_req: NextRequest) {
   try {
     await requireAdmin();
     if (!relojPruebasHabilitado()) return errorResponse("NOT_FOUND", "Recurso no disponible.", 404);
@@ -64,3 +65,7 @@ export async function DELETE() {
     return handleServiceError(error);
   }
 }
+
+export const GET = withObservability(getRelojPruebas);
+export const POST = withObservability(postRelojPruebas);
+export const DELETE = withObservability(deleteRelojPruebas);
