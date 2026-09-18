@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import { requireDatabaseUrl } from "@/lib/database-url";
+import { traceAttributes, traceSpan } from "@/lib/observability/tracing";
 
 function createPrismaClient() {
   const pool = new Pool({
@@ -13,10 +14,35 @@ function createPrismaClient() {
   const adapter = new PrismaPg(pool);
   const log: ("query" | "error" | "warn")[] =
     process.env.NODE_ENV === "production" ? ["error"] : ["error", "warn"];
-  return new PrismaClient({ adapter, log });
+  const client = new PrismaClient({ adapter, log });
+
+  return client.$extends({
+    query: {
+      $allModels: {
+        async $allOperations({ model, operation, args, query }) {
+          const modelName = model.charAt(0).toLowerCase() + model.slice(1);
+          return traceSpan(
+            {
+              name: `prisma.${modelName}.${operation}`,
+              op: "db.prisma",
+              attributes: {
+                ...traceAttributes(),
+                "db.system": "postgresql",
+                "db.operation.name": operation,
+                "db.collection.name": model,
+              },
+            },
+            () => query(args),
+          );
+        },
+      },
+    },
+  });
 }
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+type InmoTrackPrismaClient = ReturnType<typeof createPrismaClient>;
+
+const globalForPrisma = globalThis as unknown as { prisma?: InmoTrackPrismaClient };
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
