@@ -1,6 +1,6 @@
 ---
 type: Traps
-version: 11c92fe
+version: 5b8553b
 validated: 2026-09-18
 update_when: cuando se descubre un gotcha no obvio, agregarlo acá en el mismo cambio
 scope:
@@ -227,4 +227,10 @@ proyecto hosted se debe copiar esa plantilla al editor de Email Templates antes 
 ## Los spans Prisma nunca llevan `args` ni bind values
 
 El tracing distribuido envuelve el Prisma Client global en `lib/db.ts` mediante `$extends({ query: { $allModels: { $allOperations }}})`. El nombre del span identifica modelo + operación (por ejemplo `prisma.contrato.findUnique`) y alcanza para correlacionar latencia dentro del trace. No agregar `args`, valores de filtros, payloads, SQL completo ni resultados como atributos: pueden contener DNI, email, CBU, tokens u otra PII. Para investigar una query concreta usar el nombre/latencia del span y, si hace falta análisis agregado, `pg_stat_statements`.
+
+---
+
+## `lib/db.ts` también corre fuera de Next — tracing no puede arrastrar `server-only`
+
+`prisma/seed.ts` y otros scripts CLI importan el Prisma singleton de `lib/db.ts`. Si el tracing global de DB importa directa o indirectamente un módulo con `import "server-only"`, esos scripts fallan antes de ejecutar una sola query. Por eso el estado de `AsyncLocalStorage` vive en `lib/observability/context-store.ts` (Node puro) y `context.ts` es solo la fachada protegida para código Next.
 
