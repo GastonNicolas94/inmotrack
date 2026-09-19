@@ -25,6 +25,7 @@ test("genera un PDF A4 descargable con el detalle de la liquidación", async () 
         id: 21,
         id_periodo: 12,
         id_propiedad: 3,
+        porcentaje_participacion: new Decimal("100"),
         monto_bruto: new Decimal("100000"),
         comision: new Decimal("10000"),
         gastos: new Decimal("2500"),
