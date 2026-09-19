@@ -9,6 +9,11 @@ import { prorratearMonto } from "@/lib/copropiedad";
 
 type Dependencies = { prisma: PrismaClient; clock: Clock };
 
+export type ConceptoLiquidacionSeleccionado = {
+  tipo: "ALQUILER" | "GASTO";
+  id: number;
+};
+
 export function createLiquidacionesService(deps: Dependencies) {
   return {
     async listar(id_propietario?: number) {
@@ -185,10 +190,169 @@ export function createLiquidacionesService(deps: Dependencies) {
       };
     },
 
+    async listarPendientes(id_propietario: number, hasta: Date) {
+      const [aplicaciones, gastos] = await Promise.all([
+        deps.prisma.aplicacionPago.findMany({
+          where: {
+            cargo: { tipo: "ALQUILER" },
+            transaccion: { fecha_transaccion: { lte: hasta } },
+            OR: [
+              { asignaciones: { some: { id_propietario, id_liquidacion_item: null } } },
+              {
+                asignaciones: { none: {} },
+                cargo: {
+                  periodo: {
+                    contrato: {
+                      propiedad: {
+                        OR: [
+                          { copropietarios: { some: { id_propietario } } },
+                          { copropietarios: { none: {} }, id_propietario },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          },
+          include: {
+            transaccion: { select: { fecha_transaccion: true } },
+            asignaciones: true,
+            cargo: {
+              include: {
+                periodo: {
+                  include: {
+                    contrato: {
+                      include: {
+                        propiedad: {
+                          include: {
+                            copropietarios: { orderBy: { id_propietario: "asc" } },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { id: "asc" },
+        }),
+        deps.prisma.gasto.findMany({
+          where: {
+            cargo_a: "PROPIETARIO",
+            creado_en: { lte: hasta },
+            OR: [
+              { asignaciones: { some: { id_propietario, id_liquidacion_item: null } } },
+              {
+                asignaciones: { none: {} },
+                propiedad: {
+                  is: {
+                    OR: [
+                      { copropietarios: { some: { id_propietario } } },
+                      { copropietarios: { none: {} }, id_propietario },
+                    ],
+                  },
+                },
+              },
+            ],
+          },
+          include: {
+            asignaciones: true,
+            propiedad: {
+              include: {
+                copropietarios: { orderBy: { id_propietario: "asc" } },
+              },
+            },
+          },
+          orderBy: { id: "asc" },
+        }),
+      ]);
+
+      const alquileres = aplicaciones.flatMap((aplicacion) => {
+        const propiedad = aplicacion.cargo.periodo.contrato.propiedad;
+        const asignacionExistente = aplicacion.asignaciones.find(
+          (item) => item.id_propietario === id_propietario && item.id_liquidacion_item === null,
+        );
+        const participaciones =
+          propiedad.copropietarios.length > 0
+            ? propiedad.copropietarios.map((item) => ({
+                id_propietario: item.id_propietario,
+                porcentaje: item.porcentaje,
+              }))
+            : [{ id_propietario: propiedad.id_propietario, porcentaje: 100 }];
+        const calculada = asignacionExistente
+          ? {
+              porcentaje: new Decimal(asignacionExistente.porcentaje_participacion),
+              monto: new Decimal(asignacionExistente.monto_asignado),
+            }
+          : (() => {
+              const item = prorratearMonto(aplicacion.monto_aplicado, participaciones).find(
+                (asignacion) => asignacion.id_propietario === id_propietario,
+              );
+              return item ? { porcentaje: new Decimal(item.porcentaje), monto: item.monto } : null;
+            })();
+        if (!calculada) return [];
+
+        return [{
+          tipo: "ALQUILER" as const,
+          id: aplicacion.id,
+          fecha: aplicacion.transaccion.fecha_transaccion,
+          propiedad: { id: propiedad.id, direccion: propiedad.direccion },
+          periodo: aplicacion.cargo.periodo.periodo,
+          concepto: aplicacion.cargo.descripcion || "Alquiler",
+          porcentaje_participacion: calculada.porcentaje.toFixed(2),
+          monto: calculada.monto.toFixed(2),
+        }];
+      });
+
+      const gastosPendientes = gastos.flatMap((gasto) => {
+        if (!gasto.propiedad) return [];
+        const asignacionExistente = gasto.asignaciones.find(
+          (item) => item.id_propietario === id_propietario && item.id_liquidacion_item === null,
+        );
+        const participaciones =
+          gasto.propiedad.copropietarios.length > 0
+            ? gasto.propiedad.copropietarios.map((item) => ({
+                id_propietario: item.id_propietario,
+                porcentaje: item.porcentaje,
+              }))
+            : [{ id_propietario: gasto.propiedad.id_propietario, porcentaje: 100 }];
+        const calculada = asignacionExistente
+          ? {
+              porcentaje: new Decimal(asignacionExistente.porcentaje_participacion),
+              monto: new Decimal(asignacionExistente.monto_asignado),
+            }
+          : (() => {
+              const item = prorratearMonto(gasto.monto, participaciones).find(
+                (asignacion) => asignacion.id_propietario === id_propietario,
+              );
+              return item ? { porcentaje: new Decimal(item.porcentaje), monto: item.monto } : null;
+            })();
+        if (!calculada) return [];
+
+        return [{
+          tipo: "GASTO" as const,
+          id: gasto.id,
+          fecha: gasto.creado_en,
+          propiedad: { id: gasto.propiedad.id, direccion: gasto.propiedad.direccion },
+          periodo: null,
+          concepto: gasto.concepto,
+          porcentaje_participacion: calculada.porcentaje.toFixed(2),
+          monto: calculada.monto.toFixed(2),
+        }];
+      });
+
+      return [...alquileres, ...gastosPendientes].sort(
+        (a, b) => a.fecha.getTime() - b.fecha.getTime() || a.id - b.id,
+      );
+    },
+
     async generarParaPropietario(
       id_propietario: number,
       hasta: Date,
       descontarAdelantos: number | Decimal = 0,
+      conceptosSeleccionados?: ConceptoLiquidacionSeleccionado[],
     ) {
       const fechaCorrida = await deps.clock.now();
       return deps.prisma.$transaction(async (tx) => {
@@ -201,102 +365,126 @@ export function createLiquidacionesService(deps: Dependencies) {
         const desde = ultimaLiquidacion
           ? new Date(ultimaLiquidacion.fecha_hasta.getTime() + 24 * 60 * 60 * 1000)
           : new Date("1900-01-01");
+        const seleccionExplicita = conceptosSeleccionados !== undefined;
+        const idsAplicacionesSeleccionadas = (conceptosSeleccionados ?? [])
+          .filter((item) => item.tipo === "ALQUILER")
+          .map((item) => item.id);
+        const idsGastosSeleccionados = (conceptosSeleccionados ?? [])
+          .filter((item) => item.tipo === "GASTO")
+          .map((item) => item.id);
 
-        // Bloqueamos las fuentes, no sus asignaciones. Así dos corridas
-        // concurrentes no pueden snapshotear o consumir la misma fuente dos veces.
-        await tx.$queryRawUnsafe(
-          `SELECT ap.id
-           FROM aplicaciones_pago ap
-           JOIN transacciones t ON t.id = ap.id_transaccion
-           JOIN cargos c ON c.id = ap.id_cargo
-           JOIN periodos_pago pe ON pe.id = c.id_periodo
-           JOIN contratos ct ON ct.id = pe.id_contrato
-           JOIN propiedades prop ON prop.id = ct.id_propiedad
-           WHERE c.tipo = 'ALQUILER'
-             AND t.fecha_transaccion >= $2
-             AND t.fecha_transaccion <= $3
-             AND (
-               EXISTS (
-                 SELECT 1
-                 FROM aplicaciones_pago_propietarios apa
-                 WHERE apa.id_aplicacion_pago = ap.id
-                   AND apa.id_propietario = $1
-                   AND apa.id_liquidacion_item IS NULL
-               )
-               OR (
-                 NOT EXISTS (
+        // Bloqueamos las fuentes seleccionadas. Para llamadas legacy sin selección
+        // conservamos el bloqueo por ventana temporal.
+        if (seleccionExplicita) {
+          for (const id of idsAplicacionesSeleccionadas) {
+            await tx.$queryRawUnsafe(
+              `SELECT id FROM aplicaciones_pago WHERE id = $1 FOR UPDATE`,
+              id,
+            );
+          }
+          for (const id of idsGastosSeleccionados) {
+            await tx.$queryRawUnsafe(
+              `SELECT id FROM gastos WHERE id = $1 FOR UPDATE`,
+              id,
+            );
+          }
+        } else {
+          await tx.$queryRawUnsafe(
+            `SELECT ap.id
+             FROM aplicaciones_pago ap
+             JOIN transacciones t ON t.id = ap.id_transaccion
+             JOIN cargos c ON c.id = ap.id_cargo
+             JOIN periodos_pago pe ON pe.id = c.id_periodo
+             JOIN contratos ct ON ct.id = pe.id_contrato
+             JOIN propiedades prop ON prop.id = ct.id_propiedad
+             WHERE c.tipo = 'ALQUILER'
+               AND t.fecha_transaccion >= $2
+               AND t.fecha_transaccion <= $3
+               AND (
+                 EXISTS (
                    SELECT 1
-                   FROM aplicaciones_pago_propietarios apa_any
-                   WHERE apa_any.id_aplicacion_pago = ap.id
+                   FROM aplicaciones_pago_propietarios apa
+                   WHERE apa.id_aplicacion_pago = ap.id
+                     AND apa.id_propietario = $1
+                     AND apa.id_liquidacion_item IS NULL
                  )
-                 AND (
-                   EXISTS (
+                 OR (
+                   NOT EXISTS (
                      SELECT 1
-                     FROM propiedades_propietarios pp
-                     WHERE pp.id_propiedad = prop.id
-                       AND pp.id_propietario = $1
+                     FROM aplicaciones_pago_propietarios apa_any
+                     WHERE apa_any.id_aplicacion_pago = ap.id
                    )
-                   OR (
-                     NOT EXISTS (
+                   AND (
+                     EXISTS (
                        SELECT 1
-                       FROM propiedades_propietarios pp_any
-                       WHERE pp_any.id_propiedad = prop.id
+                       FROM propiedades_propietarios pp
+                       WHERE pp.id_propiedad = prop.id
+                         AND pp.id_propietario = $1
                      )
-                     AND prop.id_propietario = $1
+                     OR (
+                       NOT EXISTS (
+                         SELECT 1
+                         FROM propiedades_propietarios pp_any
+                         WHERE pp_any.id_propiedad = prop.id
+                       )
+                       AND prop.id_propietario = $1
+                     )
                    )
                  )
                )
-             )
-           FOR UPDATE OF ap`,
-          id_propietario,
-          desde,
-          hasta,
-        );
-
-        await tx.$queryRawUnsafe(
-          `SELECT g.id
-           FROM gastos g
-           JOIN propiedades prop ON prop.id = g.id_propiedad
-           WHERE g.cargo_a = 'PROPIETARIO'
-             AND g.creado_en >= $2
-             AND g.creado_en <= $3
-             AND (
-               EXISTS (
-                 SELECT 1
-                 FROM gastos_propietarios gp
-                 WHERE gp.id_gasto = g.id
-                   AND gp.id_propietario = $1
-                   AND gp.id_liquidacion_item IS NULL
-               )
-               OR (
-                 NOT EXISTS (
+             FOR UPDATE OF ap`,
+            id_propietario,
+            desde,
+            hasta,
+          );
+  
+          await tx.$queryRawUnsafe(
+            `SELECT g.id
+             FROM gastos g
+             JOIN propiedades prop ON prop.id = g.id_propiedad
+             WHERE g.cargo_a = 'PROPIETARIO'
+               AND g.creado_en >= $2
+               AND g.creado_en <= $3
+               AND (
+                 EXISTS (
                    SELECT 1
-                   FROM gastos_propietarios gp_any
-                   WHERE gp_any.id_gasto = g.id
+                   FROM gastos_propietarios gp
+                   WHERE gp.id_gasto = g.id
+                     AND gp.id_propietario = $1
+                     AND gp.id_liquidacion_item IS NULL
                  )
-                 AND (
-                   EXISTS (
+                 OR (
+                   NOT EXISTS (
                      SELECT 1
-                     FROM propiedades_propietarios pp
-                     WHERE pp.id_propiedad = prop.id
-                       AND pp.id_propietario = $1
+                     FROM gastos_propietarios gp_any
+                     WHERE gp_any.id_gasto = g.id
                    )
-                   OR (
-                     NOT EXISTS (
+                   AND (
+                     EXISTS (
                        SELECT 1
-                       FROM propiedades_propietarios pp_any
-                       WHERE pp_any.id_propiedad = prop.id
+                       FROM propiedades_propietarios pp
+                       WHERE pp.id_propiedad = prop.id
+                         AND pp.id_propietario = $1
                      )
-                     AND prop.id_propietario = $1
+                     OR (
+                       NOT EXISTS (
+                         SELECT 1
+                         FROM propiedades_propietarios pp_any
+                         WHERE pp_any.id_propiedad = prop.id
+                       )
+                       AND prop.id_propietario = $1
+                     )
                    )
                  )
                )
-             )
-           FOR UPDATE OF g`,
-          id_propietario,
-          desde,
-          hasta,
-        );
+             FOR UPDATE OF g`,
+            id_propietario,
+            desde,
+            hasta,
+          );
+  
+  
+        }
 
         const montoDescontar = new Decimal(descontarAdelantos);
 
@@ -311,8 +499,11 @@ export function createLiquidacionesService(deps: Dependencies) {
 
         const aplicacionesFuente = await tx.aplicacionPago.findMany({
           where: {
+            ...(seleccionExplicita ? { id: { in: idsAplicacionesSeleccionadas } } : {}),
             cargo: { tipo: "ALQUILER" },
-            transaccion: { fecha_transaccion: { gte: desde, lte: hasta } },
+            transaccion: {
+              fecha_transaccion: seleccionExplicita ? { lte: hasta } : { gte: desde, lte: hasta },
+            },
             OR: [
               {
                 asignaciones: {
@@ -390,8 +581,9 @@ export function createLiquidacionesService(deps: Dependencies) {
 
         const gastosFuente = await tx.gasto.findMany({
           where: {
+            ...(seleccionExplicita ? { id: { in: idsGastosSeleccionados } } : {}),
             cargo_a: "PROPIETARIO",
-            creado_en: { gte: desde, lte: hasta },
+            creado_en: seleccionExplicita ? { lte: hasta } : { gte: desde, lte: hasta },
             OR: [
               {
                 asignaciones: {
@@ -451,8 +643,11 @@ export function createLiquidacionesService(deps: Dependencies) {
             id_propietario,
             id_liquidacion_item: null,
             aplicacion_pago: {
+              ...(seleccionExplicita ? { id: { in: idsAplicacionesSeleccionadas } } : {}),
               cargo: { tipo: "ALQUILER" },
-              transaccion: { fecha_transaccion: { gte: desde, lte: hasta } },
+              transaccion: {
+                fecha_transaccion: seleccionExplicita ? { lte: hasta } : { gte: desde, lte: hasta },
+              },
             },
           },
           include: {
@@ -481,8 +676,9 @@ export function createLiquidacionesService(deps: Dependencies) {
             id_propietario,
             id_liquidacion_item: null,
             gasto: {
+              ...(seleccionExplicita ? { id: { in: idsGastosSeleccionados } } : {}),
               cargo_a: "PROPIETARIO",
-              creado_en: { gte: desde, lte: hasta },
+              creado_en: seleccionExplicita ? { lte: hasta } : { gte: desde, lte: hasta },
             },
           },
           include: {
@@ -494,6 +690,16 @@ export function createLiquidacionesService(deps: Dependencies) {
           },
           orderBy: { id: "asc" },
         });
+
+        if (seleccionExplicita) {
+          const seleccionadosEncontrados =
+            asignacionesAplicacion.length + asignacionesGasto.length;
+          if (seleccionadosEncontrados !== (conceptosSeleccionados ?? []).length) {
+            throw new Error(
+              "Alguno de los conceptos seleccionados ya no está pendiente o no pertenece al propietario.",
+            );
+          }
+        }
 
         interface ItemAlquiler {
           id_periodo: number;
