@@ -22,7 +22,7 @@ export function DialogNuevaPropiedad({ propietarios }: { propietarios: Propietar
     <>
       <Button onClick={() => setOpen(true)}>+ Nueva propiedad</Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Nueva propiedad</DialogTitle>
           </DialogHeader>
