@@ -123,7 +123,14 @@ describe("dashboard list query payloads", () => {
         id: true,
         direccion: true,
         es_propia: true,
-        propietario: { select: { nombre: true } },
+        copropietarios: {
+          select: {
+            id_propietario: true,
+            porcentaje: true,
+            propietario: { select: { nombre: true } },
+          },
+          orderBy: { id_propietario: "asc" },
+        },
         _count: { select: { contratos: true } },
       });
     });
@@ -143,6 +150,13 @@ describe("dashboard list query payloads", () => {
         id: true,
         direccion: true,
         propietario: { select: { nombre: true } },
+        copropietarios: {
+          select: {
+            porcentaje: true,
+            propietario: { select: { id: true, nombre: true } },
+          },
+          orderBy: { id_propietario: "asc" },
+        },
       });
     });
   });
