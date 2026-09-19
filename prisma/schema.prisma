@@ -73,7 +73,7 @@ model PropiedadPropietario {
   id_propiedad   Int
   propiedad      Propiedad   @relation(fields: [id_propiedad], references: [id], onDelete: Cascade)
   id_propietario Int
-  propietario    Propietario @relation(fields: [id_propietario], references: [id], onDelete: Cascade)
+  propietario    Propietario @relation(fields: [id_propietario], references: [id], onDelete: Restrict)
   porcentaje     Decimal     @db.Decimal(5, 2)
 
   @@unique([id_propiedad, id_propietario])
@@ -269,7 +269,7 @@ model AplicacionPagoPropietario {
   id_aplicacion_pago       Int
   aplicacion_pago          AplicacionPago   @relation(fields: [id_aplicacion_pago], references: [id], onDelete: Cascade)
   id_propietario           Int
-  propietario              Propietario      @relation(fields: [id_propietario], references: [id], onDelete: Cascade)
+  propietario              Propietario      @relation(fields: [id_propietario], references: [id], onDelete: Restrict)
   id_liquidacion_item      Int?
   liquidacion_item         LiquidacionItem? @relation(fields: [id_liquidacion_item], references: [id], onDelete: SetNull)
   porcentaje_participacion Decimal          @db.Decimal(5, 2)
@@ -328,7 +328,7 @@ model GastoPropietario {
   id_gasto                 Int
   gasto                    Gasto            @relation(fields: [id_gasto], references: [id], onDelete: Cascade)
   id_propietario           Int
-  propietario              Propietario      @relation(fields: [id_propietario], references: [id], onDelete: Cascade)
+  propietario              Propietario      @relation(fields: [id_propietario], references: [id], onDelete: Restrict)
   id_liquidacion_item      Int?
   liquidacion_item         LiquidacionItem? @relation(fields: [id_liquidacion_item], references: [id], onDelete: SetNull)
   porcentaje_participacion Decimal          @db.Decimal(5, 2)
