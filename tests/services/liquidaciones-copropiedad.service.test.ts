@@ -174,4 +174,131 @@ describe("LiquidacionesService con copropiedad", () => {
     assert.equal(Number(detalle.items[0].aplicaciones[0].monto_aplicado), 60000);
     assert.equal(Number(detalle.items[0].monto_bruto), 60000);
   });
+  it("lista y permite liquidar un alquiler pendiente anterior al último corte", async () => {
+    const { ana, contrato, usuario } = await crearEscenarioCompartido();
+
+    const periodo = await prisma.periodoPago.findFirstOrThrow({
+      where: { id_contrato: contrato.id },
+    });
+    const cargo = await prisma.cargo.findFirstOrThrow({
+      where: { id_periodo: periodo.id, tipo: "ALQUILER" },
+    });
+    const fechaVieja = new Date();
+    fechaVieja.setUTCDate(fechaVieja.getUTCDate() - 10);
+    const transaccion = await prisma.transaccion.create({
+      data: {
+        tipo: "INGRESO_COBRO",
+        caja_destino: "TERCEROS",
+        monto: 100000,
+        fecha_transaccion: fechaVieja,
+        id_contrato: contrato.id,
+        id_usuario_creador: usuario.id,
+      },
+    });
+    const aplicacion = await prisma.aplicacionPago.create({
+      data: {
+        id_transaccion: transaccion.id,
+        id_cargo: cargo.id,
+        monto_aplicado: 100000,
+      },
+    });
+
+    const ultimoCorte = new Date();
+    ultimoCorte.setUTCDate(ultimoCorte.getUTCDate() - 5);
+    await prisma.liquidacion.create({
+      data: {
+        id_propietario: ana.id,
+        fecha_desde: new Date("2026-01-01"),
+        fecha_hasta: ultimoCorte,
+        monto_bruto: 0,
+        retenciones: 0,
+        monto_neto: 0,
+      },
+    });
+
+    const pendientes = await LiquidacionesService.listarPendientes(ana.id, manana());
+    const pendiente = pendientes.find(
+      (item) => item.tipo === "ALQUILER" && item.id === aplicacion.id,
+    );
+
+    assert.ok(pendiente, "el alquiler viejo no liquidado debe seguir apareciendo como pendiente");
+    assert.equal(Number(pendiente.monto), 60000);
+    assert.equal(Number(pendiente.porcentaje_participacion), 60);
+
+    const liquidacion = await LiquidacionesService.generarParaPropietario(
+      ana.id,
+      manana(),
+      0,
+      [{ tipo: "ALQUILER", id: aplicacion.id }],
+    );
+
+    assert.equal(Number(liquidacion.monto_bruto), 60000);
+    const asignacion = await prisma.aplicacionPagoPropietario.findFirstOrThrow({
+      where: { id_aplicacion_pago: aplicacion.id, id_propietario: ana.id },
+    });
+    assert.ok(asignacion.id_liquidacion_item !== null);
+  });
+
+  it("liquida sólo los conceptos seleccionados y deja el resto pendiente", async () => {
+    const { ana, contrato, usuario } = await crearEscenarioCompartido();
+
+    const periodo = await prisma.periodoPago.findFirstOrThrow({
+      where: { id_contrato: contrato.id },
+    });
+    const cargo = await prisma.cargo.findFirstOrThrow({
+      where: { id_periodo: periodo.id, tipo: "ALQUILER" },
+    });
+
+    const aplicaciones = [];
+    for (const monto of [30000, 20000]) {
+      const transaccion = await prisma.transaccion.create({
+        data: {
+          tipo: "INGRESO_COBRO",
+          caja_destino: "TERCEROS",
+          monto,
+          id_contrato: contrato.id,
+          id_usuario_creador: usuario.id,
+        },
+      });
+      aplicaciones.push(
+        await prisma.aplicacionPago.create({
+          data: {
+            id_transaccion: transaccion.id,
+            id_cargo: cargo.id,
+            monto_aplicado: monto,
+          },
+        }),
+      );
+    }
+
+    const pendientes = await LiquidacionesService.listarPendientes(ana.id, manana());
+    assert.equal(
+      pendientes.filter((item) => item.tipo === "ALQUILER").length,
+      2,
+    );
+
+    const liquidacion = await LiquidacionesService.generarParaPropietario(
+      ana.id,
+      manana(),
+      0,
+      [{ tipo: "ALQUILER", id: aplicaciones[0].id }],
+    );
+
+    assert.equal(Number(liquidacion.monto_bruto), 18000);
+
+    const pendientesLuego = await LiquidacionesService.listarPendientes(ana.id, manana());
+    assert.ok(
+      pendientesLuego.some(
+        (item) => item.tipo === "ALQUILER" && item.id === aplicaciones[1].id,
+      ),
+      "el concepto no seleccionado debe continuar pendiente",
+    );
+    assert.ok(
+      !pendientesLuego.some(
+        (item) => item.tipo === "ALQUILER" && item.id === aplicaciones[0].id,
+      ),
+      "el concepto seleccionado ya no debe aparecer como pendiente",
+    );
+  });
+
 });
