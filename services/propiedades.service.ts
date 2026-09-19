@@ -1,16 +1,26 @@
 import { prisma } from "@/lib/db";
 import type { PropiedadInput } from "@/schemas/propiedad.schema";
+import { normalizarParticipaciones } from "@/lib/copropiedad";
 import { traceServiceObject } from "@/lib/observability/tracing";
 
 export const PropiedadesService = traceServiceObject("PropiedadesService", {
   async listar(id_propietario?: number) {
     return prisma.propiedad.findMany({
-      where: id_propietario ? { id_propietario } : undefined,
+      where: id_propietario
+        ? { copropietarios: { some: { id_propietario } } }
+        : undefined,
       select: {
         id: true,
         direccion: true,
         es_propia: true,
-        propietario: { select: { nombre: true } },
+        copropietarios: {
+          select: {
+            id_propietario: true,
+            porcentaje: true,
+            propietario: { select: { nombre: true } },
+          },
+          orderBy: { id_propietario: "asc" },
+        },
         _count: { select: { contratos: true } },
       },
       orderBy: { direccion: "asc" },
@@ -21,9 +31,7 @@ export const PropiedadesService = traceServiceObject("PropiedadesService", {
   // por el combo de "Nuevo contrato", para no ofrecer una propiedad ya
   // ocupada. POR_VENCER sigue siendo un contrato en curso — no libera la
   // propiedad hasta que efectivamente venza o se rescinda.
-  // Un BORRADOR no bloquea (se puede armar más de uno en paralelo y
-  // decidir después cuál activar); VENCIDO/RESCINDIDO tampoco, la
-  // propiedad vuelve a estar disponible.
+  // Un BORRADOR no bloquea; VENCIDO/RESCINDIDO tampoco.
   async listarDisponibles() {
     return prisma.propiedad.findMany({
       where: {
@@ -33,6 +41,13 @@ export const PropiedadesService = traceServiceObject("PropiedadesService", {
         id: true,
         direccion: true,
         propietario: { select: { nombre: true } },
+        copropietarios: {
+          select: {
+            porcentaje: true,
+            propietario: { select: { id: true, nombre: true } },
+          },
+          orderBy: { id_propietario: "asc" },
+        },
       },
       orderBy: { direccion: "asc" },
     });
@@ -43,6 +58,10 @@ export const PropiedadesService = traceServiceObject("PropiedadesService", {
       where: { id },
       include: {
         propietario: true,
+        copropietarios: {
+          include: { propietario: true },
+          orderBy: { id_propietario: "asc" },
+        },
         contratos: {
           include: { inquilino: true },
           orderBy: { fecha_inicio: "desc" },
@@ -52,10 +71,59 @@ export const PropiedadesService = traceServiceObject("PropiedadesService", {
   },
 
   async crear(data: PropiedadInput) {
-    return prisma.propiedad.create({ data });
+    const participaciones = normalizarParticipaciones(data.participaciones);
+    const propietarioPrincipal = participaciones[0];
+
+    return prisma.propiedad.create({
+      data: {
+        direccion: data.direccion,
+        es_propia: data.es_propia,
+        // Compatibilidad temporal: se conserva el primer propietario en el
+        // campo legacy hasta que todos los consumidores migren a copropietarios.
+        id_propietario: propietarioPrincipal.id_propietario,
+        copropietarios: {
+          create: participaciones.map((participacion) => ({
+            id_propietario: participacion.id_propietario,
+            porcentaje: participacion.porcentaje,
+          })),
+        },
+      },
+      include: {
+        copropietarios: {
+          include: { propietario: true },
+          orderBy: { id_propietario: "asc" },
+        },
+      },
+    });
   },
 
-  async actualizar(id: number, data: Partial<PropiedadInput>) {
-    return prisma.propiedad.update({ where: { id }, data });
+  async actualizar(id: number, data: PropiedadInput) {
+    const participaciones = normalizarParticipaciones(data.participaciones);
+    const propietarioPrincipal = participaciones[0];
+
+    return prisma.$transaction(async (tx) => {
+      await tx.propiedadPropietario.deleteMany({ where: { id_propiedad: id } });
+
+      return tx.propiedad.update({
+        where: { id },
+        data: {
+          direccion: data.direccion,
+          es_propia: data.es_propia,
+          id_propietario: propietarioPrincipal.id_propietario,
+          copropietarios: {
+            create: participaciones.map((participacion) => ({
+              id_propietario: participacion.id_propietario,
+              porcentaje: participacion.porcentaje,
+            })),
+          },
+        },
+        include: {
+          copropietarios: {
+            include: { propietario: true },
+            orderBy: { id_propietario: "asc" },
+          },
+        },
+      });
+    });
   },
 });
