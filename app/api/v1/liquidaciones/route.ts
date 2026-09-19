@@ -37,7 +37,8 @@ async function postLiquidacion(req: NextRequest) {
     const liquidacion = await LiquidacionesService.generarParaPropietario(
       ownerId,
       parsed.data.hasta,
-      parsed.data.descontar_adelantos
+      parsed.data.descontar_adelantos,
+      parsed.data.conceptos
     );
     logger.info(DOMAIN_EVENTS.SETTLEMENT_GENERATED, {
       settlementId: liquidacion.id,
