@@ -30,10 +30,13 @@ model Propietario {
   nombre String
   cbu    String @db.VarChar(22)
 
-  propiedades   Propiedad[]
-  usuarios      Usuario[]
-  liquidaciones Liquidacion[]
-  transacciones Transaccion[]
+  propiedades                  Propiedad[]
+  participaciones              PropiedadPropietario[]
+  liquidaciones                Liquidacion[]
+  transacciones                Transaccion[]
+  usuarios                     Usuario[]
+  aplicaciones_asignadas       AplicacionPagoPropietario[]
+  gastos_asignados             GastoPropietario[]
 
   @@map("propietarios")
 }
@@ -60,8 +63,22 @@ model Propiedad {
   contratos           Contrato[]
   gastos              Gasto[]
   liquidacion_items   LiquidacionItem[]
+  copropietarios      PropiedadPropietario[]
 
   @@map("propiedades")
+}
+
+model PropiedadPropietario {
+  id             Int         @id @default(autoincrement())
+  id_propiedad   Int
+  propiedad      Propiedad   @relation(fields: [id_propiedad], references: [id], onDelete: Cascade)
+  id_propietario Int
+  propietario    Propietario @relation(fields: [id_propietario], references: [id], onDelete: Restrict)
+  porcentaje     Decimal     @db.Decimal(5, 2)
+
+  @@unique([id_propiedad, id_propietario])
+  @@index([id_propietario])
+  @@map("propiedades_propietarios")
 }
 
 model Contrato {
@@ -206,6 +223,7 @@ model Gasto {
   contrato         Contrato?        @relation(fields: [id_contrato], references: [id])
   liquidacion_item LiquidacionItem? @relation(fields: [id_liquidacion_item], references: [id])
   cargos           Cargo[]
+  asignaciones     GastoPropietario[]
 
   @@map("gastos")
 }
@@ -241,8 +259,25 @@ model AplicacionPago {
   id_liquidacion_item Int?
   liquidacion_item    LiquidacionItem? @relation(fields: [id_liquidacion_item], references: [id])
   monto_aplicado      Decimal          @db.Decimal(15, 2)
+  asignaciones         AplicacionPagoPropietario[]
 
   @@map("aplicaciones_pago")
+}
+
+model AplicacionPagoPropietario {
+  id                       Int              @id @default(autoincrement())
+  id_aplicacion_pago       Int
+  aplicacion_pago          AplicacionPago   @relation(fields: [id_aplicacion_pago], references: [id], onDelete: Cascade)
+  id_propietario           Int
+  propietario              Propietario      @relation(fields: [id_propietario], references: [id], onDelete: Restrict)
+  id_liquidacion_item      Int?
+  liquidacion_item         LiquidacionItem? @relation(fields: [id_liquidacion_item], references: [id], onDelete: SetNull)
+  porcentaje_participacion Decimal          @db.Decimal(5, 2)
+  monto_asignado           Decimal          @db.Decimal(15, 2)
+
+  @@unique([id_aplicacion_pago, id_propietario])
+  @@index([id_propietario, id_liquidacion_item])
+  @@map("aplicaciones_pago_propietarios")
 }
 
 model Liquidacion {
@@ -274,15 +309,34 @@ model LiquidacionItem {
   id_propiedad Int
   propiedad    Propiedad    @relation(fields: [id_propiedad], references: [id])
 
-  monto_bruto Decimal @db.Decimal(15, 2)
-  comision    Decimal @db.Decimal(15, 2)
-  gastos      Decimal @db.Decimal(15, 2)
-  monto_neto  Decimal @db.Decimal(15, 2)
+  porcentaje_participacion Decimal @default(100.00) @db.Decimal(5, 2)
+  monto_bruto               Decimal @db.Decimal(15, 2)
+  comision                  Decimal @db.Decimal(15, 2)
+  gastos                    Decimal @db.Decimal(15, 2)
+  monto_neto                Decimal @db.Decimal(15, 2)
 
-  aplicaciones AplicacionPago[]
-  gastos_item  Gasto[]
+  aplicaciones             AplicacionPago[]
+  aplicaciones_asignadas  AplicacionPagoPropietario[]
+  gastos_item              Gasto[]
+  gastos_asignados         GastoPropietario[]
 
   @@map("liquidaciones_items")
+}
+
+model GastoPropietario {
+  id                       Int              @id @default(autoincrement())
+  id_gasto                 Int
+  gasto                    Gasto            @relation(fields: [id_gasto], references: [id], onDelete: Cascade)
+  id_propietario           Int
+  propietario              Propietario      @relation(fields: [id_propietario], references: [id], onDelete: Restrict)
+  id_liquidacion_item      Int?
+  liquidacion_item         LiquidacionItem? @relation(fields: [id_liquidacion_item], references: [id], onDelete: SetNull)
+  porcentaje_participacion Decimal          @db.Decimal(5, 2)
+  monto_asignado           Decimal          @db.Decimal(15, 2)
+
+  @@unique([id_gasto, id_propietario])
+  @@index([id_propietario, id_liquidacion_item])
+  @@map("gastos_propietarios")
 }
 
 model DeduccionAdelanto {
