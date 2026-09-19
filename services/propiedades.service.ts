@@ -7,7 +7,12 @@ export const PropiedadesService = traceServiceObject("PropiedadesService", {
   async listar(id_propietario?: number) {
     return prisma.propiedad.findMany({
       where: id_propietario
-        ? { copropietarios: { some: { id_propietario } } }
+        ? {
+            OR: [
+              { copropietarios: { some: { id_propietario } } },
+              { copropietarios: { none: {} }, id_propietario },
+            ],
+          }
         : undefined,
       select: {
         id: true,
