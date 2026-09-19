@@ -378,6 +378,7 @@ describe("dashboard list query payloads", () => {
               id: true,
               id_periodo: true,
               id_propiedad: true,
+              porcentaje_participacion: true,
               monto_bruto: true,
               comision: true,
               gastos: true,
@@ -413,6 +414,28 @@ describe("dashboard list query payloads", () => {
                 },
                 orderBy: { id: "asc" },
               },
+              aplicaciones_asignadas: {
+                select: {
+                  monto_asignado: true,
+                  aplicacion_pago: {
+                    select: {
+                      id: true,
+                      transaccion: {
+                        select: { id: true, tipo: true, fecha_transaccion: true },
+                      },
+                      cargo: {
+                        select: {
+                          id: true,
+                          tipo: true,
+                          monto: true,
+                          descripcion: true,
+                        },
+                      },
+                    },
+                  },
+                },
+                orderBy: { id: "asc" },
+              },
               gastos_item: {
                 select: {
                   id: true,
@@ -422,6 +445,22 @@ describe("dashboard list query payloads", () => {
                   monto: true,
                   estado_pago: true,
                   creado_en: true,
+                },
+                orderBy: { id: "asc" },
+              },
+              gastos_asignados: {
+                select: {
+                  monto_asignado: true,
+                  gasto: {
+                    select: {
+                      id: true,
+                      concepto: true,
+                      categoria_interno: true,
+                      tipo: true,
+                      estado_pago: true,
+                      creado_en: true,
+                    },
+                  },
                 },
                 orderBy: { id: "asc" },
               },
