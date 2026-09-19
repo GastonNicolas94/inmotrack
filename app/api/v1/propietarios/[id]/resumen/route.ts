@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Decimal } from "@prisma/client/runtime/client";
 import { prisma } from "@/lib/db";
 import { errorResponse } from "@/lib/errors";
 import { calcularPendiente } from "@/lib/saldos";
@@ -17,13 +18,17 @@ async function getResumenPropietario(
     const propietario = await prisma.propietario.findUnique({
       where: { id: Number(id) },
       include: {
-        propiedades: {
+        participaciones: {
           include: {
-            contratos: {
-              where: { estado: { in: ["ACTIVO", "MOROSO", "POR_VENCER", "VENCIDO"] } },
+            propiedad: {
               include: {
-                inquilino: true,
-                cargos: { include: { aplicaciones: true } },
+                contratos: {
+                  where: { estado: { in: ["ACTIVO", "MOROSO", "POR_VENCER", "VENCIDO"] } },
+                  include: {
+                    inquilino: true,
+                    cargos: { include: { aplicaciones: true } },
+                  },
+                },
               },
             },
           },
@@ -33,20 +38,32 @@ async function getResumenPropietario(
 
     if (!propietario) return errorResponse("NOT_FOUND", "Propietario no encontrado.", 404);
 
-    const contratos = propietario.propiedades.flatMap((p) => p.contratos);
+    const contratos = propietario.participaciones.flatMap((participacion) =>
+      participacion.propiedad.contratos.map((contrato) => ({
+        contrato,
+        porcentaje: new Decimal(participacion.porcentaje),
+      })),
+    );
     const contratosActivos = contratos.filter(
-      (c) => c.estado === "ACTIVO" || c.estado === "MOROSO" || c.estado === "POR_VENCER"
+      ({ contrato }) =>
+        contrato.estado === "ACTIVO" ||
+        contrato.estado === "MOROSO" ||
+        contrato.estado === "POR_VENCER",
     );
 
-    const deudaTotal = contratos
-      .flatMap((c) => c.cargos)
-      .reduce((acc, c) => acc + calcularPendiente(c.monto, c.aplicaciones).toNumber(), 0);
+    const deudaTotal = contratos.reduce((total, { contrato, porcentaje }) => {
+      const deudaContrato = contrato.cargos.reduce(
+        (subtotal, cargo) => subtotal.plus(calcularPendiente(cargo.monto, cargo.aplicaciones)),
+        new Decimal(0),
+      );
+      return total.plus(deudaContrato.times(porcentaje).dividedBy(100));
+    }, new Decimal(0));
 
     return NextResponse.json({
       id: propietario.id,
       nombre: propietario.nombre,
       contratos_activos: contratosActivos.length,
-      deuda_inquilinos: deudaTotal,
+      deuda_inquilinos: deudaTotal.toDecimalPlaces(2).toNumber(),
     });
   } catch (e) {
     return handleServiceError(e);

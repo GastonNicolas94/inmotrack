@@ -45,7 +45,7 @@ export async function TablaPropietarios() {
                   {maskCbu(p.cbu)}
                 </TableCell>
                 <TableCell className="text-center">
-                  <Badge variant="secondary">{p._count.propiedades}</Badge>
+                  <Badge variant="secondary">{p._count.participaciones}</Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   <ModalRegistrarAdelanto propietarioId={p.id} nombre={p.nombre} />

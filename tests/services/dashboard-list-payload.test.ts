@@ -101,7 +101,19 @@ describe("dashboard list query payloads", () => {
           orderBy: [{ periodo_efectivo: "asc" }, { id: "asc" }],
           take: 1,
         },
-        propiedad: { select: { direccion: true, propietario: { select: { nombre: true } } } },
+        propiedad: {
+          select: {
+            direccion: true,
+            propietario: { select: { nombre: true } },
+            copropietarios: {
+              select: {
+                porcentaje: true,
+                propietario: { select: { id: true, nombre: true } },
+              },
+              orderBy: { id_propietario: "asc" },
+            },
+          },
+        },
         inquilino: { select: { nombre: true } },
       });
     });
@@ -198,7 +210,7 @@ describe("dashboard list query payloads", () => {
         id: true,
         nombre: true,
         cbu: true,
-        _count: { select: { propiedades: true } },
+        _count: { select: { participaciones: true } },
       });
     });
   });

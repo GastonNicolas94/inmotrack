@@ -48,7 +48,12 @@ export async function TablaContratos() {
                   <TableCell className="font-medium">{c.propiedad.direccion}</TableCell>
                   <TableCell>{c.inquilino.nombre}</TableCell>
                   <TableCell className="text-muted-foreground">
-                    {c.propiedad.propietario.nombre}
+                    {c.propiedad.copropietarios
+                      .map(
+                        (participacion) =>
+                          `${participacion.propietario.nombre} (${Number(participacion.porcentaje).toFixed(2)}%)`,
+                      )
+                      .join(" · ")}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {formatFechaLocal(c.fecha_inicio)} – {formatFechaLocal(c.fecha_fin)}

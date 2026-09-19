@@ -13,7 +13,13 @@ export async function ContratosWizardData() {
       propiedades={propiedades.map((p) => ({
         id: p.id,
         direccion: p.direccion,
-        propietario: { nombre: p.propietario.nombre },
+        propietario: {
+          nombre: p.copropietarios
+            .map((participacion) =>
+              `${participacion.propietario.nombre} (${Number(participacion.porcentaje).toFixed(2)}%)`,
+            )
+            .join(" · "),
+        },
       }))}
       inquilinos={inquilinos.map((i) => ({ id: i.id, nombre: i.nombre }))}
     />

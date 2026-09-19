@@ -9,7 +9,7 @@ export const PropietariosService = traceServiceObject("PropietariosService", {
         id: true,
         nombre: true,
         cbu: true,
-        _count: { select: { propiedades: true } },
+        _count: { select: { participaciones: true } },
       },
       orderBy: { nombre: "asc" },
     });
@@ -19,10 +19,15 @@ export const PropietariosService = traceServiceObject("PropietariosService", {
     return prisma.propietario.findUnique({
       where: { id },
       include: {
-        propiedades: {
+        participaciones: {
           include: {
-            _count: { select: { contratos: true } },
+            propiedad: {
+              include: {
+                _count: { select: { contratos: true } },
+              },
+            },
           },
+          orderBy: { id_propiedad: "asc" },
         },
       },
     });

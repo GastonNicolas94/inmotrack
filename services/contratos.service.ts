@@ -70,7 +70,9 @@ export function createContratosService(deps: Dependencies) {
         where: {
           ...(filters?.estado ? { estado: filters.estado as never } : {}),
           ...(filters?.id_inquilino ? { id_inquilino: filters.id_inquilino } : {}),
-          ...(filters?.id_propietario ? { propiedad: { id_propietario: filters.id_propietario } } : {}),
+          ...(filters?.id_propietario
+            ? { propiedad: { copropietarios: { some: { id_propietario: filters.id_propietario } } } }
+            : {}),
         },
         select: {
           id: true,
@@ -98,6 +100,13 @@ export function createContratosService(deps: Dependencies) {
             select: {
               direccion: true,
               propietario: { select: { nombre: true } },
+              copropietarios: {
+                select: {
+                  porcentaje: true,
+                  propietario: { select: { id: true, nombre: true } },
+                },
+                orderBy: { id_propietario: "asc" },
+              },
             },
           },
           inquilino: { select: { nombre: true } },
@@ -110,7 +119,15 @@ export function createContratosService(deps: Dependencies) {
       return deps.prisma.contrato.findUnique({
         where: { id },
         include: {
-          propiedad: { include: { propietario: true } },
+          propiedad: {
+            include: {
+              propietario: true,
+              copropietarios: {
+                include: { propietario: true },
+                orderBy: { id_propietario: "asc" },
+              },
+            },
+          },
           inquilino: true,
           periodos_pago: { orderBy: { periodo: "desc" }, take: 12 },
           gastos: { where: { estado_pago: "PENDIENTE" } },
@@ -127,7 +144,15 @@ export function createContratosService(deps: Dependencies) {
         where: { id },
         include: {
           inquilino: true,
-          propiedad: { include: { propietario: true } },
+          propiedad: {
+            include: {
+              propietario: true,
+              copropietarios: {
+                include: { propietario: true },
+                orderBy: { id_propietario: "asc" },
+              },
+            },
+          },
           periodos_pago: {
             include: { cargos: true },
             orderBy: { periodo: "asc" },
