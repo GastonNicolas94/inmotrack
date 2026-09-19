@@ -47,16 +47,36 @@ async function main() {
   });
 
   const propertyA = await prisma.propiedad.create({
-    data: { id_propietario: ownerA.id, direccion: "Propiedad demo A - sin dirección real", es_propia: false },
+    data: {
+      id_propietario: ownerA.id,
+      direccion: "Propiedad demo A - sin dirección real",
+      es_propia: false,
+      copropietarios: { create: { id_propietario: ownerA.id, porcentaje: 100 } },
+    },
   });
   const propertyB = await prisma.propiedad.create({
-    data: { id_propietario: ownerA.id, direccion: "Propiedad demo B - sin dirección real", es_propia: false },
+    data: {
+      id_propietario: ownerA.id,
+      direccion: "Propiedad demo B - sin dirección real",
+      es_propia: false,
+      copropietarios: { create: { id_propietario: ownerA.id, porcentaje: 100 } },
+    },
   });
   const propertyC = await prisma.propiedad.create({
-    data: { id_propietario: ownerB.id, direccion: "Propiedad demo C - sin dirección real", es_propia: false },
+    data: {
+      id_propietario: ownerB.id,
+      direccion: "Propiedad demo C - sin dirección real",
+      es_propia: false,
+      copropietarios: { create: { id_propietario: ownerB.id, porcentaje: 100 } },
+    },
   });
   const propertyD = await prisma.propiedad.create({
-    data: { id_propietario: ownerAgency.id, direccion: "Propiedad demo D - sin dirección real", es_propia: true },
+    data: {
+      id_propietario: ownerAgency.id,
+      direccion: "Propiedad demo D - sin dirección real",
+      es_propia: true,
+      copropietarios: { create: { id_propietario: ownerAgency.id, porcentaje: 100 } },
+    },
   });
 
   const tenantA = await prisma.inquilino.create({
