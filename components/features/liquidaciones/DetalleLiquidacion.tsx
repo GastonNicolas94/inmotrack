@@ -41,7 +41,11 @@ export function DetalleLiquidacion({
   const desglose = calcularDesgloseLiquidacion(liquidacion);
   const itemsAlquiler = liquidacion.items.filter((item) => item.id_periodo !== null);
   const gastos = liquidacion.items.flatMap((item) =>
-    item.gastos_item.map((gasto) => ({ gasto, propiedad: item.propiedad }))
+    item.gastos_item.map((gasto) => ({
+      gasto,
+      propiedad: item.propiedad,
+      porcentajeParticipacion: item.porcentaje_participacion,
+    }))
   );
 
   const resumen = [
@@ -95,6 +99,7 @@ export function DetalleLiquidacion({
                 <TableHead>Propiedad</TableHead>
                 <TableHead>Período</TableHead>
                 <TableHead>Inquilino</TableHead>
+                <TableHead className="text-right">Participación</TableHead>
                 <TableHead>Cargos y cobros</TableHead>
                 <TableHead className="text-right">Bruto</TableHead>
                 <TableHead className="text-right">Comisión</TableHead>
@@ -104,7 +109,7 @@ export function DetalleLiquidacion({
             <TableBody>
               {itemsAlquiler.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
                     Esta liquidación no incluyó cobros de alquiler.
                   </TableCell>
                 </TableRow>
@@ -114,6 +119,9 @@ export function DetalleLiquidacion({
                     <TableCell className="font-medium">{item.propiedad.direccion}</TableCell>
                     <TableCell className="font-mono text-sm">{item.periodo?.periodo ?? "—"}</TableCell>
                     <TableCell>{item.periodo?.contrato.inquilino.nombre ?? "—"}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      {Number(item.porcentaje_participacion).toFixed(2)}%
+                    </TableCell>
                     <TableCell className="min-w-64 whitespace-normal">
                       <div className="space-y-2">
                         {item.aplicaciones.map((aplicacion) => (
@@ -169,6 +177,7 @@ export function DetalleLiquidacion({
                 <TableHead>Propiedad</TableHead>
                 <TableHead>Gasto</TableHead>
                 <TableHead>Fecha</TableHead>
+                <TableHead className="text-right">Participación</TableHead>
                 <TableHead className="text-center">Estado</TableHead>
                 <TableHead className="text-right">Monto</TableHead>
               </TableRow>
@@ -176,12 +185,12 @@ export function DetalleLiquidacion({
             <TableBody>
               {gastos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                     Esta liquidación no incluyó gastos.
                   </TableCell>
                 </TableRow>
               ) : (
-                gastos.map(({ gasto, propiedad }) => (
+                gastos.map(({ gasto, propiedad, porcentajeParticipacion }) => (
                   <TableRow key={gasto.id}>
                     <TableCell className="font-medium">{propiedad.direccion}</TableCell>
                     <TableCell>
@@ -193,6 +202,9 @@ export function DetalleLiquidacion({
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatFechaHora(gasto.creado_en)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      {Number(porcentajeParticipacion).toFixed(2)}%
                     </TableCell>
                     <TableCell className="text-center">
                       <EstadoBadge valor={gasto.estado_pago} colores={COLORES_ESTADO_GASTO} />
