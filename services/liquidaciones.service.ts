@@ -5,6 +5,7 @@ import type { Clock } from "@/lib/clock";
 import { AppClock } from "@/lib/app-clock";
 import { AdelantosService } from "@/services/adelantos.service";
 import { traceServiceObject } from "@/lib/observability/tracing";
+import { prorratearMonto } from "@/lib/copropiedad";
 
 type Dependencies = { prisma: PrismaClient; clock: Clock };
 
@@ -28,7 +29,7 @@ export function createLiquidacionesService(deps: Dependencies) {
     },
 
     async obtenerDetalle(id: number) {
-      return deps.prisma.liquidacion.findUnique({
+      const liquidacion = await deps.prisma.liquidacion.findUnique({
         where: { id },
         select: {
           id: true,
@@ -47,6 +48,7 @@ export function createLiquidacionesService(deps: Dependencies) {
               id: true,
               id_periodo: true,
               id_propiedad: true,
+              porcentaje_participacion: true,
               monto_bruto: true,
               comision: true,
               gastos: true,
@@ -82,6 +84,28 @@ export function createLiquidacionesService(deps: Dependencies) {
                 },
                 orderBy: { id: "asc" },
               },
+              aplicaciones_asignadas: {
+                select: {
+                  monto_asignado: true,
+                  aplicacion_pago: {
+                    select: {
+                      id: true,
+                      transaccion: {
+                        select: { id: true, tipo: true, fecha_transaccion: true },
+                      },
+                      cargo: {
+                        select: {
+                          id: true,
+                          tipo: true,
+                          monto: true,
+                          descripcion: true,
+                        },
+                      },
+                    },
+                  },
+                },
+                orderBy: { id: "asc" },
+              },
               gastos_item: {
                 select: {
                   id: true,
@@ -91,6 +115,22 @@ export function createLiquidacionesService(deps: Dependencies) {
                   monto: true,
                   estado_pago: true,
                   creado_en: true,
+                },
+                orderBy: { id: "asc" },
+              },
+              gastos_asignados: {
+                select: {
+                  monto_asignado: true,
+                  gasto: {
+                    select: {
+                      id: true,
+                      concepto: true,
+                      categoria_interno: true,
+                      tipo: true,
+                      estado_pago: true,
+                      creado_en: true,
+                    },
+                  },
                 },
                 orderBy: { id: "asc" },
               },
@@ -115,6 +155,35 @@ export function createLiquidacionesService(deps: Dependencies) {
           },
         },
       });
+
+      if (!liquidacion) return null;
+
+      return {
+        ...liquidacion,
+        items: liquidacion.items.map((item) => {
+          const aplicacionesAsignadas = item.aplicaciones_asignadas.map((asignacion) => ({
+            ...asignacion.aplicacion_pago,
+            monto_aplicado: asignacion.monto_asignado,
+          }));
+          const gastosAsignados = item.gastos_asignados.map((asignacion) => ({
+            ...asignacion.gasto,
+            monto: asignacion.monto_asignado,
+          }));
+
+          const {
+            aplicaciones_asignadas: _aplicacionesAsignadas,
+            gastos_asignados: _gastosAsignados,
+            ...resto
+          } = item;
+
+          return {
+            ...resto,
+            aplicaciones:
+              aplicacionesAsignadas.length > 0 ? aplicacionesAsignadas : item.aplicaciones,
+            gastos_item: gastosAsignados.length > 0 ? gastosAsignados : item.gastos_item,
+          };
+        }),
+      };
     },
 
     async generarParaPropietario(
@@ -134,25 +203,100 @@ export function createLiquidacionesService(deps: Dependencies) {
           ? new Date(ultimaLiquidacion.fecha_hasta.getTime() + 24 * 60 * 60 * 1000)
           : new Date("1900-01-01");
 
+        // Bloqueamos las fuentes, no sus asignaciones. Así dos corridas
+        // concurrentes no pueden snapshotear o consumir la misma fuente dos veces.
         await tx.$queryRawUnsafe(
-          `SELECT ap.id FROM aplicaciones_pago ap
+          `SELECT ap.id
+           FROM aplicaciones_pago ap
+           JOIN transacciones t ON t.id = ap.id_transaccion
            JOIN cargos c ON c.id = ap.id_cargo
-           JOIN periodos_pago pp ON pp.id = c.id_periodo
-           JOIN contratos ct ON ct.id = pp.id_contrato
+           JOIN periodos_pago pe ON pe.id = c.id_periodo
+           JOIN contratos ct ON ct.id = pe.id_contrato
            JOIN propiedades prop ON prop.id = ct.id_propiedad
-           WHERE c.tipo = 'ALQUILER' AND ap.id_liquidacion_item IS NULL
-             AND prop.id_propietario = $1
+           WHERE c.tipo = 'ALQUILER'
+             AND t.fecha_transaccion >= $2
+             AND t.fecha_transaccion <= $3
+             AND (
+               EXISTS (
+                 SELECT 1
+                 FROM aplicaciones_pago_propietarios apa
+                 WHERE apa.id_aplicacion_pago = ap.id
+                   AND apa.id_propietario = $1
+                   AND apa.id_liquidacion_item IS NULL
+               )
+               OR (
+                 NOT EXISTS (
+                   SELECT 1
+                   FROM aplicaciones_pago_propietarios apa_any
+                   WHERE apa_any.id_aplicacion_pago = ap.id
+                 )
+                 AND (
+                   EXISTS (
+                     SELECT 1
+                     FROM propiedades_propietarios pp
+                     WHERE pp.id_propiedad = prop.id
+                       AND pp.id_propietario = $1
+                   )
+                   OR (
+                     NOT EXISTS (
+                       SELECT 1
+                       FROM propiedades_propietarios pp_any
+                       WHERE pp_any.id_propiedad = prop.id
+                     )
+                     AND prop.id_propietario = $1
+                   )
+                 )
+               )
+             )
            FOR UPDATE OF ap`,
           id_propietario,
+          desde,
+          hasta,
         );
 
         await tx.$queryRawUnsafe(
-          `SELECT g.id FROM gastos g
+          `SELECT g.id
+           FROM gastos g
            JOIN propiedades prop ON prop.id = g.id_propiedad
-           WHERE g.cargo_a = 'PROPIETARIO' AND g.id_liquidacion_item IS NULL
-             AND prop.id_propietario = $1
+           WHERE g.cargo_a = 'PROPIETARIO'
+             AND g.creado_en >= $2
+             AND g.creado_en <= $3
+             AND (
+               EXISTS (
+                 SELECT 1
+                 FROM gastos_propietarios gp
+                 WHERE gp.id_gasto = g.id
+                   AND gp.id_propietario = $1
+                   AND gp.id_liquidacion_item IS NULL
+               )
+               OR (
+                 NOT EXISTS (
+                   SELECT 1
+                   FROM gastos_propietarios gp_any
+                   WHERE gp_any.id_gasto = g.id
+                 )
+                 AND (
+                   EXISTS (
+                     SELECT 1
+                     FROM propiedades_propietarios pp
+                     WHERE pp.id_propiedad = prop.id
+                       AND pp.id_propietario = $1
+                   )
+                   OR (
+                     NOT EXISTS (
+                       SELECT 1
+                       FROM propiedades_propietarios pp_any
+                       WHERE pp_any.id_propiedad = prop.id
+                     )
+                     AND prop.id_propietario = $1
+                   )
+                 )
+               )
+             )
            FOR UPDATE OF g`,
           id_propietario,
+          desde,
+          hasta,
         );
 
         const montoDescontar = new Decimal(descontarAdelantos);
@@ -166,85 +310,263 @@ export function createLiquidacionesService(deps: Dependencies) {
           );
         }
 
-        const aplicaciones = await tx.aplicacionPago.findMany({
+        const aplicacionesFuente = await tx.aplicacionPago.findMany({
           where: {
-            id_liquidacion_item: null,
-            cargo: {
-              tipo: "ALQUILER",
-              periodo: { contrato: { propiedad: { id_propietario } } },
-            },
+            cargo: { tipo: "ALQUILER" },
             transaccion: { fecha_transaccion: { gte: desde, lte: hasta } },
+            OR: [
+              {
+                asignaciones: {
+                  some: { id_propietario, id_liquidacion_item: null },
+                },
+              },
+              {
+                asignaciones: { none: {} },
+                cargo: {
+                  tipo: "ALQUILER",
+                  periodo: {
+                    contrato: {
+                      propiedad: {
+                        OR: [
+                          { copropietarios: { some: { id_propietario } } },
+                          {
+                            copropietarios: { none: {} },
+                            id_propietario,
+                          },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            ],
           },
           include: {
+            asignaciones: true,
             cargo: {
               include: {
-                periodo: { include: { contrato: { include: { propiedad: true } } } },
+                periodo: {
+                  include: {
+                    contrato: {
+                      include: {
+                        propiedad: {
+                          include: {
+                            copropietarios: {
+                              orderBy: { id_propietario: "asc" },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
               },
             },
-            transaccion: true,
           },
         });
 
-        const gastos = await tx.gasto.findMany({
+        for (const aplicacion of aplicacionesFuente) {
+          if (aplicacion.asignaciones.length > 0) continue;
+
+          const propiedad = aplicacion.cargo.periodo.contrato.propiedad;
+          const participaciones =
+            propiedad.copropietarios.length > 0
+              ? propiedad.copropietarios.map((participacion) => ({
+                  id_propietario: participacion.id_propietario,
+                  porcentaje: participacion.porcentaje,
+                }))
+              : [{ id_propietario: propiedad.id_propietario, porcentaje: 100 }];
+
+          const asignaciones = prorratearMonto(aplicacion.monto_aplicado, participaciones);
+          await tx.aplicacionPagoPropietario.createMany({
+            data: asignaciones.map((asignacion) => ({
+              id_aplicacion_pago: aplicacion.id,
+              id_propietario: asignacion.id_propietario,
+              porcentaje_participacion: asignacion.porcentaje,
+              monto_asignado: asignacion.monto,
+            })),
+            skipDuplicates: true,
+          });
+        }
+
+        const gastosFuente = await tx.gasto.findMany({
           where: {
             cargo_a: "PROPIETARIO",
-            id_liquidacion_item: null,
             creado_en: { gte: desde, lte: hasta },
-            propiedad: { id_propietario },
+            propiedad: {
+              is: {
+                OR: [
+                  { copropietarios: { some: { id_propietario } } },
+                  { copropietarios: { none: {} }, id_propietario },
+                ],
+              },
+            },
+            OR: [
+              {
+                asignaciones: {
+                  some: { id_propietario, id_liquidacion_item: null },
+                },
+              },
+              { asignaciones: { none: {} } },
+            ],
           },
-          include: { propiedad: true },
+          include: {
+            asignaciones: true,
+            propiedad: {
+              include: {
+                copropietarios: {
+                  orderBy: { id_propietario: "asc" },
+                },
+              },
+            },
+          },
+        });
+
+        for (const gasto of gastosFuente) {
+          if (gasto.asignaciones.length > 0 || !gasto.propiedad) continue;
+
+          const participaciones =
+            gasto.propiedad.copropietarios.length > 0
+              ? gasto.propiedad.copropietarios.map((participacion) => ({
+                  id_propietario: participacion.id_propietario,
+                  porcentaje: participacion.porcentaje,
+                }))
+              : [{ id_propietario: gasto.propiedad.id_propietario, porcentaje: 100 }];
+
+          const asignaciones = prorratearMonto(gasto.monto, participaciones);
+          await tx.gastoPropietario.createMany({
+            data: asignaciones.map((asignacion) => ({
+              id_gasto: gasto.id,
+              id_propietario: asignacion.id_propietario,
+              porcentaje_participacion: asignacion.porcentaje,
+              monto_asignado: asignacion.monto,
+            })),
+            skipDuplicates: true,
+          });
+        }
+
+        const asignacionesAplicacion = await tx.aplicacionPagoPropietario.findMany({
+          where: {
+            id_propietario,
+            id_liquidacion_item: null,
+            aplicacion_pago: {
+              cargo: { tipo: "ALQUILER" },
+              transaccion: { fecha_transaccion: { gte: desde, lte: hasta } },
+            },
+          },
+          include: {
+            aplicacion_pago: {
+              include: {
+                asignaciones: { orderBy: { id_propietario: "asc" } },
+                cargo: {
+                  include: {
+                    periodo: {
+                      include: {
+                        contrato: {
+                          include: { propiedad: true },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { id: "asc" },
+        });
+
+        const asignacionesGasto = await tx.gastoPropietario.findMany({
+          where: {
+            id_propietario,
+            id_liquidacion_item: null,
+            gasto: {
+              cargo_a: "PROPIETARIO",
+              creado_en: { gte: desde, lte: hasta },
+            },
+          },
+          include: { gasto: true },
+          orderBy: { id: "asc" },
         });
 
         interface ItemAlquiler {
           id_periodo: number;
           id_propiedad: number;
+          porcentaje_participacion: Decimal;
           monto_bruto: Decimal;
           comision: Decimal;
-          pct_comision: Decimal;
-          aplicacionIds: number[];
+          asignacionIds: number[];
+          aplicacionIdsLegacy: number[];
         }
 
-        const porPeriodo = new Map<number, ItemAlquiler>();
+        const porPeriodo = new Map<string, ItemAlquiler>();
 
-        for (const aplicacion of aplicaciones) {
+        for (const asignacion of asignacionesAplicacion) {
+          const aplicacion = asignacion.aplicacion_pago;
           const idPeriodo = aplicacion.cargo.id_periodo;
           const idPropiedad = aplicacion.cargo.periodo.contrato.propiedad.id;
+          const porcentaje = new Decimal(asignacion.porcentaje_participacion);
+          const clave = `${idPeriodo}:${idPropiedad}:${porcentaje.toFixed(2)}`;
           const pctComision = new Decimal(aplicacion.cargo.periodo.contrato.pct_comision);
 
-          const entry = porPeriodo.get(idPeriodo) ?? {
+          const totalComision = new Decimal(aplicacion.monto_aplicado)
+            .times(pctComision)
+            .dividedBy(100)
+            .toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
+          const comisionAsignada =
+            prorratearMonto(
+              totalComision,
+              aplicacion.asignaciones.map((item) => ({
+                id_propietario: item.id_propietario,
+                porcentaje: item.porcentaje_participacion,
+              })),
+            ).find((item) => item.id_propietario === id_propietario)?.monto ?? new Decimal(0);
+
+          const entry = porPeriodo.get(clave) ?? {
             id_periodo: idPeriodo,
             id_propiedad: idPropiedad,
+            porcentaje_participacion: porcentaje,
             monto_bruto: new Decimal(0),
             comision: new Decimal(0),
-            pct_comision: pctComision,
-            aplicacionIds: [] as number[],
+            asignacionIds: [],
+            aplicacionIdsLegacy: [],
           };
 
-          const monto = new Decimal(aplicacion.monto_aplicado);
-          entry.monto_bruto = entry.monto_bruto.plus(monto);
-          entry.comision = entry.comision.plus(monto.times(pctComision).dividedBy(100));
-          entry.aplicacionIds.push(aplicacion.id);
-          porPeriodo.set(idPeriodo, entry);
+          entry.monto_bruto = entry.monto_bruto.plus(asignacion.monto_asignado);
+          entry.comision = entry.comision.plus(comisionAsignada);
+          entry.asignacionIds.push(asignacion.id);
+          if (aplicacion.asignaciones.length === 1) {
+            entry.aplicacionIdsLegacy.push(aplicacion.id);
+          }
+          porPeriodo.set(clave, entry);
         }
 
         interface ItemGasto {
           id_propiedad: number;
+          porcentaje_participacion: Decimal;
           monto_gastos: Decimal;
-          gastoIds: number[];
+          asignacionIds: number[];
+          gastoIdsLegacy: number[];
         }
 
-        const porPropiedad = new Map<number, ItemGasto>();
+        const porPropiedad = new Map<string, ItemGasto>();
 
-        for (const gasto of gastos) {
-          const idPropiedad = gasto.id_propiedad!;
-          const entry = porPropiedad.get(idPropiedad) ?? {
-            id_propiedad: idPropiedad,
+        for (const asignacion of asignacionesGasto) {
+          if (!asignacion.gasto.id_propiedad) continue;
+          const porcentaje = new Decimal(asignacion.porcentaje_participacion);
+          const clave = `${asignacion.gasto.id_propiedad}:${porcentaje.toFixed(2)}`;
+          const entry = porPropiedad.get(clave) ?? {
+            id_propiedad: asignacion.gasto.id_propiedad,
+            porcentaje_participacion: porcentaje,
             monto_gastos: new Decimal(0),
-            gastoIds: [] as number[],
+            asignacionIds: [],
+            gastoIdsLegacy: [],
           };
-          entry.monto_gastos = entry.monto_gastos.plus(gasto.monto);
-          entry.gastoIds.push(gasto.id);
-          porPropiedad.set(idPropiedad, entry);
+          entry.monto_gastos = entry.monto_gastos.plus(asignacion.monto_asignado);
+          entry.asignacionIds.push(asignacion.id);
+          if (gastoAsSingleOwner(asignacion.gasto.id, gastosFuente)) {
+            entry.gastoIdsLegacy.push(asignacion.gasto.id);
+          }
+          porPropiedad.set(clave, entry);
         }
 
         let adelantosDescontados = new Decimal(0);
@@ -303,52 +625,56 @@ export function createLiquidacionesService(deps: Dependencies) {
           },
         });
 
-        const itemsAlquilerIds: Array<{ id: number; aplicacionIds: number[] }> = [];
         for (const item of porPeriodo.values()) {
           const liquidacionItem = await tx.liquidacionItem.create({
             data: {
               id_liquidacion: liquidacion.id,
               id_periodo: item.id_periodo,
               id_propiedad: item.id_propiedad,
+              porcentaje_participacion: item.porcentaje_participacion,
               monto_bruto: item.monto_bruto,
               comision: item.comision,
               gastos: new Decimal(0),
               monto_neto: item.monto_bruto.minus(item.comision),
             },
           });
-          itemsAlquilerIds.push({ id: liquidacionItem.id, aplicacionIds: item.aplicacionIds });
+
+          await tx.aplicacionPagoPropietario.updateMany({
+            where: { id: { in: item.asignacionIds } },
+            data: { id_liquidacion_item: liquidacionItem.id },
+          });
+
+          if (item.aplicacionIdsLegacy.length > 0) {
+            await tx.aplicacionPago.updateMany({
+              where: { id: { in: item.aplicacionIdsLegacy } },
+              data: { id_liquidacion_item: liquidacionItem.id },
+            });
+          }
         }
 
-        const itemsGastoIds: Array<{ id: number; gastoIds: number[] }> = [];
         for (const item of porPropiedad.values()) {
           const liquidacionItem = await tx.liquidacionItem.create({
             data: {
               id_liquidacion: liquidacion.id,
               id_periodo: null,
               id_propiedad: item.id_propiedad,
+              porcentaje_participacion: item.porcentaje_participacion,
               monto_bruto: new Decimal(0),
               comision: new Decimal(0),
               gastos: item.monto_gastos,
               monto_neto: item.monto_gastos.negated(),
             },
           });
-          itemsGastoIds.push({ id: liquidacionItem.id, gastoIds: item.gastoIds });
-        }
 
-        for (const { id, aplicacionIds } of itemsAlquilerIds) {
-          if (aplicacionIds.length > 0) {
-            await tx.aplicacionPago.updateMany({
-              where: { id: { in: aplicacionIds } },
-              data: { id_liquidacion_item: id },
-            });
-          }
-        }
+          await tx.gastoPropietario.updateMany({
+            where: { id: { in: item.asignacionIds } },
+            data: { id_liquidacion_item: liquidacionItem.id },
+          });
 
-        for (const { id, gastoIds } of itemsGastoIds) {
-          if (gastoIds.length > 0) {
+          if (item.gastoIdsLegacy.length > 0) {
             await tx.gasto.updateMany({
-              where: { id: { in: gastoIds } },
-              data: { id_liquidacion_item: id },
+              where: { id: { in: item.gastoIdsLegacy } },
+              data: { id_liquidacion_item: liquidacionItem.id },
             });
           }
         }
