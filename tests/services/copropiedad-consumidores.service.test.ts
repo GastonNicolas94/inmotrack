@@ -70,6 +70,8 @@ describe("consumidores de copropiedad", () => {
     const porId = new Map(propietarios.map((item) => [item.id, item]));
 
     assert.equal(porId.get(ana.id)?._count.participaciones, 1);
+    assert.equal(porId.get(ana.id)?._count.propiedades, 1);
     assert.equal(porId.get(juan.id)?._count.participaciones, 1);
+    assert.equal(porId.get(juan.id)?._count.propiedades, 1);
   });
 });

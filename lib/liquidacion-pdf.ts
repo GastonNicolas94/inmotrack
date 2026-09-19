@@ -367,7 +367,9 @@ export async function generarPdfLiquidacion(liquidacion: LiquidacionDetalle): Pr
         const aplicaciones = item.aplicaciones.length > 0 ? item.aplicaciones : [null];
         return aplicaciones.map((aplicacion, indice) => [
           indice === 0
-            ? `${item.propiedad.direccion}\n${item.periodo?.contrato.inquilino.nombre ?? "-"}`
+            ? `${item.propiedad.direccion}\n${item.periodo?.contrato.inquilino.nombre ?? "-"}\nParticipación: ${Number(
+                item.porcentaje_participacion
+              ).toFixed(2)}%`
             : "",
           indice === 0 ? item.periodo?.periodo ?? "-" : "",
           aplicacion
@@ -394,7 +396,11 @@ export async function generarPdfLiquidacion(liquidacion: LiquidacionDetalle): Pr
     asegurarEspacio(doc, liquidacion, 80);
     agregarTituloSeccion(doc, "Detalle de gastos descontados");
     const gastos = liquidacion.items.flatMap((item) =>
-      item.gastos_item.map((gasto) => ({ gasto, propiedad: item.propiedad }))
+      item.gastos_item.map((gasto) => ({
+        gasto,
+        propiedad: item.propiedad,
+        porcentajeParticipacion: item.porcentaje_participacion,
+      }))
     );
     agregarTabla(
       doc,
@@ -406,8 +412,8 @@ export async function generarPdfLiquidacion(liquidacion: LiquidacionDetalle): Pr
         { titulo: "ESTADO", ancho: 73, alineacion: "center" },
         { titulo: "MONTO", ancho: 62, alineacion: "right" },
       ],
-      gastos.map(({ gasto, propiedad }) => [
-        propiedad.direccion,
+      gastos.map(({ gasto, propiedad, porcentajeParticipacion }) => [
+        `${propiedad.direccion}\nParticipación: ${Number(porcentajeParticipacion).toFixed(2)}%`,
         `Gasto #${gasto.id} - ${gasto.concepto}\n${textoEstado(gasto.tipo)}${
           gasto.categoria_interno ? ` · ${gasto.categoria_interno}` : ""
         }`,
