@@ -161,20 +161,19 @@ export function createLiquidacionesService(deps: Dependencies) {
       return {
         ...liquidacion,
         items: liquidacion.items.map((item) => {
-          const aplicacionesAsignadas = item.aplicaciones_asignadas.map((asignacion) => ({
+          const {
+            aplicaciones_asignadas,
+            gastos_asignados,
+            ...resto
+          } = item;
+          const aplicacionesAsignadas = aplicaciones_asignadas.map((asignacion) => ({
             ...asignacion.aplicacion_pago,
             monto_aplicado: asignacion.monto_asignado,
           }));
-          const gastosAsignados = item.gastos_asignados.map((asignacion) => ({
+          const gastosAsignados = gastos_asignados.map((asignacion) => ({
             ...asignacion.gasto,
             monto: asignacion.monto_asignado,
           }));
-
-          const {
-            aplicaciones_asignadas: _aplicacionesAsignadas,
-            gastos_asignados: _gastosAsignados,
-            ...resto
-          } = item;
 
           return {
             ...resto,
@@ -393,21 +392,23 @@ export function createLiquidacionesService(deps: Dependencies) {
           where: {
             cargo_a: "PROPIETARIO",
             creado_en: { gte: desde, lte: hasta },
-            propiedad: {
-              is: {
-                OR: [
-                  { copropietarios: { some: { id_propietario } } },
-                  { copropietarios: { none: {} }, id_propietario },
-                ],
-              },
-            },
             OR: [
               {
                 asignaciones: {
                   some: { id_propietario, id_liquidacion_item: null },
                 },
               },
-              { asignaciones: { none: {} } },
+              {
+                asignaciones: { none: {} },
+                propiedad: {
+                  is: {
+                    OR: [
+                      { copropietarios: { some: { id_propietario } } },
+                      { copropietarios: { none: {} }, id_propietario },
+                    ],
+                  },
+                },
+              },
             ],
           },
           include: {
@@ -484,7 +485,13 @@ export function createLiquidacionesService(deps: Dependencies) {
               creado_en: { gte: desde, lte: hasta },
             },
           },
-          include: { gasto: true },
+          include: {
+            gasto: {
+              include: {
+                asignaciones: { orderBy: { id_propietario: "asc" } },
+              },
+            },
+          },
           orderBy: { id: "asc" },
         });
 
@@ -563,7 +570,7 @@ export function createLiquidacionesService(deps: Dependencies) {
           };
           entry.monto_gastos = entry.monto_gastos.plus(asignacion.monto_asignado);
           entry.asignacionIds.push(asignacion.id);
-          if (gastoAsSingleOwner(asignacion.gasto.id, gastosFuente)) {
+          if (asignacion.gasto.asignaciones.length === 1) {
             entry.gastoIdsLegacy.push(asignacion.gasto.id);
           }
           porPropiedad.set(clave, entry);
