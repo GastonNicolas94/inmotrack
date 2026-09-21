@@ -200,12 +200,19 @@ describe("dashboard list query payloads", () => {
       id: 4,
       nombre: "Dueño",
       cbu: "0000000000000000000000",
-      _count: { propiedades: 2 },
+      _count: { participaciones: 2 },
+    }];
+
+    const expected = [{
+      id: 4,
+      nombre: "Dueño",
+      cbu: "0000000000000000000000",
+      _count: { participaciones: 2, propiedades: 2 },
     }];
 
     await withFindManyStub(prisma.propietario as unknown as FindManyDelegate, rows, async (calls) => {
       const result = await PropietariosService.listar();
-      assert.deepEqual(result, rows);
+      assert.deepEqual(result, expected);
       assert.deepEqual((calls[0] as { select?: unknown }).select, {
         id: true,
         nombre: true,
