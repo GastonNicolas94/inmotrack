@@ -38,6 +38,7 @@ export function isPublicProxyPath(pathname: string): boolean {
   return (
     isExactOrChild(pathname, "/login") ||
     pathname === "/auth/confirm" ||
+    pathname === "/auth/confirm/callback" ||
     pathname.startsWith("/api/v1/cron/") ||
     isExactOrChild(pathname, "/_next/static") ||
     isExactOrChild(pathname, "/_next/image") ||

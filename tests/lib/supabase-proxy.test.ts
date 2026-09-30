@@ -40,6 +40,7 @@ test("recognizes login, callback, cron and static assets as public", () => {
     "/login",
     "/login/anything",
     "/auth/confirm",
+    "/auth/confirm/callback",
     "/api/v1/cron/cierre-periodo",
     "/_next/static/chunk.js",
     "/_next/image?url=%2Flogo.svg",
@@ -55,6 +56,7 @@ test("recognizes login, callback, cron and static assets as public", () => {
   assert.equal(isPublicProxyPath("/auth/callback/subroute"), false);
   assert.equal(isPublicProxyPath("/auth/callback-evil"), false);
   assert.equal(isPublicProxyPath("/auth/confirm/password"), false);
+  assert.equal(isPublicProxyPath("/auth/confirm/callback/evil"), false);
   assert.equal(isPublicProxyPath("/auth/confirm-evil"), false);
   assert.equal(isPublicProxyPath("/api/auth-evil"), false);
   assert.equal(isPublicProxyPath("/_next/static-evil/chunk.js"), false);

@@ -2,7 +2,15 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async headers() {
+    return [{
+      source: "/auth/confirm/callback",
+      headers: [
+        { key: "Cache-Control", value: "no-store" },
+        { key: "Referrer-Policy", value: "no-referrer" },
+      ],
+    }];
+  },
 };
 
 export default withSentryConfig(nextConfig, {

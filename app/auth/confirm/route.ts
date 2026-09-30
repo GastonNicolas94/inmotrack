@@ -18,6 +18,9 @@ export async function confirmInvitation(
   createClient: () => Promise<InviteVerificationClient> = createServerSupabaseClient,
 ): Promise<NextResponse> {
   const url = new URL(request.url);
+  // Default Supabase emails return tokens in a fragment, invisible to this server.
+  // A Location without a fragment preserves it in the browser (RFC 9110 §10.2.2).
+  if (!url.search) return safeRedirect(new URL("/auth/confirm/callback", request.url));
   const tokenHash = url.searchParams.get("token_hash")?.trim() ?? "";
   const type = url.searchParams.get("type");
   if (!tokenHash || type !== "invite") return invalidInviteResponse(request);

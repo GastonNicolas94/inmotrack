@@ -2,8 +2,50 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   confirmInviteToken,
+  confirmDefaultInvite,
   passwordValidationError,
 } from "../../lib/supabase/invitation.ts";
+
+test("default invites clear credentials before validating the returned session", async () => {
+  const order: string[] = [];
+  const verified = await confirmDefaultInvite(
+    "#access_token=access&refresh_token=refresh&type=invite",
+    () => { order.push("cleared"); },
+    () => {
+      order.push("client");
+      return { auth: {
+        async setSession(input: unknown) {
+          assert.deepEqual(input, { access_token: "access", refresh_token: "refresh" });
+          order.push("session");
+          return { data: { session: {} }, error: null };
+        },
+        async getUser() {
+          order.push("user");
+          return { data: { user: { id: "invited-user" } }, error: null };
+        },
+      } };
+    },
+  );
+  assert.equal(verified, true);
+  assert.deepEqual(order, ["cleared", "client", "session", "user"]);
+});
+
+test("default invites fail closed for missing, wrong-type or expired credentials", async () => {
+  for (const fragment of ["", "#type=invite&access_token=access", "#type=recovery&access_token=a&refresh_token=r", "#error=access_denied&error_description=private"]) {
+    let cleared = false;
+    assert.equal(await confirmDefaultInvite(fragment, () => { cleared = true; }, () => { throw new Error("should not create client"); }), false);
+    assert.equal(cleared, true);
+  }
+  for (const failure of ["session", "user", "throw"]) {
+    assert.equal(await confirmDefaultInvite("#type=invite&access_token=a&refresh_token=r", () => {}, () => ({ auth: {
+      async setSession() {
+        if (failure === "throw") throw new Error("private");
+        return { data: { session: failure === "session" ? null : {} }, error: failure === "session" ? {} : null };
+      },
+      async getUser() { return { data: { user: null }, error: {} }; },
+    } })), false);
+  }
+});
 
 function client(result: unknown) {
   const calls: unknown[] = [];

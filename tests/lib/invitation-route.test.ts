@@ -15,10 +15,11 @@ test("confirmInvitation rejects malformed callbacks without calling Auth", async
   assert.equal(called, false);
 });
 
-test("the route export delegates malformed requests to the same safe response", async () => {
+test("default email callbacks reach the browser without requiring a server session", async () => {
   const response = await GET(new Request("http://localhost/auth/confirm"));
   assert.equal(response.status, 303);
-  assert.equal(response.headers.get("location"), "http://localhost/login?error=invite_invalid");
+  assert.equal(response.headers.get("location"), "http://localhost/auth/confirm/callback");
+  assert.equal(response.headers.get("referrer-policy"), "no-referrer");
 });
 
 test("confirmInvitation verifies the invite and redirects to password setup", async () => {
