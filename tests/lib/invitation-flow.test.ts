@@ -4,7 +4,25 @@ import {
   confirmInviteToken,
   confirmDefaultInvite,
   passwordValidationError,
+  passwordEmailCallbackPath,
 } from "../../lib/supabase/invitation.ts";
+
+test("password emails landing at login keep their session and reach the callback", () => {
+  for (const type of ["invite", "recovery"]) {
+    const hash = `#access_token=a&refresh_token=r&type=${type}`;
+    assert.equal(passwordEmailCallbackPath(hash), `/auth/confirm/callback${hash}`);
+  }
+  for (const hash of ["", "#next=https://evil.example", "#access_token=a&type=invite", "#access_token=a&refresh_token=r&type=signup"]) {
+    assert.equal(passwordEmailCallbackPath(hash), null);
+  }
+});
+
+test("a confirmed user can establish a password through a recovery email", async () => {
+  assert.equal(await confirmDefaultInvite("#access_token=a&refresh_token=r&type=recovery", () => {}, () => ({ auth: {
+    async setSession() { return { data: { session: {} }, error: null }; },
+    async getUser() { return { data: { user: { id: "confirmed-user" } }, error: null }; },
+  } })), true);
+});
 
 test("default invites clear credentials before validating the returned session", async () => {
   const order: string[] = [];
@@ -31,7 +49,7 @@ test("default invites clear credentials before validating the returned session",
 });
 
 test("default invites fail closed for missing, wrong-type or expired credentials", async () => {
-  for (const fragment of ["", "#type=invite&access_token=access", "#type=recovery&access_token=a&refresh_token=r", "#error=access_denied&error_description=private"]) {
+  for (const fragment of ["", "#type=invite&access_token=access", "#type=signup&access_token=a&refresh_token=r", "#error=access_denied&error_description=private"]) {
     let cleared = false;
     assert.equal(await confirmDefaultInvite(fragment, () => { cleared = true; }, () => { throw new Error("should not create client"); }), false);
     assert.equal(cleared, true);

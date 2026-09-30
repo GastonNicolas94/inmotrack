@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginAndRedirect } from "@/lib/supabase/login";
+import { passwordEmailCallbackPath } from "@/lib/supabase/invitation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +12,12 @@ export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Dashboard-sent emails can return to Site URL and reach login through the proxy.
+    const callback = passwordEmailCallbackPath(window.location.hash);
+    if (callback) window.location.replace(callback);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

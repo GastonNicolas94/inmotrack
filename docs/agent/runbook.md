@@ -1,6 +1,6 @@
 ---
 type: Runbook
-version: 16c44ff
+version: 88a5e83
 validated: 2026-09-30
 update_when: Cambian los scripts de package.json, el flujo de migraciones, o el proceso de deploy
 scope:
@@ -235,3 +235,7 @@ Vercel porque una instalación limpia no garantiza que el lifecycle script trans
 ## Deploy
 
 Vercel. `vercel.json` define un único cron (`/api/v1/cron/activar-cierre-periodos`, `0 6 1 * *` — 1° de cada mes). No hay staging/preview con datos separados documentado — verificar antes de asumir que existe un entorno de pruebas remoto.
+
+### Reenvíos desde Supabase Dashboard
+
+El dashboard puede enviar correos con destino Site URL, en lugar del redirectTo del service. El login reconoce fragmentos de invitación y recuperación y deriva al callback de contraseña. Si Auth ya confirmó la invitación y el usuario todavía no estableció contraseña, enviar **Password recovery** al usuario existente desde Authentication → Users y abrir el enlace nuevo. No eliminar/recrear la identidad ni el perfil. El formulario de contraseña sigue protegido por una sesión validada.

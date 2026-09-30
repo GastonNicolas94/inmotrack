@@ -11,6 +11,18 @@ type InviteSessionClient = {
   };
 };
 
+function isPasswordEmailType(type: string | null): boolean {
+  return type === "invite" || type === "recovery";
+}
+
+export function passwordEmailCallbackPath(fragment: string): string | null {
+  const params = new URLSearchParams(fragment.replace(/^#/, ""));
+  if (!isPasswordEmailType(params.get("type")) || !params.get("access_token") || !params.get("refresh_token")) {
+    return null;
+  }
+  return `/auth/confirm/callback#${params.toString()}`;
+}
+
 export async function confirmDefaultInvite(
   fragment: string,
   clearFragment: () => void,
@@ -21,7 +33,7 @@ export async function confirmDefaultInvite(
   const params = new URLSearchParams(fragment.replace(/^#/, ""));
   const accessToken = params.get("access_token");
   const refreshToken = params.get("refresh_token");
-  if (params.has("error") || params.get("type") !== "invite" || !accessToken || !refreshToken) {
+  if (params.has("error") || !isPasswordEmailType(params.get("type")) || !accessToken || !refreshToken) {
     return false;
   }
   try {
