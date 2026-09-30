@@ -1,7 +1,7 @@
 ---
 type: Runbook
-version: 8629635
-validated: 2026-09-12
+version: 16c44ff
+validated: 2026-09-30
 update_when: Cambian los scripts de package.json, el flujo de migraciones, o el proceso de deploy
 scope:
   - package.json
@@ -125,9 +125,20 @@ verifica `verifyOtp({ token_hash, type: "invite" })`, establece cookies y rediri
 `/auth/confirm/password`. La pantalla exige coincidencia y ocho caracteres como mínimo,
 ejecuta `updateUser({ password })` y entra a `/contratos`. No se registran tokens.
 
-En producción hay que configurar SMTP propio antes de invitar usuarios reales (host, puerto,
-usuario y secreto se cargan en la configuración del proyecto o variables del entorno, nunca
-en git). En el dashboard de Supabase, la plantilla Invite equivalente es:
+En producción se soporta el correo predeterminado de Supabase sin editar plantillas:
+configurar Authentication → URL Configuration con Site URL igual a `APP_URL` y agregar
+`${APP_URL}/auth/confirm` a Redirect URLs. El callback sin query deriva a
+`/auth/confirm/callback`; el navegador elimina el fragmento, establece la sesión con
+`setSession` y verifica `getUser` antes de pasar al formulario protegido de contraseña.
+Para validar manualmente: abrir una invitación nueva en un navegador sin sesión, comprobar
+que permite crear contraseña, entrar a `/contratos` y luego probar login con esa contraseña.
+Un enlace vencido debe mostrar el error de invitación sin exponer credenciales en la URL.
+Cambiar Site URL no corrige los enlaces ya enviados: reenviar la invitación desde Auth al
+usuario existente, conservando `auth_user_id` y su perfil; no repetir el POST de alta.
+
+SMTP propio sigue siendo una opción para correo de producción y plantillas personalizadas.
+Las restricciones y límites del proveedor predeterminado de Supabase siguen vigentes.
+Si se configura SMTP, la plantilla Invite compatible es:
 
 ```html
 <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=invite">Aceptar invitación</a>

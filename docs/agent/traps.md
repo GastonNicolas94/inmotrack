@@ -1,7 +1,7 @@
 ---
 type: Traps
-version: bde0a16
-validated: 2026-09-18
+version: 16c44ff
+validated: 2026-09-30
 update_when: cuando se descubre un gotcha no obvio, agregarlo acá en el mismo cambio
 scope:
   - services
@@ -209,7 +209,7 @@ ese tipo.
 
 ## El callback de invitación es público, la fijación de contraseña no
 
-`/auth/confirm` debe poder recibir el `token_hash` sin sesión y es la única ruta pública de
+`/auth/confirm` debe poder recibir el `token_hash` sin sesión y, junto con `/auth/confirm/callback`, es una ruta pública exacta de
 confirmación en `proxy.ts`. `/auth/confirm/password` queda protegido por el gate de identidad:
 `verifyOtp({ token_hash, type: "invite" })` establece las cookies y recién entonces se muestra
 la pantalla que llama `updateUser({ password })`. No ampliar el bypass al subtree completo ni
@@ -220,7 +220,7 @@ registrar el token en logs o URLs posteriores.
 `APP_URL` se valida como un origen HTTP/HTTPS sin credenciales, ruta, query ni hash. El service
 construye `${APP_URL}/auth/confirm`; la allowlist de Supabase debe contener esa URL exacta. La
 plantilla local vive en `supabase/templates/invite.html` y usa `TokenHash`/`RedirectTo`; en un
-proyecto hosted se debe copiar esa plantilla al editor de Email Templates antes de invitar.
+proyecto hosted también se soporta el correo predeterminado, sin editar Email Templates. Los proyectos Free nuevos requieren SMTP propio para personalizar plantillas.
 
 ---
 
@@ -240,3 +240,12 @@ El tracing distribuido envuelve el Prisma Client global en `lib/db.ts` mediante 
 
 El wrapper global de tracing usa `client.$extends({ query: ... })`. En Prisma 7.8 el tipo devuelto por `$extends` omite APIs de lifecycle como `$on`, por lo que deja de ser asignable a funciones/services cuyo dependency contract es `PrismaClient`, aunque el comportamiento runtime requerido siga intacto. No propagar ese tipo extendido por toda la capa de services: `lib/db.ts` debe conservar el singleton público tipado como `PrismaClient` y mantener la extensión como detalle interno de ejecución.
 
+
+## El correo predeterminado devuelve la sesión en un fragmento
+
+El servidor no recibe `#access_token=...&refresh_token=...&type=invite`. Rechazar el
+callback sin query corta este flujo. El redirect HTTP a `/auth/confirm/callback` no debe
+incluir un fragmento: el navegador hereda el fragmento original (RFC 9110 §10.2.2).
+La pantalla elimina el fragmento antes de crear el cliente para evitar la autodetección
+concurrente de sesión; verifica `type=invite` y la identidad con Auth. No ampliar el bypass
+al subtree `/auth/confirm/` ni convertir en pública la pantalla de contraseña.

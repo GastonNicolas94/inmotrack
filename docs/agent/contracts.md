@@ -1,7 +1,7 @@
 ---
 type: Contracts
-version: contract-rent-adjustments-queue
-validated: 2026-09-17
+version: 16c44ff
+validated: 2026-09-30
 update_when: Rutas HTTP agregadas/cambiadas/eliminadas, o cambia el criterio de acceso por rol en proxy.ts/handlers
 scope:
   - app/api
@@ -102,7 +102,7 @@ No se usa `after()` ni self-fetch HTTP para sostener la cola. `/cron/*` está ex
 
 ## Auth Supabase
 
-El login y logout usan los clientes SSR de Supabase. `/auth/confirm` acepta solamente `token_hash` con `type=invite`, establece cookies mediante `verifyOtp` y redirige a la pantalla para crear contraseña. Las credenciales viven en Auth; `public.usuarios` solo guarda el perfil y `auth_user_id`.
+El login y logout usan los clientes SSR de Supabase. `/auth/confirm` verifica `token_hash` con `type=invite` mediante `verifyOtp`. Si no hay query, redirige a `/auth/confirm/callback` preservando el fragmento del correo predeterminado. Esa ruta pública exacta procesa únicamente `type=invite`, elimina las credenciales de la URL, establece cookies SSR y valida la identidad contra Auth antes de navegar a `/auth/confirm/password`, que sigue protegida. Los enlaces inválidos o vencidos terminan en `/login?error=invite_invalid`. Las credenciales viven en Auth; `public.usuarios` solo guarda el perfil y `auth_user_id`.
 
 ## Dependencias externas
 

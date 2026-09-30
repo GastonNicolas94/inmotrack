@@ -1,7 +1,7 @@
 ---
 type: Architecture
-version: 5b8553b
-validated: 2026-09-18
+version: 16c44ff
+validated: 2026-09-30
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
   - app
@@ -138,7 +138,7 @@ La UI `/dev/reloj` y su API son solo ADMIN. No introducir `new Date()`/`Date.now
 
 Supabase Auth es la autoridad de credenciales y sesiones. `lib/auth-context.ts` resuelve identidad + perfil de dominio en cada entrypoint protegido. `public.usuarios` no guarda contraseñas.
 
-El flujo de invitación es server-only: ADMIN invita por Supabase Auth y se crea el perfil; si Prisma falla, se compensa eliminando la identidad recién creada.
+La creación de invitaciones es server-only: ADMIN invita por Supabase Auth y se crea el perfil; si Prisma falla, se compensa eliminando la identidad recién creada.
 
 ## Low-signal / generated areas
 
@@ -149,3 +149,5 @@ El flujo de invitación es server-only: ADMIN invita por Supabase Auth y se crea
 | `supabase/migrations/` | Historia ejecutable | No editar una migración ya aplicada |
 | `docs/archive/prisma-migrations/` | Historia Prisma heredada | Solo referencia |
 | `components/ui/` | Componentes shadcn | Sin lógica de dominio |
+
+La confirmación acepta el TokenHash de plantillas propias en servidor y la sesión del correo predeterminado en `/auth/confirm/callback`. El navegador elimina el fragmento antes de crear el cliente, establece cookies SSR con `setSession` y valida la identidad con `getUser`; luego navega a la pantalla protegida de contraseña.
