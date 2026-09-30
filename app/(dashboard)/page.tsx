@@ -7,6 +7,7 @@ import { parseDashboardFilters } from "@/lib/dashboard/filters";
 import type { DashboardSearchParams, FinancialDashboardData, OperationalDashboardData } from "@/lib/dashboard/types";
 import { DashboardClockService } from "@/services/dashboard-clock.service";
 import { AppClock } from "@/lib/app-clock";
+import { PasswordEmailLanding } from "@/components/features/shared/PasswordEmailLanding";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   return (
     <div className="space-y-6">
+      <PasswordEmailLanding />
       <DashboardTabs filters={filters} />
       <DashboardFilters filters={filters} properties={properties} />
       {dataResult.status === "rejected" ? (

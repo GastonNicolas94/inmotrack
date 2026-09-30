@@ -1,6 +1,6 @@
 ---
 type: Runbook
-version: 88a5e83
+version: 9d3fed4
 validated: 2026-09-30
 update_when: Cambian los scripts de package.json, el flujo de migraciones, o el proceso de deploy
 scope:
@@ -239,3 +239,9 @@ Vercel. `vercel.json` define un único cron (`/api/v1/cron/activar-cierre-period
 ### Reenvíos desde Supabase Dashboard
 
 El dashboard puede enviar correos con destino Site URL, en lugar del redirectTo del service. El login reconoce fragmentos de invitación y recuperación y deriva al callback de contraseña. Si Auth ya confirmó la invitación y el usuario todavía no estableció contraseña, enviar **Password recovery** al usuario existente desde Authentication → Users y abrir el enlace nuevo. No eliminar/recrear la identidad ni el perfil. El formulario de contraseña sigue protegido por una sesión validada.
+
+La raíz autenticada (dashboard) usa la misma detección que el login: el usuario puede tener
+una sesión preexistente cuando abre el enlace de recuperación. La allowlist `/auth/confirm`
+no cambia el destino de un reset enviado desde el Dashboard; el `Site URL` de Supabase
+es el redirect por defecto. Para comprobar el flujo desde cero, probar ambos navegadores:
+uno sin sesión y otro con sesión previa en la raíz.

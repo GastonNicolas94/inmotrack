@@ -1,6 +1,6 @@
 ---
 type: Traps
-version: 88a5e83
+version: 9d3fed4
 validated: 2026-09-30
 update_when: cuando se descubre un gotcha no obvio, agregarlo acá en el mismo cambio
 scope:
@@ -253,3 +253,6 @@ al subtree `/auth/confirm/` ni convertir en pública la pantalla de contraseña.
 ## Los reenvíos del dashboard no heredan APP_URL/redirectTo del service
 
 El correo enviado desde Authentication → Users puede retornar a Site URL; el proxy redirige la raíz sin cookies al login, conservando el fragmento. El login debe detectar los tokens de `invite` o `recovery` y conducirlos al callback público exacto. La invitación puede quedar confirmada en Auth aun cuando la app no haya establecido cookies ni contraseña; en ese caso usar recuperación para el usuario existente.
+
+Si el navegador ya tiene una sesión válida, la raíz devuelve el dashboard y no pasa por
+`/login`. El dashboard también debe detectar el fragmento de recuperación e ir al callback.
