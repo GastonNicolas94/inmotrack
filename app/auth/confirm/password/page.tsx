@@ -51,7 +51,7 @@ export default function ConfirmPasswordPage() {
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-5 rounded-3xl border border-border bg-card p-6 shadow-sm">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Creá tu contraseña</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Ya confirmamos tu invitación. Elegí una contraseña para entrar a InmoTrack.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Elegí una contraseña para entrar a InmoTrack.</p>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="password">Contraseña</Label>

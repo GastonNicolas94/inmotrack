@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginAndRedirect } from "@/lib/supabase/login";
+import { PasswordEmailLanding } from "@/components/features/shared/PasswordEmailLanding";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +40,7 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-6">
+      <PasswordEmailLanding />
       {/* Halo decorativo, sutil, sin imágenes */}
       <div
         aria-hidden

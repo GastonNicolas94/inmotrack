@@ -1,6 +1,6 @@
 ---
 type: Contracts
-version: 16c44ff
+version: 88a5e83
 validated: 2026-09-30
 update_when: Rutas HTTP agregadas/cambiadas/eliminadas, o cambia el criterio de acceso por rol en proxy.ts/handlers
 scope:
@@ -121,3 +121,5 @@ Supabase provee PostgreSQL. Vercel Queue entrega trabajo de cierre a un subscrib
 ## Telemetría emitida
 
 No hay métricas custom ni tracing/OTel todavía. Los fallos de publicación a Queue se registran con `console.error`; `lib/db.ts` mantiene Prisma con logging de errores.
+
+Los correos de invitación o recuperación enviados desde el dashboard de Supabase pueden volver a Site URL sin `redirectTo`. Cuando llegan al login con tokens y `type=invite` o `type=recovery`, la página deriva al callback de sesión antes de solicitar credenciales. Las otras clases de autenticación no usan este flujo.
