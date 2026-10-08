@@ -1,3 +1,4 @@
+import { CajasDashboardService } from "@/services/cajas-dashboard.service";
 import { DashboardErrorState } from "@/components/features/dashboard/DashboardStates";
 import { DashboardFilters } from "@/components/features/dashboard/DashboardFilters";
 import { DashboardTabs } from "@/components/features/dashboard/DashboardTabs";
@@ -22,9 +23,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     ? DashboardClockService.getFinancialData(filters)
     : DashboardClockService.getOperationalData(filters);
 
-  const [propertiesResult, dataResult] = await Promise.allSettled([
+  const [propertiesResult, dataResult, cashResult] = await Promise.allSettled([
     DashboardClockService.listPropertyOptions(),
     dataPromise,
+    filters.tab === "financiero" ? CajasDashboardService.obtenerSaldos() : Promise.resolve(null),
   ]);
   const properties = propertiesResult.status === "fulfilled" ? propertiesResult.value : [];
 
@@ -36,7 +38,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       {dataResult.status === "rejected" ? (
         <DashboardErrorState message="No pudimos cargar este resumen. Probá nuevamente en unos segundos." />
       ) : filters.tab === "financiero" ? (
-        <FinancialDashboard data={dataResult.value as FinancialDashboardData} />
+        <FinancialDashboard data={dataResult.value as FinancialDashboardData} balances={cashResult.status === "fulfilled" ? cashResult.value : null} />
       ) : (
         <OperationalDashboard data={dataResult.value as OperationalDashboardData} />
       )}

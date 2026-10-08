@@ -1,26 +1,23 @@
 import type { LucideIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function DashboardMetricCard({
-  label,
-  value,
-  description,
-  icon: Icon,
-}: {
+export function DashboardMetricCard({ label, value, description, icon: Icon }: {
   label: string;
   value: string | number;
   description?: string;
   icon?: LucideIcon;
 }) {
   return (
-    <Card className="h-full">
-      <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-        {Icon ? <Icon aria-hidden className="size-4 text-primary" /> : null}
+    <Card className="h-full justify-between gap-3">
+      <CardHeader className="flex flex-row items-start justify-between gap-2 pb-0">
+        <CardTitle className="font-sans text-[10px] font-extrabold uppercase tracking-[1px] text-muted-foreground sm:text-[11px]">
+          {label}
+        </CardTitle>
+        {Icon ? <Icon aria-hidden className="size-[18px] shrink-0 text-primary" strokeWidth={1.8} /> : null}
       </CardHeader>
       <CardContent>
-        <p className="font-heading text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
-        {description ? <CardDescription className="mt-1">{description}</CardDescription> : null}
+        <p className="inmotrack-amount break-words text-[20px] font-bold leading-tight text-foreground sm:text-[25px] 2xl:text-[30px]">{value}</p>
+        {description ? <CardDescription className="mt-2 text-[11px]">{description}</CardDescription> : null}
       </CardContent>
     </Card>
   );
