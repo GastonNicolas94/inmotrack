@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,11 +66,6 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
     }
   }, [contratoId]);
 
-  useEffect(() => {
-    if (!open) return;
-    void cargar();
-  }, [open, cargar]);
-
   async function aplicar() {
     if (!ajustePendiente || !montoNuevo) return;
     const numero = Number(montoNuevo);
@@ -117,7 +112,7 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
         size="sm"
         variant={ajustePendiente && canWrite ? "default" : "outline"}
         className="text-xs"
-        onClick={() => setOpen(true)}
+        onClick={() => { setOpen(true); void cargar(); }}
       >
         {ajustePendiente && canWrite ? "Actualizar alquiler" : "Ajustes"}
       </Button>
