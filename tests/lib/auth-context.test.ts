@@ -236,7 +236,7 @@ test("rejects mismatched domain identity and unknown roles", async () => {
     id: 10, auth_user_id: "expected-sub", email: "test@example.com",
     rol: "ADMIN" as const, puede_aprobar_liquidaciones: false, id_propietario: null,
   };
-  assert.equal(await getAuthenticatedUser(dependencies(claims, { ...valid, auth_user_id: "other-sub" })), null);
+  assert.equal(await getAuthenticatedUser({ getClaims: async () => claims, findProfile: async () => ({ ...valid, auth_user_id: "other-sub" }) }), null);
   assert.equal(await getAuthenticatedUser(dependencies(claims, { ...valid, id: 0 })), null);
   assert.equal(await getAuthenticatedUser(dependencies(claims, { ...valid, rol: "SUPERADMIN" as Profile["rol"] })), null);
 });
