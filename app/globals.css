@@ -235,6 +235,11 @@
   .inmotrack-card-table[data-kind="liquidaciones"] tbody td:nth-child(7) > div { flex-wrap: wrap; justify-content: flex-end; }
 }
 
+@media (max-width: 760px) {
+  [data-slot="dialog-content"] { max-width: calc(100vw - 24px); max-height: 88dvh; overflow-y: auto; }
+  .inmotrack-mobile-bottom { z-index: 35; }
+  .toaster[data-sonner-toaster] { bottom: calc(68px + env(safe-area-inset-bottom)) !important; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }

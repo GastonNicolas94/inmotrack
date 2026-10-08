@@ -10,7 +10,7 @@ const TABS: Array<{ id: DashboardTab; label: string }> = [
 
 export function DashboardTabs({ filters }: { filters: DashboardFilters }) {
   return (
-    <nav aria-label="Sección del dashboard" className="flex gap-1 border-b border-border">
+    <nav aria-label="Sección del dashboard" className="inmotrack-dashboard-tabs flex gap-1 border-b border-border">
       {TABS.map((tab) => {
         const active = filters.tab === tab.id;
         return (

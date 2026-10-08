@@ -23,9 +23,9 @@ export function FiltrosLibroDiario() {
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
       <Select onValueChange={(v) => setFiltro("tipo", (v as string) === "TODOS" ? "" : (v as string))}>
-        <SelectTrigger className="w-48"><SelectValue placeholder="Todos los tipos" /></SelectTrigger>
+        <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Todos los tipos" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="TODOS">Todos los tipos</SelectItem>
           {TIPOS.map((t) => (
@@ -34,7 +34,7 @@ export function FiltrosLibroDiario() {
         </SelectContent>
       </Select>
       <Select onValueChange={(v) => setFiltro("caja", (v as string) === "TODAS" ? "" : (v as string))}>
-        <SelectTrigger className="w-40"><SelectValue placeholder="Todas las cajas" /></SelectTrigger>
+        <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Todas las cajas" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="TODAS">Todas las cajas</SelectItem>
           <SelectItem value="TERCEROS">Terceros</SelectItem>

@@ -22,7 +22,7 @@ export function FiltroRangoFecha() {
 
   return (
     <>
-      <Input type="date" className="w-40" onChange={(e) => setFiltro("desde", e.target.value)} />
+      <Input type="date" className="w-full min-w-0 sm:w-40" onChange={(e) => setFiltro("desde", e.target.value)} />
       <Input type="date" className="w-40" onChange={(e) => setFiltro("hasta", e.target.value)} />
     </>
   );

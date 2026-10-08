@@ -164,7 +164,7 @@ export function ModalGenerarLiquidacion({ propietarios }: { propietarios: Propie
     <>
       <Button onClick={() => setOpen(true)}>+ Generar liquidación</Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-h-[85dvh] w-[calc(100vw-32px)] max-w-2xl overflow-y-auto">
           <DialogHeader><DialogTitle>Generar liquidación</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <Select onValueChange={(v) => setIdPropietario(Number(v))}>
@@ -183,7 +183,7 @@ export function ModalGenerarLiquidacion({ propietarios }: { propietarios: Propie
 
             {idPropietario && (
               <div className="space-y-2 rounded-md border p-3">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium">Conceptos pendientes de liquidar</p>
                     <p className="text-xs text-muted-foreground">
@@ -191,7 +191,7 @@ export function ModalGenerarLiquidacion({ propietarios }: { propietarios: Propie
                     </p>
                   </div>
                   {pendientes.length > 0 && (
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button type="button" variant="outline" size="sm" onClick={seleccionarTodos}>
                         Seleccionar todos
                       </Button>
@@ -237,7 +237,7 @@ export function ModalGenerarLiquidacion({ propietarios }: { propietarios: Propie
                                   {concepto.propiedad.direccion} · {concepto.porcentaje_participacion}%
                                 </p>
                               </div>
-                              <p className="shrink-0 font-mono text-sm font-semibold">
+                              <p className="shrink-0 font-heading tabular-nums text-sm font-semibold">
                                 {concepto.tipo === "GASTO" ? "−" : ""}
                                 {formatMonto(concepto.monto)}
                               </p>
