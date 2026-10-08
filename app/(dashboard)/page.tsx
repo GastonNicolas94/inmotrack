@@ -36,16 +36,21 @@ function DashboardFilterSkeleton() {
 
 /** Query results stream independently of the filters and other widgets. */
 async function DashboardMetrics({ filters }: { filters: FilterState }) {
-  try {
-    if (filters.tab === "financiero") {
-      const data = await DashboardClockService.getFinancialData(filters);
-      return <FinancialDashboard data={data} />;
-    }
-    const data = await DashboardClockService.getOperationalData(filters);
-    return <OperationalDashboard data={data} />;
-  } catch {
-    return <DashboardErrorState message="No pudimos cargar este resumen. Probá nuevamente en unos segundos." />;
+  // Catch only query errors here. Rendering errors belong to the route error boundary.
+  if (filters.tab === "financiero") {
+    const result = await DashboardClockService.getFinancialData(filters)
+      .then((data) => ({ ok: true as const, data }))
+      .catch(() => ({ ok: false as const }));
+    return result.ok
+      ? <FinancialDashboard data={result.data} />
+      : <DashboardErrorState message="No pudimos cargar este resumen. Probá nuevamente en unos segundos." />;
   }
+  const result = await DashboardClockService.getOperationalData(filters)
+    .then((data) => ({ ok: true as const, data }))
+    .catch(() => ({ ok: false as const }));
+  return result.ok
+    ? <OperationalDashboard data={result.data} />
+    : <DashboardErrorState message="No pudimos cargar este resumen. Probá nuevamente en unos segundos." />;
 }
 
 async function FinancialCashBalances() {

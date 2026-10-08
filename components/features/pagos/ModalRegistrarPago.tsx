@@ -24,6 +24,7 @@ interface Props {
     inquilino: { nombre: string };
     propiedad: { direccion: string };
   };
+  triggerClassName?: string;
 }
 
 interface CargoPendiente {
@@ -39,7 +40,7 @@ function nuevoIdempotencyKey() {
   return crypto.randomUUID();
 }
 
-export function ModalRegistrarPago({ contrato }: Props) {
+export function ModalRegistrarPago({ contrato, triggerClassName }: Props) {
   const [open, setOpen] = useState(false);
   const [cargos, setCargos] = useState<CargoPendiente[]>([]);
   const [saldoAFavor, setSaldoAFavor] = useState<string>("0");
@@ -116,7 +117,7 @@ export function ModalRegistrarPago({ contrato }: Props) {
 
   return (
     <>
-      <Button size="sm" variant="outline" onClick={() => { setLoading(true); setOpen(true); }}>
+      <Button size="sm" variant="outline" className={triggerClassName} onClick={() => { setLoading(true); setOpen(true); }}>
         Registrar pago
       </Button>
       <Dialog open={open} onOpenChange={(next) => { if (next) setLoading(true); setOpen(next); }}>

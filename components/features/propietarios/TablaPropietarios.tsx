@@ -53,7 +53,7 @@ export async function TablaPropietarios() {
                   <Badge variant="secondary">{p._count.participaciones}</Badge>
                 </TableCell>
                 {puedeAdelantar ? (
-                  <TableCell className="text-right">
+                  <TableCell className="row-actions-cell text-right">
                     <ModalRegistrarAdelanto propietarioId={p.id} nombre={p.nombre} />
                   </TableCell>
                 ) : null}

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { AlertCircle, RotateCcw } from "lucide-react";
 
 export default function DashboardError({
@@ -10,10 +9,8 @@ export default function DashboardError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    // No account details or server payloads are logged to the browser.
-    void error;
-  }, [error]);
+  // Deliberately don't expose server errors or user details in the rendered UI.
+  void error;
   return (
     <div role="alert" className="rounded-lg border border-border bg-card p-6">
       <div className="flex items-center gap-3">
