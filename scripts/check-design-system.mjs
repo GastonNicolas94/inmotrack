@@ -12,6 +12,9 @@ const checks = [
   ["components/layout/DashboardShell.tsx", /Gestión inmobiliaria/, "branding neutro InmoTrack"],
   ["components/layout/DashboardNav.tsx", /GESTIÓN[\s\S]*FINANZAS/, "navegación agrupada"],
   ["components/layout/DashboardShell.tsx", /keepFocusInsideDrawer/, "navegación mobile accesible"],
+  ["app/(auth)/login/page.tsx", /submissionInProgress\.current/, "bloqueo sincrónico de doble ingreso"],
+  ["app/(auth)/login/page.tsx", /Acceso confirmado\. Cargando tus contratos/, "feedback durante navegación"],
+  ["app/(auth)/login/page.tsx", /role="status" aria-live="polite"/, "estado accesible de login"],
   ["components/features/cobranzas/CobranzasListado.tsx", /ESTADOS_COBRANZA/, "pestañas de cobranza"],
   ["components/features/cobranzas/CobranzasListado.tsx", /Exportar CSV/, "exportación de cobranza"],
   ["components/features/pagos/ModalRegistrarPago.tsx", /bg-brand-soft/, "total del modal destacado"],
@@ -26,4 +29,4 @@ for (const [file, pattern, description] of checks) {
 if (/logo-macchieraldo|<img\b|Macchieraldo|Villarruel/.test(read("components/layout/DashboardShell.tsx"))) {
   throw new Error("Design System: el shell no debe mostrar branding de una inmobiliaria");
 }
-console.log("Design System v1.0: 17 controles estáticos OK");
+console.log("Design System v1.0: 20 controles estáticos OK");

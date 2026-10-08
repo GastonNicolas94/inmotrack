@@ -44,6 +44,8 @@ Drawer móvil: ancho máximo 280px, marca en cabecera de 76px, desplazamiento ex
 
 El login presenta la **identidad de producto InmoTrack**, no la imagen ni el nombre de una inmobiliaria concreta. Usa el icono lineal `Building2` de Lucide, la marca en Sora, el coral en el isotipo/eyebrow/botón y un formulario sobre blanco con borde de 1px. Desktop: dos columnas sin tarjetas anidadas; mobile: composición apilada con formulario accesible. No se incorporan fotos, ilustraciones decorativas, gradientes, glassmorphism, estadísticas ficticias ni sombras.
 
+El login informa el progreso **desde el primer clic** ("Validando tus credenciales") con loader y anuncio accesible (`role=status`), evitando dobles envíos mediante bloqueo sincrónico. Tras autenticarse mantiene la interacción bloqueada hasta que concluye la navegación ("Acceso confirmado. Cargando tus contratos"). Un error de credenciales o red desbloquea el formulario y muestra el mensaje correspondiente. El estilo sigue siendo coral, plano y sobrio.
+
 La autenticación y los flujos de confirmación de credenciales son independientes de este cambio visual.
 
 ## Listados, búsqueda y cobranza

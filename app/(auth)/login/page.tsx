@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Building2, FileText, HandCoins, LoaderCircle, Wallet } from "lucide-react";
 import { loginAndRedirect } from "@/lib/supabase/login";
@@ -18,29 +18,47 @@ const CAPABILITIES = [
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "authenticating" | "redirecting">("idle");
+  // A ref locks synchronously, before React paints the disabled state.
+  const submissionInProgress = useRef(false);
+  const loading = phase !== "idle";
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
+    if (submissionInProgress.current) return;
+    submissionInProgress.current = true;
+    setPhase("authenticating");
     setError("");
     const form = new FormData(event.currentTarget);
     const email = form.get("email");
     const password = form.get("password");
     if (typeof email !== "string" || typeof password !== "string") {
       setError("Ingresá tu correo electrónico y contraseña.");
-      setLoading(false);
+      setPhase("idle");
+      submissionInProgress.current = false;
       return;
     }
 
     try {
-      const loggedIn = await loginAndRedirect(email, password, router);
-      if (!loggedIn) setError("Correo electrónico o contraseña incorrectos.");
+      const loggedIn = await loginAndRedirect(
+        email,
+        password,
+        router,
+        undefined,
+        () => setPhase("redirecting"),
+      );
+      if (loggedIn) {
+        // replace/refresh initiates navigation but does not wait until it completes.
+        // Keep the button disabled and the loader visible until this page unmounts.
+        return;
+      }
+      setError("Correo electrónico o contraseña incorrectos.");
     } catch {
       setError("No se pudo iniciar sesión. Intentá nuevamente.");
-    } finally {
-      setLoading(false);
     }
+    // Only unlock on failure. A successful login must not allow another click.
+    submissionInProgress.current = false;
+    setPhase("idle");
   }
 
   return (
@@ -125,7 +143,7 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-                  Ingresando…
+                  {phase === "redirecting" ? "Abriendo InmoTrack…" : "Ingresando…"}
                 </>
               ) : (
                 <>
@@ -134,6 +152,13 @@ export default function LoginPage() {
                 </>
               )}
             </Button>
+            <p role="status" aria-live="polite" aria-atomic="true" className="min-h-5 text-center text-[11px] text-muted-foreground">
+              {phase === "authenticating"
+                ? "Validando tus credenciales…"
+                : phase === "redirecting"
+                  ? "Acceso confirmado. Cargando tus contratos…"
+                  : ""}
+            </p>
           </form>
           <p className="mt-6 border-t border-border pt-5 text-[11px] leading-5 text-muted-foreground">
             Acceso exclusivo para usuarios autorizados.

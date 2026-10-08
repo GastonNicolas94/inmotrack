@@ -32,9 +32,11 @@ export async function loginAndRedirect(
   password: string,
   router: LoginRouter,
   attempt: LoginAttempt = signInWithPassword,
+  onAuthenticated?: () => void,
 ): Promise<boolean> {
   const { error } = await attempt(email, password);
   if (error) return false;
+  onAuthenticated?.();
   router.replace("/contratos");
   router.refresh();
   return true;
