@@ -33,7 +33,6 @@ export function ModalPeriodos({ contratoId, label, controlledOpen, onOpenChange,
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
     fetch(`/api/v1/contratos/${contratoId}/periodos`)
       .then((r) => r.json())
       .then(setPeriodos)
@@ -47,13 +46,13 @@ export function ModalPeriodos({ contratoId, label, controlledOpen, onOpenChange,
 
   return (
     <>
-      {!hideTrigger && <Button size="sm" variant="outline" className="text-xs" onClick={() => setOpen(true)}>
+      {!hideTrigger && <Button size="sm" variant="outline" className="text-xs" onClick={() => { setLoading(true); setOpen(true); }}>
         Períodos
       </Button>}
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+      <Dialog open={open} onOpenChange={(next) => { if (next) setLoading(true); setOpen(next); }}>
+        <DialogContent className="flex max-h-[85dvh] flex-col overflow-hidden sm:max-w-lg">
+          <DialogHeader className="shrink-0 pr-8">
             <DialogTitle>Períodos de pago</DialogTitle>
             <p className="text-sm text-muted-foreground">{label}</p>
           </DialogHeader>
@@ -63,7 +62,7 @@ export function ModalPeriodos({ contratoId, label, controlledOpen, onOpenChange,
           ) : periodos.length === 0 ? (
             <EstadoAsyncModal mensaje="No hay períodos generados." />
           ) : (
-            <div className="space-y-2">
+            <div className="min-h-0 space-y-2 overflow-y-auto overscroll-contain" tabIndex={0} aria-label="Períodos de pago del contrato">
               {periodos.map((p) => (
                 <FilaResumenPeriodo
                   key={p.id}

@@ -45,7 +45,7 @@ async function MovimientosContratoContenido({
     hasta: hasta ? new Date(hasta) : undefined,
   });
   if (!detalle) notFound();
-  const { contrato, movimientos } = detalle;
+  const { contrato, movimientos, saldoActual } = detalle;
 
   return (
     <div>
@@ -62,6 +62,15 @@ async function MovimientosContratoContenido({
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row">
         <FiltroRangoFecha />
+      </div>
+
+      <div className="mb-4 rounded-lg border border-border bg-card p-4">
+        <p className="text-sm text-muted-foreground">Saldo actual del contrato</p>
+        <p className="mt-1 font-heading text-2xl font-semibold tabular-nums">{fmt(saldoActual.toString())}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {saldoActual.isNegative() ? "Saldo a favor del inquilino" : saldoActual.isZero() ? "Sin saldo pendiente" : "Saldo pendiente del inquilino"}
+          {desde || hasta ? " · Incluye todos los movimientos, sin el filtro de fechas." : ""}
+        </p>
       </div>
 
       <TableCard key={`${id}:${desde ?? ""}:${hasta ?? ""}`}>
@@ -81,11 +90,11 @@ async function MovimientosContratoContenido({
             {movimientos.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                  Este contrato no tiene movimientos todavía.
+                  {desde || hasta ? "No hay movimientos en el rango de fechas seleccionado." : "Este contrato no tiene movimientos todavía."}
                 </TableCell>
               </TableRow>
             ) : (
-              movimientos.map((m, i) => (
+              [...movimientos].reverse().map((m, i) => (
                 <TableRow key={i}>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(m.fecha).toLocaleString("es-AR")}
