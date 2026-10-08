@@ -12,7 +12,7 @@ export default function ContratosPage() {
         title="Contratos"
         description="Alta, vigencia y estado de cada contrato de alquiler."
         action={
-          <Suspense fallback={null}>
+          <Suspense fallback={<span role="status" aria-label="Preparando formulario de contrato" className="inline-flex h-10 w-full items-center justify-center rounded-md border border-border bg-muted px-4 text-[11px] font-semibold text-muted-foreground sm:w-40">Preparando formulario…</span>}>
             <ContratosWizardData />
           </Suspense>
         }
