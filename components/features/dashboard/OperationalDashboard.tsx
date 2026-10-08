@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { DashboardBottomLists } from "@/components/features/dashboard/DashboardBottomLists";
 import { AlertCircle, ClipboardList, FileCheck2, Receipt, RefreshCcw, WalletCards } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +33,7 @@ export function OperationalDashboard({ data }: { data: OperationalDashboardData 
         <OperationalAlerts alerts={data.alerts} />
         <Card><CardHeader><CardTitle>Última actualización</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">{data.generatedAt.toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" })}</p></CardContent></Card>
       </section>
+      <Suspense fallback={null}><DashboardBottomLists /></Suspense>
     </div>
   );
 }

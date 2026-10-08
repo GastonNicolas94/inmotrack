@@ -190,6 +190,9 @@ export function DashboardShell({
         <main id="contenido-principal" className="flex-1">
           <div className="inmotrack-main">{children}</div>
         </main>
+        <footer className="inmotrack-desktop-only border-t border-border px-8 py-4 text-center text-[10px] text-muted-foreground">
+          InmoTrack · Gestión inmobiliaria · v0.1.0
+        </footer>
       </div>
       <nav className="inmotrack-mobile-bottom" aria-label="Navegación inferior">
         {NAV_ITEMS.filter((item) => MOBILE_HREFS.includes(item.href)).map(({ href, label, icon: Icon }) => {
