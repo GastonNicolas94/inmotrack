@@ -53,7 +53,7 @@ export function RelojPruebas({ initialFecha }: { initialFecha: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <div className="rounded-lg border border-border bg-card p-6">
         <div className="space-y-2">
           <h2 className="text-lg font-semibold">Fecha global de prueba</h2>
           <p className="text-sm text-muted-foreground">
@@ -90,7 +90,7 @@ export function RelojPruebas({ initialFecha }: { initialFecha: string }) {
         )}
       </div>
 
-      <div className="rounded-xl border border-border p-5">
+      <div className="rounded-lg border border-border p-5">
         <h3 className="font-medium">Cómo probar</h3>
         <p className="mt-2 text-sm text-muted-foreground">
           Mové la fecha mes a mes. Si elegís ejecutar cierres, se procesan todos los contratos que correspondan para esa fecha global.

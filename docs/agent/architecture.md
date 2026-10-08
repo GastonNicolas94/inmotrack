@@ -1,7 +1,7 @@
 ---
 type: Architecture
-version: 16c44ff
-validated: 2026-09-30
+version: f67614b
+validated: 2026-10-07
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
   - app
@@ -17,6 +17,10 @@ scope:
 
 ## Style
 
+El login en `app/(auth)/login/` se identifica como **InmoTrack** (no muestra el logo de la inmobiliaria) y utiliza iconografía lineal Lucide + tokens semánticos. Conserva el cliente de autenticación Supabase actual y `PasswordEmailLanding`.
+
+El frontend usa el Design System «Cajas protagonistas» documentado en `docs/ui/design-system.md`. La implementación adapta los tokens del prototipo a Tailwind v4 / Next.js 16 sin importar sus rutas TanStack; `components/layout/DashboardShell.tsx` provee drawer y navegación inferior, y `DashboardNav.tsx` agrupa destinos por General/Gestión/Finanzas/Herramientas sin marca particular, `app/globals.css` contiene tokens OKLCH y `app/layout.tsx` carga Sora/Manrope. El dashboard financiero presenta saldos contables por caja mediante el servicio read-only `services/cajas-dashboard.service.ts` y el helper puro `lib/dashboard/cajas.ts`, sin presentar reconciliación bancaria ni sumar cajas entre sí.
+
 Next.js App Router monolito, con una separación de capas informal pero consistente en todo el repo — no es hexagonal ni tiene lint de arquitectura que la fuerce, es una convención seguida a mano:
 
 | Layer | Path | Regla |
@@ -26,6 +30,8 @@ Next.js App Router monolito, con una separación de capas informal pero consiste
 | Servicios (lógica de negocio) | `services/*.ts` | Toda regla de negocio y toda llamada a Prisma vive acá. Exporta un objeto `XxxService` con métodos async. Operaciones multi-tabla van dentro de `prisma.$transaction`. |
 | Helpers puros | `lib/*.ts` | Funciones sin I/O (cálculos de fecha, saldos, prelación, punitorios, calendario de ajustes) o wrappers finos sobre un recurso externo (`lib/db.ts`, `lib/auth-context.ts`, `lib/supabase/*`). Se testean sin base de datos. |
 | UI | `components/**`, `app/(dashboard)/**`, `app/(auth)/**` | Server Components para listar (`TablaXxx.tsx`, fetch directo al service), Client Components (`"use client"`) para todo lo que tiene estado/submit (`ModalXxx.tsx`, `DialogXxx.tsx`, `WizardXxx.tsx`). |
+
+La pantalla de cobranza agrega `CobranzasService` (consulta de períodos/cargos/aplicaciones), `lib/cobranzas.ts` (saldo/estados/filtros puros), `CobranzasListado` y un CSV protegido en `/api/v1/cobranzas/export`. `ListadoTools` encapsula búsqueda en la tabla y exportación local; `DashboardBottomLists` consume servicios read-only de propietarios y pagos.
 
 ## Folder layout
 
@@ -59,6 +65,8 @@ supabase/migrations/                 → Historia ejecutable de esquema
 docs/archive/prisma-migrations/      → Historia heredada, solo referencia
 proxy.ts                             → Gate grueso de identidad; cron exceptuado por path
 ```
+
+El layout lee un conteo agregado para el badge de pendientes desde `MenuPendientesService`, sin cargar toda la deuda del portfolio y con fallback no bloqueante.
 
 ## Request / data flow
 

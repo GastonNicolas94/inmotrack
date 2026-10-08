@@ -22,30 +22,30 @@ export function DashboardFilters({
   const uniquePeriods = [...new Set(periods)];
 
   return (
-    <form method="get" className="grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1.5fr_1fr_auto] lg:items-end">
+    <form method="get" className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1.5fr_1fr_auto] lg:items-end">
       <input type="hidden" name="tab" value={filters.tab} />
       <label className="grid gap-1 text-sm font-medium">
         <span>Período</span>
-        <select name="periodo" defaultValue={filters.periodo} className="h-9 rounded-lg border border-input bg-background px-3 text-sm font-normal">
+        <select name="periodo" defaultValue={filters.periodo} className="h-9 rounded-md border border-input bg-background px-3 text-sm font-normal">
           {uniquePeriods.map((periodo) => <option key={periodo} value={periodo}>{periodo}</option>)}
         </select>
       </label>
       <label className="grid gap-1 text-sm font-medium">
         <span>Propiedad</span>
-        <select name="propiedad" defaultValue={filters.propiedadId === null ? "todos" : String(filters.propiedadId)} className="h-9 rounded-lg border border-input bg-background px-3 text-sm font-normal">
+        <select name="propiedad" defaultValue={filters.propiedadId === null ? "todos" : String(filters.propiedadId)} className="h-9 rounded-md border border-input bg-background px-3 text-sm font-normal">
           <option value="todos">Todas las propiedades</option>
           {properties.map((property) => <option key={property.id} value={property.id}>{property.direccion}{property.esPropia ? " · Propia" : " · Terceros"}</option>)}
         </select>
       </label>
       <label className="grid gap-1 text-sm font-medium">
         <span>Cartera</span>
-        <select name="cartera" defaultValue={filters.cartera} className="h-9 rounded-lg border border-input bg-background px-3 text-sm font-normal">
+        <select name="cartera" defaultValue={filters.cartera} className="h-9 rounded-md border border-input bg-background px-3 text-sm font-normal">
           <option value="todas">Todas</option>
           <option value="propias">Propias</option>
           <option value="terceros">Terceros</option>
         </select>
       </label>
-      <button type="submit" className="h-9 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Aplicar</button>
+      <button type="submit" className="h-12 w-full rounded-md bg-primary sm:h-9 px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Aplicar</button>
     </form>
   );
 }

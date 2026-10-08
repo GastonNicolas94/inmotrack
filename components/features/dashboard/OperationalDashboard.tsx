@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { DashboardBottomLists } from "@/components/features/dashboard/DashboardBottomLists";
 import { AlertCircle, ClipboardList, FileCheck2, Receipt, RefreshCcw, WalletCards } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,11 +14,11 @@ const money = (value: string) => ars.format(Number(value));
 export function OperationalDashboard({ data }: { data: OperationalDashboardData }) {
   const { metrics } = data;
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader eyebrow="Resumen operativo" title="Dashboard" description="La operación diaria de tu cartera, en una sola vista." />
       <section aria-labelledby="operational-kpis" className="space-y-3">
         <h2 id="operational-kpis" className="sr-only">Indicadores operativos</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <DashboardMetricCard label="Contratos vigentes" value={metrics.contratosVigentes} icon={FileCheck2} />
           <DashboardMetricCard label="Por vencer" value={metrics.contratosPorVencer} description="Próximos vencimientos" icon={AlertCircle} />
           <DashboardMetricCard label="Ajustes pendientes" value={data.ajustesPendientes} description="Bloquean el avance del período" icon={RefreshCcw} />
@@ -27,10 +29,11 @@ export function OperationalDashboard({ data }: { data: OperationalDashboardData 
         </div>
       </section>
       <DashboardQuickActions />
-      <section className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
+      <section className="grid gap-3 lg:grid-cols-[1.3fr_1fr]">
         <OperationalAlerts alerts={data.alerts} />
         <Card><CardHeader><CardTitle>Última actualización</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">{data.generatedAt.toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" })}</p></CardContent></Card>
       </section>
+      <Suspense fallback={null}><DashboardBottomLists /></Suspense>
     </div>
   );
 }

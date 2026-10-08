@@ -62,14 +62,14 @@ export function DetalleLiquidacion({
         {resumen.map((item) => (
           <div
             key={item.label}
-            className={`rounded-2xl border border-border bg-card p-4 ${
+            className={`rounded-lg border border-border bg-card p-4 ${
               item.destacado ? "ring-1 ring-primary/25" : ""
             }`}
           >
             <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
               {item.label}
             </p>
-            <p className="mt-2 font-mono text-xl font-semibold">{fmt(item.monto.toString())}</p>
+            <p className="mt-2 font-heading tabular-nums text-xl font-semibold">{fmt(item.monto.toString())}</p>
           </div>
         ))}
       </div>
@@ -77,7 +77,7 @@ export function DetalleLiquidacion({
       {!desglose.consistente && (
         <div
           role="alert"
-          className="rounded-xl bg-status-danger-bg px-4 py-3 text-sm text-status-danger"
+          className="rounded-lg bg-status-danger-bg px-4 py-3 text-sm text-status-danger"
         >
           El detalle no reconcilia con los totales guardados de la liquidación.
         </div>
@@ -85,7 +85,7 @@ export function DetalleLiquidacion({
 
       <section aria-labelledby="alquileres-liquidacion" className="space-y-4">
         <div>
-          <h2 id="alquileres-liquidacion" className="font-heading text-2xl font-semibold">
+          <h2 id="alquileres-liquidacion" className="font-heading text-[18px] font-bold">
             Alquileres cobrados
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -93,7 +93,7 @@ export function DetalleLiquidacion({
           </p>
         </div>
         <TableCard>
-          <Table>
+          <Table className="inmotrack-card-table" data-kind="liquidacion-alquileres">
             <TableHeader>
               <TableRow>
                 <TableHead>Propiedad</TableHead>
@@ -117,9 +117,9 @@ export function DetalleLiquidacion({
                 itemsAlquiler.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.propiedad.direccion}</TableCell>
-                    <TableCell className="font-mono text-sm">{item.periodo?.periodo ?? "—"}</TableCell>
+                    <TableCell className="font-heading tabular-nums text-sm">{item.periodo?.periodo ?? "—"}</TableCell>
                     <TableCell>{item.periodo?.contrato.inquilino.nombre ?? "—"}</TableCell>
-                    <TableCell className="text-right font-mono text-sm">
+                    <TableCell className="text-right font-heading tabular-nums text-sm">
                       {Number(item.porcentaje_participacion).toFixed(2)}%
                     </TableCell>
                     <TableCell className="min-w-64 whitespace-normal">
@@ -141,16 +141,16 @@ export function DetalleLiquidacion({
                         ))}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm">
+                    <TableCell className="text-right font-heading tabular-nums text-sm">
                       {fmt(item.monto_bruto.toString())}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm text-muted-foreground">
+                    <TableCell className="text-right font-heading tabular-nums text-sm text-muted-foreground">
                       <span className="block">{fmt(item.comision.toString())}</span>
                       <span className="text-xs">
                         {calcularPorcentajeComision(item.monto_bruto, item.comision).toFixed(2)}%
                       </span>
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm font-semibold">
+                    <TableCell className="text-right font-heading tabular-nums text-sm font-semibold">
                       {fmt(item.monto_neto.toString())}
                     </TableCell>
                   </TableRow>
@@ -163,7 +163,7 @@ export function DetalleLiquidacion({
 
       <section aria-labelledby="gastos-liquidacion" className="space-y-4">
         <div>
-          <h2 id="gastos-liquidacion" className="font-heading text-2xl font-semibold">
+          <h2 id="gastos-liquidacion" className="font-heading text-[18px] font-bold">
             Gastos descontados
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -171,7 +171,7 @@ export function DetalleLiquidacion({
           </p>
         </div>
         <TableCard>
-          <Table>
+          <Table className="inmotrack-card-table" data-kind="liquidacion-gastos">
             <TableHeader>
               <TableRow>
                 <TableHead>Propiedad</TableHead>
@@ -203,13 +203,13 @@ export function DetalleLiquidacion({
                     <TableCell className="text-sm text-muted-foreground">
                       {formatFechaHora(gasto.creado_en)}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm">
+                    <TableCell className="text-right font-heading tabular-nums text-sm">
                       {Number(porcentajeParticipacion).toFixed(2)}%
                     </TableCell>
                     <TableCell className="text-center">
                       <EstadoBadge valor={gasto.estado_pago} colores={COLORES_ESTADO_GASTO} />
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm">
+                    <TableCell className="text-right font-heading tabular-nums text-sm">
                       {fmt(gasto.monto.toString())}
                     </TableCell>
                   </TableRow>
@@ -222,7 +222,7 @@ export function DetalleLiquidacion({
 
       <section aria-labelledby="adelantos-liquidacion" className="space-y-4">
         <div>
-          <h2 id="adelantos-liquidacion" className="font-heading text-2xl font-semibold">
+          <h2 id="adelantos-liquidacion" className="font-heading text-[18px] font-bold">
             Adelantos descontados
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -230,7 +230,7 @@ export function DetalleLiquidacion({
           </p>
         </div>
         <TableCard>
-          <Table>
+          <Table className="inmotrack-card-table" data-kind="liquidacion-adelantos">
             <TableHeader>
               <TableRow>
                 <TableHead>Adelanto</TableHead>
@@ -260,10 +260,10 @@ export function DetalleLiquidacion({
                     <TableCell className="text-sm text-muted-foreground">
                       {formatFechaHora(deduccion.transaccion.fecha_transaccion)}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm">
+                    <TableCell className="text-right font-heading tabular-nums text-sm">
                       {fmt(new Decimal(deduccion.transaccion.monto).abs().toString())}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm font-semibold">
+                    <TableCell className="text-right font-heading tabular-nums text-sm font-semibold">
                       {fmt(deduccion.monto_descontado.toString())}
                     </TableCell>
                   </TableRow>
@@ -274,12 +274,12 @@ export function DetalleLiquidacion({
         </TableCard>
       </section>
 
-      <div className="rounded-2xl border border-border bg-card p-5 text-right">
+      <div className="rounded-lg border border-border bg-card p-5 text-right">
         <p className="text-sm text-muted-foreground">
           {fmt(liquidacion.monto_bruto.toString())} − {fmt(desglose.comisiones.toString())} −{" "}
           {fmt(desglose.gastos.toString())} − {fmt(desglose.adelantos.toString())}
         </p>
-        <p className="mt-1 font-mono text-2xl font-semibold">
+        <p className="mt-1 font-heading tabular-nums text-2xl font-semibold">
           Neto a pagar: {fmt(liquidacion.monto_neto.toString())}
         </p>
         <p className="mt-2 text-xs text-muted-foreground">

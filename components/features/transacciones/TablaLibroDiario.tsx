@@ -1,3 +1,4 @@
+import { ListadoTools } from "@/components/layout/ListadoTools";
 import { TransaccionesService } from "@/services/transacciones.service";
 import { requireAuthenticatedUser } from "@/lib/auth-context";
 import {
@@ -28,8 +29,9 @@ export async function TablaLibroDiario({
   const esAdmin = user.rol === "ADMIN";
 
   return (
+    <ListadoTools filename="libro-diario.csv" columns={["Fecha","Tipo","Caja","Monto","Usuario"]} rows={transacciones.map((t) => [new Date(t.fecha_transaccion).toLocaleString("es-AR"), t.tipo, t.caja_destino, formatMonto(t.monto.toString()), t.usuario_creador?.email ?? "Sistema"])}>
     <TableCard>
-      <Table>
+      <Table className="inmotrack-card-table" data-kind="transacciones">
         <TableHeader>
           <TableRow>
             <TableHead>Fecha</TableHead>
@@ -58,9 +60,7 @@ export async function TablaLibroDiario({
                 </TableCell>
                 <TableCell className="text-center text-xs text-muted-foreground">{t.caja_destino}</TableCell>
                 <TableCell
-                  className={`text-right font-mono text-sm ${
-                    Number(t.monto) < 0 ? "text-status-danger" : "text-status-success"
-                  }`}
+                  className="text-right font-heading tabular-nums text-sm text-foreground"
                 >
                   {formatMonto(t.monto.toString())}
                 </TableCell>
@@ -68,7 +68,7 @@ export async function TablaLibroDiario({
                   {t.usuario_creador?.email ?? "Sistema"}
                 </TableCell>
                 {esAdmin && (
-                  <TableCell>
+                  <TableCell className="row-actions-cell">
                     {t.tipo !== "CONTRA_ASIENTO" &&
                       !t.contra_asientos.some((c) => c.tipo === "CONTRA_ASIENTO") && (
                         <ModalContraAsiento idTxnOrigen={t.id} />
@@ -81,5 +81,6 @@ export async function TablaLibroDiario({
         </TableBody>
       </Table>
     </TableCard>
+    </ListadoTools>
   );
 }

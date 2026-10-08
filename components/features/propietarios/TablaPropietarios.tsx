@@ -1,3 +1,5 @@
+import { ListadoTools } from "@/components/layout/ListadoTools";
+import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { PropietariosService } from "@/services/propietarios.service";
 import {
   Table,
@@ -17,23 +19,26 @@ function maskCbu(cbu: string) {
 }
 
 export async function TablaPropietarios() {
-  const propietarios = await PropietariosService.listar();
+  const [user, propietarios] = await Promise.all([requireAuthenticatedUser(), PropietariosService.listar()]);
+  const puedeCrear = user.rol !== "AUDITOR";
+  const puedeAdelantar = user.rol === "ADMIN";
 
   return (
-    <TableCard action={<DialogNuevoPropietario />}>
-      <Table>
+    <ListadoTools filename="propietarios.csv" columns={["Nombre","CBU","Propiedades"]} rows={propietarios.map((p) => [p.nombre, maskCbu(p.cbu), String(p._count.participaciones)])}>
+    <TableCard action={puedeCrear ? <DialogNuevoPropietario /> : undefined}>
+      <Table className="inmotrack-card-table" data-kind="propietarios">
         <TableHeader>
           <TableRow>
             <TableHead>Nombre</TableHead>
             <TableHead>CBU</TableHead>
             <TableHead className="text-center">Propiedades</TableHead>
-            <TableHead />
+            {puedeAdelantar ? <TableHead /> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
           {propietarios.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={puedeAdelantar ? 4 : 3} className="text-center text-muted-foreground py-8">
                 No hay propietarios cargados.
               </TableCell>
             </TableRow>
@@ -41,20 +46,23 @@ export async function TablaPropietarios() {
             propietarios.map((p) => (
               <TableRow key={p.id}>
                 <TableCell className="font-medium">{p.nombre}</TableCell>
-                <TableCell className="font-mono text-sm text-muted-foreground">
+                <TableCell className="font-heading tabular-nums text-sm text-muted-foreground">
                   {maskCbu(p.cbu)}
                 </TableCell>
                 <TableCell className="text-center">
                   <Badge variant="secondary">{p._count.participaciones}</Badge>
                 </TableCell>
-                <TableCell className="text-right">
-                  <ModalRegistrarAdelanto propietarioId={p.id} nombre={p.nombre} />
-                </TableCell>
+                {puedeAdelantar ? (
+                  <TableCell className="row-actions-cell text-right">
+                    <ModalRegistrarAdelanto propietarioId={p.id} nombre={p.nombre} />
+                  </TableCell>
+                ) : null}
               </TableRow>
             ))
           )}
         </TableBody>
       </Table>
     </TableCard>
+    </ListadoTools>
   );
 }

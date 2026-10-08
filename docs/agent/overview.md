@@ -1,7 +1,7 @@
 ---
 type: Overview
-version: global-clock
-validated: 2026-09-16
+version: d7ee202
+validated: 2026-10-07
 update_when: Purpose changes, new roles/actors added, or capability scope shifts
 scope:
   - app
@@ -32,7 +32,7 @@ Cuatro responsabilidades principales:
 | ORM | Prisma 7 (`@prisma/adapter-pg`, driver `pg`) |
 | Base de datos | PostgreSQL (local: `postgresql://gfrancone@localhost:5432/inmotrack`) |
 | Auth | Supabase Auth (email/password e invitaciones); `public.usuarios.auth_user_id` UUID vincula identidad y perfil |
-| UI | shadcn/ui ("base-nova") + Tailwind v4, estilo editorial tipo apple.com |
+| UI | shadcn/ui ("base-nova") + Tailwind v4, InmoTrack Design System v1.0 («Cajas protagonistas», coral, Sora/Manrope) |
 | Hosting objetivo | Vercel (cron jobs vía `vercel.json`) |
 | Arquetipo | Monolito Next.js — rutas API finas, lógica de negocio en `services/` |
 | Repo | Personal, un solo desarrollador — CI con Supabase local en GitHub Actions (ver [runbook.md](runbook.md)) |

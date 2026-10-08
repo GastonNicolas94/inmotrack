@@ -32,10 +32,12 @@ export async function loginAndRedirect(
   password: string,
   router: LoginRouter,
   attempt: LoginAttempt = signInWithPassword,
+  onAuthenticated?: () => void,
 ): Promise<boolean> {
   const { error } = await attempt(email, password);
   if (error) return false;
+  onAuthenticated?.();
+  // App Router fetches the new route automatically; refresh() can trigger redundant work.
   router.replace("/contratos");
-  router.refresh();
   return true;
 }

@@ -1,3 +1,4 @@
+import { ListadoTools } from "@/components/layout/ListadoTools";
 import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { GastosService } from "@/services/gastos.service";
 import {
@@ -31,8 +32,9 @@ export async function TablaGastos() {
   const mostrarAcciones = user.rol !== "AUDITOR";
 
   return (
+    <ListadoTools filename="gastos.csv" columns={["Concepto","Propiedad","Cargo a","Monto","Estado"]} rows={gastos.map((g) => [g.concepto, g.propiedad?.direccion ?? "Propio", g.cargo_a, formatMonto(g.monto.toString()), g.estado_pago])}>
     <TableCard action={mostrarAcciones ? <ModalCargarGasto triggerLabel="+ Nuevo gasto" /> : undefined}>
-      <Table>
+      <Table className="inmotrack-card-table" data-kind="gastos">
         <TableHeader>
           <TableRow>
             <TableHead>Concepto</TableHead>
@@ -65,13 +67,13 @@ export async function TablaGastos() {
                 <TableCell className="text-center">
                   <EstadoBadge valor={g.cargo_a} colores={COLORES_CARGO} />
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm">
+                <TableCell className="text-right font-heading tabular-nums text-sm">
                   {formatMonto(g.monto.toString())}
                 </TableCell>
                 <TableCell className="text-center">
                   <EstadoBadge valor={g.estado_pago} colores={COLORES_ESTADO_PAGO} />
                 </TableCell>
-                <TableCell>
+                <TableCell className="row-actions-cell">
                   {mostrarAcciones && g.estado_pago === "PENDIENTE" && <BotonMarcarPagado id={g.id} />}
                 </TableCell>
               </TableRow>
@@ -80,5 +82,6 @@ export async function TablaGastos() {
         </TableBody>
       </Table>
     </TableCard>
+    </ListadoTools>
   );
 }

@@ -26,6 +26,9 @@ interface Props {
   contratoId: number;
   label: string;
   canWrite: boolean;
+  controlledOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
   ajustePendiente?: {
     id: number;
     periodo_efectivo: string;
@@ -44,9 +47,11 @@ function formatMonto(value: number | string) {
   return ars.format(Number(value));
 }
 
-export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendiente }: Props) {
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendiente, controlledOpen, onOpenChange, hideTrigger = false }: Props) {
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = onOpenChange ?? setLocalOpen;
+  const [loading, setLoading] = useState(Boolean(controlledOpen));
   const [enviando, setEnviando] = useState(false);
   const [ajustes, setAjustes] = useState<AjusteContratoDto[]>([]);
   const [montoNuevo, setMontoNuevo] = useState("");
@@ -65,11 +70,6 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
       setLoading(false);
     }
   }, [contratoId]);
-
-  useEffect(() => {
-    if (!open) return;
-    void cargar();
-  }, [open, cargar]);
 
   async function aplicar() {
     if (!ajustePendiente || !montoNuevo) return;
@@ -111,16 +111,27 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
     }
   }
 
+  useEffect(() => {
+    if (!controlledOpen) return;
+    // Deferred to a microtask: never synchronously set state within an effect.
+    // It also avoids loading adjustments for every contract on first render.
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) void cargar();
+    });
+    return () => { cancelled = true; };
+  }, [controlledOpen, cargar]);
+
   return (
     <>
-      <Button
+      {!hideTrigger && <Button
         size="sm"
         variant={ajustePendiente && canWrite ? "default" : "outline"}
         className="text-xs"
-        onClick={() => setOpen(true)}
+        onClick={() => { setOpen(true); void cargar(); }}
       >
         {ajustePendiente && canWrite ? "Actualizar alquiler" : "Ajustes"}
-      </Button>
+      </Button>}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
@@ -130,7 +141,7 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
           </DialogHeader>
 
           {ajustePendiente ? (
-            <section className="space-y-4 rounded-2xl border border-border p-4">
+            <section className="space-y-4 rounded-lg border border-border p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium">Ajuste pendiente · {ajustePendiente.periodo_efectivo}</p>
@@ -138,7 +149,7 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
                     {ajustePendiente.indice} · monto vigente {formatMonto(ajustePendiente.monto_anterior)}
                   </p>
                 </div>
-                <span className="rounded-full bg-status-warning-bg px-2.5 py-1 text-xs font-medium text-status-warning">
+                <span className="rounded-[5px] bg-status-warning-bg px-2.5 py-1 text-xs font-medium text-status-warning">
                   Pendiente
                 </span>
               </div>
@@ -180,11 +191,11 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
             {loading ? (
               <EstadoAsyncModal mensaje="Cargando ajustes..." />
             ) : ajustes.length === 0 ? (
-              <p className="rounded-xl border border-border px-4 py-6 text-center text-sm text-muted-foreground">
+              <p className="rounded-lg border border-border px-4 py-6 text-center text-sm text-muted-foreground">
                 Este contrato todavía no tiene actualizaciones registradas.
               </p>
             ) : (
-              <div className="divide-y divide-border rounded-2xl border border-border px-4">
+              <div className="divide-y divide-border rounded-lg border border-border px-4">
                 {ajustes.map((ajuste) => (
                   <div key={ajuste.id} className="flex flex-col gap-1 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                     <div>

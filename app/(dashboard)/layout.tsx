@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { requireDashboardUser } from "@/lib/auth-context";
 import { signOutAndRedirect } from "@/lib/supabase/logout";
 import { relojPruebasHabilitado } from "@/lib/reloj-pruebas";
 import { redirect } from "next/navigation";
+import { PendingCollectionsBadge } from "@/components/layout/PendingCollectionsBadge";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +27,11 @@ export default async function DashboardLayout({
       rol={user.rol}
       onLogout={logout}
       showTestClock={showTestClock}
+      pendingCollections={
+        <Suspense fallback={null}>
+          <PendingCollectionsBadge />
+        </Suspense>
+      }
     >
       {children}
     </DashboardShell>

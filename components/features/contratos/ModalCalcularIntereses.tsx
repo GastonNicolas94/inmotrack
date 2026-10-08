@@ -27,17 +27,18 @@ interface CargoPendiente {
 }
 
 
-export function ModalCalcularIntereses({ contrato }: Props) {
-  const [open, setOpen] = useState(false);
+export function ModalCalcularIntereses({ contrato, controlledOpen, onOpenChange, hideTrigger = false }: Props & { controlledOpen?: boolean; onOpenChange?: (open: boolean) => void; hideTrigger?: boolean }) {
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = onOpenChange ?? setLocalOpen;
   const [cargos, setCargos] = useState<CargoPendiente[]>([]);
   const [seleccionados, setSeleccionados] = useState<Set<number>>(new Set());
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(Boolean(controlledOpen));
   const [enviando, setEnviando] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
     fetch(`/api/v1/contratos/${contrato.id}/cargos-pendientes`)
       .then((r) => r.json())
       .then((data: { cargos: CargoPendiente[] }) => {
@@ -88,11 +89,11 @@ export function ModalCalcularIntereses({ contrato }: Props) {
 
   return (
     <>
-      <Button size="sm" variant="outline" className="text-xs" onClick={() => setOpen(true)}>
+      {!hideTrigger && <Button size="sm" variant="outline" className="text-xs" onClick={() => { setLoading(true); setOpen(true); }}>
         Calcular intereses
-      </Button>
+      </Button>}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(next) => { if (next) setLoading(true); setOpen(next); }}>
         <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Calcular intereses</DialogTitle>
@@ -115,7 +116,7 @@ export function ModalCalcularIntereses({ contrato }: Props) {
                 {cargos.map((c) => (
                   <label
                     key={c.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2 text-sm cursor-pointer"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
                       <Checkbox
@@ -123,14 +124,14 @@ export function ModalCalcularIntereses({ contrato }: Props) {
                         onCheckedChange={() => toggle(c.id)}
                       />
                       <div>
-                        <span className="font-mono font-medium">{c.periodo}</span>{" "}
+                        <span className="font-heading tabular-nums font-medium">{c.periodo}</span>{" "}
                         <span className="text-xs text-muted-foreground">
                           {etiquetaTipoCargo(c.tipo)}
                         </span>
                       </div>
                     </div>
                     <div className="font-semibold text-status-danger">
-                      Debe: <span className="font-mono">{fmt(c.pendiente)}</span>
+                      Debe: <span className="font-heading tabular-nums">{fmt(c.pendiente)}</span>
                     </div>
                   </label>
                 ))}

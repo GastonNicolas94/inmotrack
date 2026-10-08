@@ -47,13 +47,13 @@ function ListaConceptosPendientes({
       {items.map((item) => (
         <div
           key={item.id}
-          className="flex items-center justify-between rounded-xl border border-border p-2"
+          className="flex items-center justify-between rounded-lg border border-border p-2"
         >
           <div>
             <p className="text-sm font-medium">{item.concepto}</p>
             <p className="text-xs text-muted-foreground">{item.direccion}</p>
           </div>
-          <p className="text-sm font-mono font-semibold text-status-danger">{fmt(item.monto)}</p>
+          <p className="text-sm font-heading tabular-nums font-semibold text-status-danger">{fmt(item.monto)}</p>
         </div>
       ))}
     </div>
@@ -73,7 +73,6 @@ export function ModalDeudaInquilino({
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
     fetch(`/api/v1/inquilinos/${inquilinoId}/saldo`)
       .then((r) => r.json())
       .then(setSaldo)
@@ -82,11 +81,11 @@ export function ModalDeudaInquilino({
 
   return (
     <>
-      <Button size="sm" variant="outline" className="text-xs" onClick={() => setOpen(true)}>
+      <Button size="sm" variant="outline" className="text-xs" onClick={() => { setLoading(true); setOpen(true); }}>
         Ver deuda
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(next) => { if (next) setLoading(true); setOpen(next); }}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Deuda total — {nombre}</DialogTitle>
@@ -97,9 +96,9 @@ export function ModalDeudaInquilino({
           {!loading && saldo && (
             <div className="space-y-5">
               {/* Resumen */}
-              <div className="rounded-xl border border-border p-2 text-center">
+              <div className="rounded-lg border border-border p-2 text-center">
                 <p className="text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">Total</p>
-                <p className="text-sm font-mono mt-0.5 font-bold">{fmt(saldo.total)}</p>
+                <p className="text-sm font-heading tabular-nums mt-0.5 font-bold">{fmt(saldo.total)}</p>
               </div>
 
               {saldo.total === 0 && (

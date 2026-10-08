@@ -1,3 +1,4 @@
+import { ListadoTools } from "@/components/layout/ListadoTools";
 import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { ContratosService } from "@/services/contratos.service";
 import {
@@ -5,8 +6,6 @@ import {
 } from "@/components/ui/table";
 import { BadgeEstadoContrato } from "./BadgeEstadoContrato";
 import { BotonesContrato } from "./BotonesContrato";
-import { ModalPeriodos } from "./ModalPeriodos";
-import { ModalAjustesContrato } from "./ModalAjustesContrato";
 import { TableCard } from "@/components/layout/TableCard";
 import { formatFechaLocal } from "@/lib/fecha";
 
@@ -20,8 +19,9 @@ export async function TablaContratos() {
   const mostrarAcciones = user.rol !== "AUDITOR";
 
   return (
+    <ListadoTools filename="contratos.csv" columns={["Propiedad","Inquilino","Propietarios","Vigencia","Monto base","Estado"]} rows={contratos.map((c) => [c.propiedad.direccion, c.inquilino.nombre, c.propiedad.copropietarios.map((p) => p.propietario.nombre).join(" / "), `${formatFechaLocal(c.fecha_inicio)} - ${formatFechaLocal(c.fecha_fin)}`, formatMonto(c.monto_base.toString()), c.estado])}>
     <TableCard>
-      <Table>
+      <Table className="inmotrack-card-table" data-kind="contratos">
         <TableHeader>
           <TableRow>
             <TableHead>Propiedad</TableHead>
@@ -30,7 +30,7 @@ export async function TablaContratos() {
             <TableHead>Vigencia</TableHead>
             <TableHead>Monto base</TableHead>
             <TableHead className="text-center">Estado</TableHead>
-            <TableHead />
+            <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -58,49 +58,38 @@ export async function TablaContratos() {
                   <TableCell className="text-sm text-muted-foreground">
                     {formatFechaLocal(c.fecha_inicio)} – {formatFechaLocal(c.fecha_fin)}
                   </TableCell>
-                  <TableCell className="font-mono text-sm">
+                  <TableCell className="font-heading tabular-nums text-sm">
                     {formatMonto(c.monto_base.toString())}
                   </TableCell>
                   <TableCell className="text-center">
                     <div className="flex flex-col items-center gap-1.5">
                       <BadgeEstadoContrato estado={c.estado} />
                       {ajustePendiente ? (
-                        <span className="rounded-full bg-status-warning-bg px-2 py-0.5 text-[11px] font-medium text-status-warning">
-                          Ajuste pendiente
+                        <span className="rounded-[5px] bg-status-warning-bg px-2 py-0.5 text-[11px] font-medium text-status-warning">
+                          <span aria-hidden="true" className="mr-1 inline-block size-1 rounded-full bg-current align-middle" /> Ajuste pendiente
                         </span>
                       ) : null}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <ModalPeriodos
-                        contratoId={c.id}
-                        label={`${c.propiedad.direccion} — ${c.inquilino.nombre}`}
-                      />
-                      <ModalAjustesContrato
-                        contratoId={c.id}
-                        label={`${c.propiedad.direccion} — ${c.inquilino.nombre}`}
-                        canWrite={mostrarAcciones}
-                        ajustePendiente={ajustePendiente ? {
-                          id: ajustePendiente.id,
-                          periodo_efectivo: ajustePendiente.periodo_efectivo,
-                          indice: ajustePendiente.indice,
-                          monto_anterior: ajustePendiente.monto_anterior.toString(),
-                        } : null}
-                      />
-                      <BotonesContrato
-                        id={c.id}
-                        estado={c.estado}
-                        contrato={{
-                          id: c.id,
-                          inquilinoId: c.id_inquilino,
-                          id_propiedad: c.id_propiedad,
-                          inquilino: { nombre: c.inquilino.nombre },
-                          propiedad: { direccion: c.propiedad.direccion },
-                        }}
-                        mostrarAcciones={mostrarAcciones}
-                      />
-                    </div>
+                  <TableCell className="contract-row-actions-cell text-right">
+                    <BotonesContrato
+                      id={c.id}
+                      estado={c.estado}
+                      contrato={{
+                        id: c.id,
+                        inquilinoId: c.id_inquilino,
+                        id_propiedad: c.id_propiedad,
+                        inquilino: { nombre: c.inquilino.nombre },
+                        propiedad: { direccion: c.propiedad.direccion },
+                      }}
+                      ajustePendiente={ajustePendiente ? {
+                        id: ajustePendiente.id,
+                        periodo_efectivo: ajustePendiente.periodo_efectivo,
+                        indice: ajustePendiente.indice,
+                        monto_anterior: ajustePendiente.monto_anterior.toString(),
+                      } : null}
+                      mostrarAcciones={mostrarAcciones}
+                    />
                   </TableCell>
                 </TableRow>
               );
@@ -109,5 +98,6 @@ export async function TablaContratos() {
         </TableBody>
       </Table>
     </TableCard>
+    </ListadoTools>
   );
 }

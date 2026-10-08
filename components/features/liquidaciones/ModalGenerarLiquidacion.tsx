@@ -53,11 +53,7 @@ export function ModalGenerarLiquidacion({ propietarios }: { propietarios: Propie
   const router = useRouter();
 
   useEffect(() => {
-    if (!idPropietario) {
-      setAdelantoPendiente(0);
-      setDescontarAdelantos("");
-      return;
-    }
+    if (!idPropietario) return;
     fetch(`/api/v1/propietarios/${idPropietario}/adelantos`)
       .then((r) => r.json())
       .then((data) => setAdelantoPendiente(Number(data.total)))
@@ -65,14 +61,9 @@ export function ModalGenerarLiquidacion({ propietarios }: { propietarios: Propie
   }, [idPropietario]);
 
   useEffect(() => {
-    if (!idPropietario || !hasta) {
-      setPendientes([]);
-      setSeleccionados(new Set());
-      return;
-    }
+    if (!idPropietario || !hasta) return;
 
     let cancelled = false;
-    setLoadingPendientes(true);
     fetch(
       `/api/v1/liquidaciones/pendientes?id_propietario=${idPropietario}&hasta=${encodeURIComponent(hasta)}`,
     )
@@ -164,10 +155,17 @@ export function ModalGenerarLiquidacion({ propietarios }: { propietarios: Propie
     <>
       <Button onClick={() => setOpen(true)}>+ Generar liquidación</Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-h-[85dvh] w-[calc(100vw-32px)] max-w-2xl overflow-y-auto">
           <DialogHeader><DialogTitle>Generar liquidación</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <Select onValueChange={(v) => setIdPropietario(Number(v))}>
+            <Select onValueChange={(v) => {
+              setIdPropietario(Number(v));
+              setAdelantoPendiente(0);
+              setDescontarAdelantos("");
+              setPendientes([]);
+              setSeleccionados(new Set());
+              setLoadingPendientes(Boolean(v && hasta));
+            }}>
               <SelectTrigger><SelectValue placeholder="Seleccioná un propietario" /></SelectTrigger>
               <SelectContent>
                 {propietarios.map((p) => (
@@ -178,12 +176,18 @@ export function ModalGenerarLiquidacion({ propietarios }: { propietarios: Propie
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Hasta</label>
-              <Input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
+              <Input type="date" value={hasta} onChange={(e) => {
+                const next = e.target.value;
+                setHasta(next);
+                setPendientes([]);
+                setSeleccionados(new Set());
+                setLoadingPendientes(Boolean(idPropietario && next));
+              }} />
             </div>
 
             {idPropietario && (
               <div className="space-y-2 rounded-md border p-3">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium">Conceptos pendientes de liquidar</p>
                     <p className="text-xs text-muted-foreground">
@@ -191,7 +195,7 @@ export function ModalGenerarLiquidacion({ propietarios }: { propietarios: Propie
                     </p>
                   </div>
                   {pendientes.length > 0 && (
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button type="button" variant="outline" size="sm" onClick={seleccionarTodos}>
                         Seleccionar todos
                       </Button>
@@ -237,7 +241,7 @@ export function ModalGenerarLiquidacion({ propietarios }: { propietarios: Propie
                                   {concepto.propiedad.direccion} · {concepto.porcentaje_participacion}%
                                 </p>
                               </div>
-                              <p className="shrink-0 font-mono text-sm font-semibold">
+                              <p className="shrink-0 font-heading tabular-nums text-sm font-semibold">
                                 {concepto.tipo === "GASTO" ? "−" : ""}
                                 {formatMonto(concepto.monto)}
                               </p>

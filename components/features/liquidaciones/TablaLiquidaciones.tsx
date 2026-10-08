@@ -1,3 +1,4 @@
+import { ListadoTools } from "@/components/layout/ListadoTools";
 import { LiquidacionesService } from "@/services/liquidaciones.service";
 import { PropietariosService } from "@/services/propietarios.service";
 import { requireAuthenticatedUser } from "@/lib/auth-context";
@@ -8,7 +9,6 @@ import { TableCard } from "@/components/layout/TableCard";
 import { BadgeEstadoLiquidacion } from "./BadgeEstadoLiquidacion";
 import { ModalGenerarLiquidacion } from "./ModalGenerarLiquidacion";
 import { BotonesLiquidacion } from "./BotonesLiquidacion";
-import { EnlaceDetalleLiquidacion } from "./EnlaceDetalleLiquidacion";
 
 function formatMonto(n: number | string) {
   return Number(n).toLocaleString("es-AR", {
@@ -27,8 +27,9 @@ export async function TablaLiquidaciones() {
   const mostrarAcciones = user.rol !== "AUDITOR";
 
   return (
+    <ListadoTools filename="liquidaciones.csv" columns={["Propietario","Fecha","Bruto","Retenciones","Neto","Estado"]} rows={liquidaciones.map((l) => [l.propietario.nombre, new Date(l.fecha_corrida).toLocaleDateString("es-AR"), formatMonto(l.monto_bruto.toString()), formatMonto(l.retenciones.toString()), formatMonto(l.monto_neto.toString()), l.estado])}>
     <TableCard action={mostrarAcciones ? <ModalGenerarLiquidacion propietarios={propietarios} /> : undefined}>
-      <Table>
+      <Table className="inmotrack-card-table" data-kind="liquidaciones">
         <TableHeader>
           <TableRow>
             <TableHead>Propietario</TableHead>
@@ -54,30 +55,25 @@ export async function TablaLiquidaciones() {
                 <TableCell className="text-sm text-muted-foreground">
                   {new Date(l.fecha_corrida).toLocaleDateString("es-AR")}
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm">
+                <TableCell className="text-right font-heading tabular-nums text-sm">
                   {formatMonto(l.monto_bruto.toString())}
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm text-muted-foreground">
+                <TableCell className="text-right font-heading tabular-nums text-sm text-muted-foreground">
                   {formatMonto(l.retenciones.toString())}
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm font-semibold">
+                <TableCell className="text-right font-heading tabular-nums text-sm font-semibold">
                   {formatMonto(l.monto_neto.toString())}
                 </TableCell>
                 <TableCell className="text-center">
                   <BadgeEstadoLiquidacion estado={l.estado} />
                 </TableCell>
-                <TableCell>
-                  <div className="flex items-center justify-end gap-2">
-                    <EnlaceDetalleLiquidacion id={l.id} />
-                    {mostrarAcciones ? (
-                      <BotonesLiquidacion
-                        id={l.id}
-                        estado={l.estado}
-                        puedeAprobar={puedeAprobar}
-                        esAdmin={esAdmin}
-                      />
-                    ) : null}
-                  </div>
+                <TableCell className="row-actions-cell">
+                  <BotonesLiquidacion
+                    id={l.id}
+                    estado={l.estado}
+                    puedeAprobar={mostrarAcciones && puedeAprobar}
+                    esAdmin={mostrarAcciones && esAdmin}
+                  />
                 </TableCell>
               </TableRow>
             ))
@@ -85,5 +81,6 @@ export async function TablaLiquidaciones() {
         </TableBody>
       </Table>
     </TableCard>
+    </ListadoTools>
   );
 }

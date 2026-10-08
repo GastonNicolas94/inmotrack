@@ -16,10 +16,10 @@ export function TableCard({
 }) {
   return (
     <div className="space-y-4">
-      {action && <div className="flex justify-end">{action}</div>}
+      {action && <div className="flex justify-stretch [&_[data-slot=button]]:min-h-12 [&_[data-slot=button]]:w-full sm:justify-end sm:[&_[data-slot=button]]:min-h-0 sm:[&_[data-slot=button]]:w-auto">{action}</div>}
       <div
         className={cn(
-          "overflow-hidden rounded-2xl border border-border bg-card",
+          "overflow-hidden rounded-lg border border-border bg-card",
           className
         )}
       >

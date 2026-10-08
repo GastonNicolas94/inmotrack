@@ -1,3 +1,5 @@
+import { ListadoTools } from "@/components/layout/ListadoTools";
+import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { PropiedadesService } from "@/services/propiedades.service";
 import { PropietariosService } from "@/services/propietarios.service";
 import {
@@ -14,33 +16,36 @@ import { DialogEditarPropiedad } from "./DialogEditarPropiedad";
 import { TableCard } from "@/components/layout/TableCard";
 
 export async function TablaPropiedades() {
-  const [propiedades, propietarios] = await Promise.all([
+  const [user, propiedades, propietarios] = await Promise.all([
+    requireAuthenticatedUser(),
     PropiedadesService.listar(),
     PropietariosService.listar(),
   ]);
+  const mostrarAcciones = user.rol !== "AUDITOR";
   const opcionesPropietarios = propietarios.map((p) => ({
     id: p.id,
     nombre: p.nombre,
   }));
 
   return (
+    <ListadoTools filename="propiedades.csv" columns={["Dirección","Propietarios","Tipo","Contratos"]} rows={propiedades.map((p) => [p.direccion, p.copropietarios.map((o) => `${o.propietario.nombre} (${Number(o.porcentaje).toFixed(2)}%)`).join(" / "), p.es_propia ? "Propia" : "Administrada", String(p._count.contratos)])}>
     <TableCard
-      action={<DialogNuevaPropiedad propietarios={opcionesPropietarios} />}
+      action={mostrarAcciones ? <DialogNuevaPropiedad propietarios={opcionesPropietarios} /> : undefined}
     >
-      <Table>
+      <Table className="inmotrack-card-table" data-kind="propiedades">
         <TableHeader>
           <TableRow>
             <TableHead>Dirección</TableHead>
             <TableHead>Propietarios</TableHead>
             <TableHead className="text-center">Tipo</TableHead>
             <TableHead className="text-center">Contratos</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
+            {mostrarAcciones ? <TableHead className="text-right">Acciones</TableHead> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
           {propiedades.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={mostrarAcciones ? 5 : 4} className="text-center text-muted-foreground py-8">
                 No hay propiedades cargadas.
               </TableCell>
             </TableRow>
@@ -60,7 +65,7 @@ export async function TablaPropiedades() {
                 </TableCell>
                 <TableCell className="text-center">
                   {p.es_propia ? (
-                    <Badge className="bg-primary/10 text-primary hover:bg-primary/10">
+                    <Badge className="bg-status-neutral-bg text-status-neutral">
                       Propia
                     </Badge>
                   ) : (
@@ -70,25 +75,28 @@ export async function TablaPropiedades() {
                 <TableCell className="text-center">
                   <Badge variant="secondary">{p._count.contratos}</Badge>
                 </TableCell>
-                <TableCell className="text-right">
-                  <DialogEditarPropiedad
-                    propietarios={opcionesPropietarios}
-                    propiedad={{
-                      id: p.id,
-                      direccion: p.direccion,
-                      es_propia: p.es_propia,
-                      participaciones: p.copropietarios.map((participacion) => ({
-                        id_propietario: participacion.id_propietario,
-                        porcentaje: Number(participacion.porcentaje),
-                      })),
-                    }}
-                  />
-                </TableCell>
+                {mostrarAcciones ? (
+                  <TableCell className="row-actions-cell text-right">
+                    <DialogEditarPropiedad
+                      propietarios={opcionesPropietarios}
+                      propiedad={{
+                        id: p.id,
+                        direccion: p.direccion,
+                        es_propia: p.es_propia,
+                        participaciones: p.copropietarios.map((participacion) => ({
+                          id_propietario: participacion.id_propietario,
+                          porcentaje: Number(participacion.porcentaje),
+                        })),
+                      }}
+                    />
+                  </TableCell>
+                ) : null}
               </TableRow>
             ))
           )}
         </TableBody>
       </Table>
     </TableCard>
+    </ListadoTools>
   );
 }
