@@ -115,7 +115,7 @@ export function ModalCalcularIntereses({ contrato }: Props) {
                 {cargos.map((c) => (
                   <label
                     key={c.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2 text-sm cursor-pointer"
+                    className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
                       <Checkbox
@@ -123,14 +123,14 @@ export function ModalCalcularIntereses({ contrato }: Props) {
                         onCheckedChange={() => toggle(c.id)}
                       />
                       <div>
-                        <span className="font-mono font-medium">{c.periodo}</span>{" "}
+                        <span className="font-heading tabular-nums font-medium">{c.periodo}</span>{" "}
                         <span className="text-xs text-muted-foreground">
                           {etiquetaTipoCargo(c.tipo)}
                         </span>
                       </div>
                     </div>
                     <div className="font-semibold text-status-danger">
-                      Debe: <span className="font-mono">{fmt(c.pendiente)}</span>
+                      Debe: <span className="font-heading tabular-nums">{fmt(c.pendiente)}</span>
                     </div>
                   </label>
                 ))}

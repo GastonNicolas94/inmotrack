@@ -47,13 +47,13 @@ function ListaConceptosPendientes({
       {items.map((item) => (
         <div
           key={item.id}
-          className="flex items-center justify-between rounded-xl border border-border p-2"
+          className="flex items-center justify-between rounded-lg border border-border p-2"
         >
           <div>
             <p className="text-sm font-medium">{item.concepto}</p>
             <p className="text-xs text-muted-foreground">{item.direccion}</p>
           </div>
-          <p className="text-sm font-mono font-semibold text-status-danger">{fmt(item.monto)}</p>
+          <p className="text-sm font-heading tabular-nums font-semibold text-status-danger">{fmt(item.monto)}</p>
         </div>
       ))}
     </div>
@@ -97,9 +97,9 @@ export function ModalDeudaInquilino({
           {!loading && saldo && (
             <div className="space-y-5">
               {/* Resumen */}
-              <div className="rounded-xl border border-border p-2 text-center">
+              <div className="rounded-lg border border-border p-2 text-center">
                 <p className="text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">Total</p>
-                <p className="text-sm font-mono mt-0.5 font-bold">{fmt(saldo.total)}</p>
+                <p className="text-sm font-heading tabular-nums mt-0.5 font-bold">{fmt(saldo.total)}</p>
               </div>
 
               {saldo.total === 0 && (
