@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readBoundedJson } from "@/lib/security/bounded-json";
 import { ContratosService } from "@/services/contratos.service";
 import { contratoSchema } from "@/schemas/contrato.schema";
 import { errorResponse } from "@/lib/errors";
@@ -31,7 +32,7 @@ async function postContrato(req: NextRequest) {
   try {
     const user = await requireAuthenticatedUser();
     assertCanWrite(user);
-    const body = await req.json();
+    const body = await readBoundedJson(req);
     const parsed = contratoSchema.safeParse(body);
 
     if (!parsed.success) {
