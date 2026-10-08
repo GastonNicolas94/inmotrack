@@ -1,3 +1,4 @@
+import { ListPagination } from "./ListPagination";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +24,7 @@ export function TableCard({
           className
         )}
       >
-        {children}
+        <ListPagination>{children}</ListPagination>
       </div>
     </div>
   );

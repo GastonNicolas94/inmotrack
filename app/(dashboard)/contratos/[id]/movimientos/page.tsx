@@ -64,7 +64,7 @@ async function MovimientosContratoContenido({
         <FiltroRangoFecha />
       </div>
 
-      <TableCard>
+      <TableCard key={`${id}:${desde ?? ""}:${hasta ?? ""}`}>
         <Table className="inmotrack-card-table" data-kind="movimientos-contrato">
           <TableHeader>
             <TableRow>

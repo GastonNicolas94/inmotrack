@@ -1,7 +1,7 @@
 ---
 type: Traps
-version: 9d3fed4
-validated: 2026-09-30
+version: e715643
+validated: 2026-10-08
 update_when: cuando se descubre un gotcha no obvio, agregarlo acá en el mismo cambio
 scope:
   - services
@@ -256,3 +256,7 @@ El correo enviado desde Authentication → Users puede retornar a Site URL; el p
 
 Si el navegador ya tiene una sesión válida, la raíz devuelve el dashboard y no pasa por
 `/login`. El dashboard también debe detectar el fragmento de recuperación e ir al callback.
+
+## Paginación y búsqueda
+
+`ListadoTools.rows` debe conservar exactamente el orden y cantidad de filas de `TableBody`: esos textos sirven para filtrar y exportar el mismo conjunto completo. No construirlos a partir de la página activa. `TableCard` pagina un único conjunto lógico; desktop/mobile deben tener el mismo orden. Para una búsqueda/estado/fecha controlada por URL, usar una key estable basada en los filtros en `TableCard` para reiniciar la página (cobranzas, libro diario y movimientos). Los CSV y PDF nunca se generan a partir de las filas paginadas.
