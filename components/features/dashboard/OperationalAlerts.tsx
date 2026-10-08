@@ -39,7 +39,7 @@ export function OperationalAlerts({ alerts }: { alerts: DashboardAlert[] }) {
               return (
                 <li key={alert.kind + "-" + alert.id}>
                   <Link href={alert.href} className="group flex items-start gap-3 py-3 first:pt-0 last:pb-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                    <Icon aria-hidden className="mt-0.5 size-4 shrink-0 text-destructive" />
+                    <Icon aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
                     <span className="min-w-0 flex-1">
                       <span className="block font-medium text-foreground group-hover:text-primary">{alert.title}</span>
                       {alert.description ? <span className="mt-0.5 block text-sm text-muted-foreground">{alert.description}</span> : null}

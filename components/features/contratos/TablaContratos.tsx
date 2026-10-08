@@ -65,8 +65,8 @@ export async function TablaContratos() {
                     <div className="flex flex-col items-center gap-1.5">
                       <BadgeEstadoContrato estado={c.estado} />
                       {ajustePendiente ? (
-                        <span className="rounded-full bg-status-warning-bg px-2 py-0.5 text-[11px] font-medium text-status-warning">
-                          Ajuste pendiente
+                        <span className="rounded-[5px] bg-status-warning-bg px-2 py-0.5 text-[11px] font-medium text-status-warning">
+                          <span aria-hidden="true" className="mr-1 inline-block size-1 rounded-full bg-current align-middle" /> Ajuste pendiente
                         </span>
                       ) : null}
                     </div>

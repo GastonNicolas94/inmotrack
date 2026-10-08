@@ -16,7 +16,7 @@ export function DashboardMetricCard({ label, value, description, icon: Icon }: {
         {Icon ? <Icon aria-hidden className="size-[18px] shrink-0 text-primary" strokeWidth={1.8} /> : null}
       </CardHeader>
       <CardContent>
-        <p className="inmotrack-amount break-words text-[20px] font-bold leading-tight text-foreground sm:text-[25px] 2xl:text-[30px]">{value}</p>
+        <p className="inmotrack-amount break-words text-[22px] font-bold leading-tight text-foreground sm:text-[25px] 2xl:text-[30px]">{value}</p>
         {description ? <CardDescription className="mt-2 text-[11px]">{description}</CardDescription> : null}
       </CardContent>
     </Card>

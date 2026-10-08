@@ -42,4 +42,4 @@ Este documento describe diseño, **no** modifica autorizaciones ni contabilidad.
 
 - `components/ui` contiene Base UI/shadcn. `components/layout`: shell, navegación, encabezados y contenedores. `components/features`: módulos de dominio.
 - `PageHeader`, `TableCard`, `DashboardMetricCard`, `CashBalancesCards` son patrones reutilizables.
-- Comprobar: `npm run design:check`, `npm run lint`, `npm run build`, roles, flujo de registro/consulta, desktop y viewport <=760px. La automatización de diseño es un control estático, no reemplaza la comprobación visual ni los tests de integración.
+- Comprobar: `npm run design:check`, `npm run lint:design`, `npm run lint` (este último posee seis errores heredados `react-hooks/set-state-in-effect` en modales previos a la migración), `npm run build`, roles, flujo de registro/consulta, desktop y viewport <=760px. La automatización de diseño es un control estático, no reemplaza la comprobación visual ni los tests de integración.

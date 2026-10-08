@@ -19,7 +19,7 @@ export function DashboardTabs({ filters }: { filters: DashboardFilters }) {
             href={`/?${serializeDashboardFilters(filters, { tab: tab.id })}`}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "border-b-2 px-3 py-2 text-sm font-medium transition-colors",
+              "border-b-2 px-3 py-2 text-[12px] font-medium transition-colors",
               active ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground",
             )}
           >

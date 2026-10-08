@@ -130,7 +130,7 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
           </DialogHeader>
 
           {ajustePendiente ? (
-            <section className="space-y-4 rounded-2xl border border-border p-4">
+            <section className="space-y-4 rounded-lg border border-border p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium">Ajuste pendiente · {ajustePendiente.periodo_efectivo}</p>
@@ -138,7 +138,7 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
                     {ajustePendiente.indice} · monto vigente {formatMonto(ajustePendiente.monto_anterior)}
                   </p>
                 </div>
-                <span className="rounded-full bg-status-warning-bg px-2.5 py-1 text-xs font-medium text-status-warning">
+                <span className="rounded-[5px] bg-status-warning-bg px-2.5 py-1 text-xs font-medium text-status-warning">
                   Pendiente
                 </span>
               </div>
@@ -184,7 +184,7 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
                 Este contrato todavía no tiene actualizaciones registradas.
               </p>
             ) : (
-              <div className="divide-y divide-border rounded-2xl border border-border px-4">
+              <div className="divide-y divide-border rounded-lg border border-border px-4">
                 {ajustes.map((ajuste) => (
                   <div key={ajuste.id} className="flex flex-col gap-1 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                     <div>

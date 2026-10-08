@@ -33,4 +33,4 @@ Antes de tocar código, leer en este orden — es el contexto de agente mantenid
 
 **Componentes compartidos:** `components/ui` para primitivos, `components/layout` para shell/encabezados/tablas y `components/features/<dominio>` para UI propia. Reutilizar `PageHeader`, `TableCard`, `BadgeEstadoPeriodo` y `PeriodoResumenRow`. No clonar componentes por pantalla.
 
-Los cambios de frontend deben revisar tanto desktop como mobile y ejecutar `npm run design:check` además de `npm run lint` y los tests pertinentes.
+Los cambios de frontend deben revisar tanto desktop como mobile y ejecutar `npm run design:check` y `npm run lint:design` además del lint integral (baseline con seis errores heredados en modales no modificados) y los tests pertinentes.

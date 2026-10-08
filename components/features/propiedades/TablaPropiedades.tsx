@@ -60,7 +60,7 @@ export async function TablaPropiedades() {
                 </TableCell>
                 <TableCell className="text-center">
                   {p.es_propia ? (
-                    <Badge className="bg-primary/10 text-primary hover:bg-primary/10">
+                    <Badge className="bg-status-neutral-bg text-status-neutral">
                       Propia
                     </Badge>
                   ) : (
