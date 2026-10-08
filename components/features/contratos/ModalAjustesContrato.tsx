@@ -112,7 +112,14 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
   }
 
   useEffect(() => {
-    if (controlledOpen) void cargar();
+    if (!controlledOpen) return;
+    // Deferred to a microtask: never synchronously set state within an effect.
+    // It also avoids loading adjustments for every contract on first render.
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) void cargar();
+    });
+    return () => { cancelled = true; };
   }, [controlledOpen, cargar]);
 
   return (
