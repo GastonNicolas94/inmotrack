@@ -260,3 +260,7 @@ Si el navegador ya tiene una sesión válida, la raíz devuelve el dashboard y n
 ## Paginación y búsqueda
 
 `ListadoTools.rows` debe conservar exactamente el orden y cantidad de filas de `TableBody`: esos textos sirven para filtrar y exportar el mismo conjunto completo. No construirlos a partir de la página activa. `TableCard` pagina un único conjunto lógico; desktop/mobile deben tener el mismo orden. Para una búsqueda/estado/fecha controlada por URL, usar una key estable basada en los filtros en `TableCard` para reiniciar la página (cobranzas, libro diario y movimientos). Los CSV y PDF nunca se generan a partir de las filas paginadas.
+
+## Libro Mayor descendente: invertir la presentación después del cálculo
+
+`obtenerMovimientosContrato` calcula el saldo cronológicamente antes de aplicar filtros. Invertir la acumulación cambiaría el significado contable de cada fila. La UI invierte una copia del resultado y muestra `saldoActual` del historial completo; no inferir ese saldo de la última fila filtrada.

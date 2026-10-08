@@ -221,7 +221,7 @@ export function createContratosService(deps: Dependencies) {
       if (filtros?.desde) movimientos = movimientos.filter((m) => m.fecha >= filtros.desde!);
       if (filtros?.hasta) movimientos = movimientos.filter((m) => m.fecha <= filtros.hasta!);
 
-      return { contrato, movimientos };
+      return { contrato, movimientos, saldoActual: saldoAcumulado };
     },
 
     async crear(data: ContratoInput) {

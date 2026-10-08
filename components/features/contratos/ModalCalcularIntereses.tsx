@@ -45,9 +45,12 @@ export function ModalCalcularIntereses({ contrato, controlledOpen, onOpenChange,
         // Un PUNITORIO nunca genera punitorio sobre sí mismo — no se
         // ofrece como opción, aunque tenga saldo pendiente.
         setCargos(data.cargos.filter((c) => c.tipo !== "PUNITORIO"));
+        setSeleccionados(new Set());
       })
       .finally(() => setLoading(false));
   }, [open, contrato.id]);
+
+  const todosSeleccionados = cargos.length > 0 && cargos.every((c) => seleccionados.has(c.id));
 
   function toggle(id: number) {
     setSeleccionados((prev) => {
@@ -94,7 +97,7 @@ export function ModalCalcularIntereses({ contrato, controlledOpen, onOpenChange,
       </Button>}
 
       <Dialog open={open} onOpenChange={(next) => { if (next) setLoading(true); setOpen(next); }}>
-        <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-xl max-h-[85dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Calcular intereses</DialogTitle>
             <p className="text-sm text-muted-foreground">
@@ -112,6 +115,18 @@ export function ModalCalcularIntereses({ contrato, controlledOpen, onOpenChange,
                 Elegí sobre qué cargos calcular intereses. No seleccionar uno equivale a perdonarlo por
                 ahora — se puede calcular más tarde sin perder nada de lo que ya se generó.
               </p>
+              <label className="flex cursor-pointer flex-wrap items-center gap-3 border-b border-border pb-3 text-sm">
+                <Checkbox
+                  checked={todosSeleccionados}
+                  indeterminate={seleccionados.size > 0 && !todosSeleccionados}
+                  disabled={enviando}
+                  onCheckedChange={(checked) => setSeleccionados(checked ? new Set(cargos.map((c) => c.id)) : new Set())}
+                />
+                <span>Seleccionar todos</span>
+                <span className="ml-auto text-xs text-muted-foreground" aria-live="polite">
+                  {seleccionados.size} de {cargos.length} seleccionados
+                </span>
+              </label>
               <div className="space-y-2">
                 {cargos.map((c) => (
                   <label
@@ -120,6 +135,7 @@ export function ModalCalcularIntereses({ contrato, controlledOpen, onOpenChange,
                   >
                     <div className="flex items-center gap-3">
                       <Checkbox
+                        disabled={enviando}
                         checked={seleccionados.has(c.id)}
                         onCheckedChange={() => toggle(c.id)}
                       />
