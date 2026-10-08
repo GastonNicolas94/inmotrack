@@ -9,7 +9,6 @@ import { TableCard } from "@/components/layout/TableCard";
 import { BadgeEstadoLiquidacion } from "./BadgeEstadoLiquidacion";
 import { ModalGenerarLiquidacion } from "./ModalGenerarLiquidacion";
 import { BotonesLiquidacion } from "./BotonesLiquidacion";
-import { EnlaceDetalleLiquidacion } from "./EnlaceDetalleLiquidacion";
 
 function formatMonto(n: number | string) {
   return Number(n).toLocaleString("es-AR", {
@@ -68,18 +67,13 @@ export async function TablaLiquidaciones() {
                 <TableCell className="text-center">
                   <BadgeEstadoLiquidacion estado={l.estado} />
                 </TableCell>
-                <TableCell>
-                  <div className="flex items-center justify-end gap-2">
-                    <EnlaceDetalleLiquidacion id={l.id} />
-                    {mostrarAcciones ? (
-                      <BotonesLiquidacion
-                        id={l.id}
-                        estado={l.estado}
-                        puedeAprobar={puedeAprobar}
-                        esAdmin={esAdmin}
-                      />
-                    ) : null}
-                  </div>
+                <TableCell className="row-actions-cell">
+                  <BotonesLiquidacion
+                    id={l.id}
+                    estado={l.estado}
+                    puedeAprobar={mostrarAcciones && puedeAprobar}
+                    esAdmin={mostrarAcciones && esAdmin}
+                  />
                 </TableCell>
               </TableRow>
             ))

@@ -41,7 +41,7 @@ export async function TablaInquilinos() {
                 <TableCell className="text-center">
                   <Badge variant="secondary">{i._count.contratos}</Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="row-actions-cell">
                   <ModalDeudaInquilino inquilinoId={i.id} nombre={i.nombre} />
                 </TableCell>
               </TableRow>
