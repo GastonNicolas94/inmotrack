@@ -130,7 +130,7 @@ export function ModalRegistrarPago({ contrato }: Props) {
             <div className="space-y-5">
               {Number(saldoAFavor) > 0 && (
                 <div className="rounded-xl border border-status-success bg-status-success-bg px-3 py-2 text-sm text-status-success">
-                  Este inquilino tiene <span className="font-mono font-semibold">{fmt(saldoAFavor)}</span>{" "}
+                  Este inquilino tiene <span className="font-heading tabular-nums font-semibold">{fmt(saldoAFavor)}</span>{" "}
                   de saldo a favor disponible — se aplica solo, contra la próxima deuda que aparezca o al
                   cerrar el período.
                 </div>
@@ -147,13 +147,13 @@ export function ModalRegistrarPago({ contrato }: Props) {
                       <div key={c.id} className="rounded-xl border border-border px-3 py-2 text-sm">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono font-medium">{c.periodo}</span>
+                            <span className="font-heading tabular-nums font-medium">{c.periodo}</span>
                             <span className="text-xs text-muted-foreground">
                               {etiquetaTipoCargo(c.tipo)}
                             </span>
                           </div>
                           <div className="font-semibold text-status-danger">
-                            Debe: <span className="font-mono">{fmt(c.pendiente)}</span>
+                            Debe: <span className="font-heading tabular-nums">{fmt(c.pendiente)}</span>
                           </div>
                         </div>
                         {cubierto && cubierto.greaterThan(0) && (
@@ -196,7 +196,7 @@ export function ModalRegistrarPago({ contrato }: Props) {
                   {montoIngresado > 0 && sobrante.greaterThan(0) && (
                     <p className="text-xs text-muted-foreground">
                       Sobrante sin aplicar (queda disponible para lo próximo):{" "}
-                      <span className="font-mono font-medium text-foreground">
+                      <span className="font-heading tabular-nums font-medium text-foreground">
                         {fmt(sobrante.toString())}
                       </span>
                     </p>

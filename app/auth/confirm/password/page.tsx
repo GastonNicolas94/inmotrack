@@ -48,9 +48,9 @@ export default function ConfirmPasswordPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-6">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-5 rounded-3xl border border-border bg-card p-6 shadow-sm">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-5 rounded-lg border border-border bg-card p-6 ">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Creá tu contraseña</h1>
+          <h1 className="text-2xl font-semibold tracking-normal">Creá tu contraseña</h1>
           <p className="mt-2 text-sm text-muted-foreground">Elegí una contraseña para entrar a InmoTrack.</p>
         </div>
         <div className="space-y-1.5">

@@ -58,7 +58,7 @@ export async function TablaLibroDiario({
                 </TableCell>
                 <TableCell className="text-center text-xs text-muted-foreground">{t.caja_destino}</TableCell>
                 <TableCell
-                  className={`text-right font-mono text-sm ${
+                  className={`text-right font-heading tabular-nums text-sm ${
                     Number(t.monto) < 0 ? "text-status-danger" : "text-status-success"
                   }`}
                 >

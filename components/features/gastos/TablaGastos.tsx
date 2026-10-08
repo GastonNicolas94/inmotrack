@@ -65,7 +65,7 @@ export async function TablaGastos() {
                 <TableCell className="text-center">
                   <EstadoBadge valor={g.cargo_a} colores={COLORES_CARGO} />
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm">
+                <TableCell className="text-right font-heading tabular-nums text-sm">
                   {formatMonto(g.monto.toString())}
                 </TableCell>
                 <TableCell className="text-center">

@@ -42,8 +42,8 @@ export async function TablaPagos() {
                 <TableCell className="text-sm text-muted-foreground">{formatFecha(p.fecha)}</TableCell>
                 <TableCell>{p.inquilino ?? "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{p.direccion ?? "—"}</TableCell>
-                <TableCell className="font-mono text-sm">{p.periodo ?? "—"}</TableCell>
-                <TableCell className="text-right font-mono text-sm">{formatMonto(p.monto)}</TableCell>
+                <TableCell className="font-heading tabular-nums text-sm">{p.periodo ?? "—"}</TableCell>
+                <TableCell className="text-right font-heading tabular-nums text-sm">{formatMonto(p.monto)}</TableCell>
               </TableRow>
             ))
           )}

@@ -41,7 +41,7 @@ export async function TablaPropietarios() {
             propietarios.map((p) => (
               <TableRow key={p.id}>
                 <TableCell className="font-medium">{p.nombre}</TableCell>
-                <TableCell className="font-mono text-sm text-muted-foreground">
+                <TableCell className="font-heading tabular-nums text-sm text-muted-foreground">
                   {maskCbu(p.cbu)}
                 </TableCell>
                 <TableCell className="text-center">

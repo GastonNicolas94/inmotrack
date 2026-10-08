@@ -54,13 +54,13 @@ export async function TablaLiquidaciones() {
                 <TableCell className="text-sm text-muted-foreground">
                   {new Date(l.fecha_corrida).toLocaleDateString("es-AR")}
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm">
+                <TableCell className="text-right font-heading tabular-nums text-sm">
                   {formatMonto(l.monto_bruto.toString())}
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm text-muted-foreground">
+                <TableCell className="text-right font-heading tabular-nums text-sm text-muted-foreground">
                   {formatMonto(l.retenciones.toString())}
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm font-semibold">
+                <TableCell className="text-right font-heading tabular-nums text-sm font-semibold">
                   {formatMonto(l.monto_neto.toString())}
                 </TableCell>
                 <TableCell className="text-center">

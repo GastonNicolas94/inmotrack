@@ -33,7 +33,7 @@ export async function TablaInquilinos() {
             inquilinos.map((i) => (
               <TableRow key={i.id}>
                 <TableCell className="font-medium">{i.nombre}</TableCell>
-                <TableCell className="font-mono text-sm">{i.dni_cuit}</TableCell>
+                <TableCell className="font-heading tabular-nums text-sm">{i.dni_cuit}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">{i.email ?? "—"}</TableCell>
                 <TableCell className="text-center">
                   <Badge variant="secondary">{i._count.contratos}</Badge>

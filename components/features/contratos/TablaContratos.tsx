@@ -58,7 +58,7 @@ export async function TablaContratos() {
                   <TableCell className="text-sm text-muted-foreground">
                     {formatFechaLocal(c.fecha_inicio)} – {formatFechaLocal(c.fecha_fin)}
                   </TableCell>
-                  <TableCell className="font-mono text-sm">
+                  <TableCell className="font-heading tabular-nums text-sm">
                     {formatMonto(c.monto_base.toString())}
                   </TableCell>
                   <TableCell className="text-center">
