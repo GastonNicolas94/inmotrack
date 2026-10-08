@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { assertOwnerObjectAccess } from "@/lib/security/object-access";
 import { PropietariosService } from "@/services/propietarios.service";
 import { propietarioSchema } from "@/schemas/propietario.schema";
 import { errorResponse } from "@/lib/errors";
@@ -11,8 +12,9 @@ async function getPropietario(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuthenticatedUser();
+    const user = await requireAuthenticatedUser();
     const { id } = await params;
+    assertOwnerObjectAccess(user, Number(id));
     const propietario = await PropietariosService.obtenerPorId(Number(id));
     if (!propietario) return errorResponse("NOT_FOUND", "Propietario no encontrado.", 404);
     return NextResponse.json(propietario);
@@ -29,6 +31,7 @@ async function patchPropietario(
     const user = await requireAuthenticatedUser();
     assertCanWrite(user);
     const { id } = await params;
+    assertOwnerObjectAccess(user, Number(id));
     const body = await req.json();
     const parsed = propietarioSchema.partial().safeParse(body);
 
