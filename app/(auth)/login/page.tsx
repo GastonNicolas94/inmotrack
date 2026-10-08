@@ -41,27 +41,22 @@ export default function LoginPage() {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-6">
       <PasswordEmailLanding />
-      {/* Halo decorativo, sutil, sin imágenes */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-[-20%] h-[520px] bg-[radial-gradient(closest-side,_color-mix(in_oklch,var(--primary),transparent_88%),_transparent)]"
-      />
 
-      <div className="relative flex w-full max-w-sm flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="relative flex w-full max-w-sm flex-col items-center">
         {/* eslint-disable-next-line @next/next/no-img-element -- SVG: next/image bloquea SVG local por defecto */}
         <img
           src="/logo-macchieraldo-villarruel-full.svg"
           alt="Macchieraldo Villarruel — Estudio Contable & Inmobiliaria"
-          className="mb-2 h-80 w-80 object-contain"
+          className="mb-4 h-44 w-64 object-contain"
         />
 
-        <p className="mt-2 mb-8 text-center text-base text-muted-foreground">
+        <p className="mt-2 mb-8 text-center text-[13px] text-muted-foreground">
           Iniciá sesión para gestionar contratos, propiedades e inquilinos.
         </p>
 
         <form
           onSubmit={handleSubmit}
-          className="w-full rounded-3xl border border-border bg-card p-6 shadow-[0_20px_60px_-25px_rgba(0,0,0,0.25)]"
+          className="w-full rounded-lg border border-border bg-card p-6"
         >
           <div className="space-y-4">
             <div className="space-y-1.5">

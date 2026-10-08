@@ -19,7 +19,7 @@ export function TableCard({
       {action && <div className="flex justify-end">{action}</div>}
       <div
         className={cn(
-          "overflow-hidden rounded-2xl border border-border bg-card",
+          "overflow-hidden rounded-lg border border-border bg-card",
           className
         )}
       >

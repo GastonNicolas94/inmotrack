@@ -2,14 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  FileText, Building2, UserRound, Users,
-  Wallet, Receipt, HandCoins, BookText, LayoutDashboard, Clock3,
-} from "lucide-react";
+import { FileText, Building2, UserRound, Users, Wallet, Receipt, HandCoins, BookText, LayoutDashboard, Clock3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NavLinkPendingIndicator } from "@/components/layout/NavLinkPendingIndicator";
 
-const NAV_ITEMS = [
+export const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/contratos", label: "Contratos", icon: FileText },
   { href: "/propietarios", label: "Propietarios", icon: Users },
@@ -19,42 +16,25 @@ const NAV_ITEMS = [
   { href: "/gastos", label: "Gastos", icon: Receipt },
   { href: "/liquidaciones", label: "Liquidaciones", icon: HandCoins },
   { href: "/transacciones", label: "Libro Diario", icon: BookText },
-];
+] as const;
 
-export function DashboardNav({
-  onNavigate,
-  showTestClock = false,
-}: {
-  onNavigate?: () => void;
-  showTestClock?: boolean;
-}) {
+export function DashboardNav({ onNavigate, showTestClock = false }: { onNavigate?: () => void; showTestClock?: boolean }) {
   const pathname = usePathname();
   const items = showTestClock
     ? [...NAV_ITEMS, { href: "/dev/reloj", label: "Reloj de pruebas", icon: Clock3 }]
     : NAV_ITEMS;
 
   return (
-    <nav className="flex-1 space-y-0.5 p-3">
-      {items.map((item) => {
-        const active = item.href === "/" ? pathname === "/" : pathname?.startsWith(item.href);
-        const Icon = item.icon;
+    <nav aria-label="Menú principal" className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
+      <p className="sidebar-label mb-3 px-3 text-[10px] font-bold uppercase tracking-[1.3px] text-muted-foreground">Navegación</p>
+      {items.map(({ href, label, icon: Icon }) => {
+        const active = href === "/" ? pathname === "/" : pathname?.startsWith(href);
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            title={item.label}
-            className={cn(
-              "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors md:group-data-[collapsed=true]/aside:justify-center md:group-data-[collapsed=true]/aside:px-0",
-              active
-                ? "bg-primary/10 text-primary"
-                : "text-foreground/80 hover:bg-muted hover:text-foreground"
-            )}
-          >
-            <Icon className="size-4 shrink-0" strokeWidth={2} />
-            <span className="md:group-data-[collapsed=true]/aside:hidden">
-              {item.label}
-            </span>
+          <Link key={href} href={href} onClick={onNavigate} title={label} aria-current={active ? "page" : undefined}
+            className={cn("sidebar-link flex min-h-10 items-center gap-3 rounded-[6px] px-3 py-2 text-[12px] font-semibold transition-colors duration-200",
+              active ? "bg-brand-soft text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground")}>
+            <Icon aria-hidden className={cn("size-[18px] shrink-0", active && "text-primary")} strokeWidth={1.8} />
+            <span className="sidebar-label flex-1">{label}</span>
             <NavLinkPendingIndicator />
           </Link>
         );

@@ -1,41 +1,41 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import {
-  LogOut,
-  Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
-  X,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { LogOut, Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DashboardNav } from "@/components/layout/DashboardNav";
+import { DashboardNav, NAV_ITEMS } from "@/components/layout/DashboardNav";
 import { cn } from "@/lib/utils";
 import type { AuthenticatedUser } from "@/lib/auth-context";
 
 const STORAGE_KEY = "inmotrack:sidebar-collapsed";
+const MOBILE_HREFS = ["/", "/contratos", "/pagos", "/propiedades", "/liquidaciones"];
 
-export function DashboardShell({
-  email,
-  rol,
-  onLogout,
-  showTestClock,
-  children,
-}: {
+export function DashboardShell({ email, rol, onLogout, showTestClock, children }: {
   email: string;
   rol: AuthenticatedUser["rol"];
   onLogout: (formData: FormData) => void | Promise<void>;
   showTestClock?: boolean;
   children: ReactNode;
 }) {
+  const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (localStorage.getItem(STORAGE_KEY) === "1") setCollapsed(true);
   }, []);
+  useEffect(() => {
+    // Close the drawer when route changes (includes browser back/forward).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMobileOpen(false);
+  }, [pathname]);
+
+  const pageName = NAV_ITEMS.find((item) => item.href === pathname)?.label
+    ?? NAV_ITEMS.find((item) => item.href !== "/" && pathname.startsWith(item.href))?.label
+    ?? (pathname.startsWith("/dev/") ? "Reloj de pruebas" : "InmoTrack");
+  const initial = email.trim().charAt(0).toUpperCase() || "U";
 
   function toggleCollapsed() {
     setCollapsed((prev) => {
@@ -46,104 +46,74 @@ export function DashboardShell({
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/30 md:hidden"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden
-        />
-      )}
-
-      <aside
-        data-collapsed={collapsed}
-        className={cn(
-          "group/aside fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border bg-sidebar transition-transform duration-200 ease-in-out",
-          mobileOpen ? "translate-x-0" : "-translate-x-full",
-          "md:static md:z-auto md:translate-x-0 md:transition-[width]",
-          collapsed ? "md:w-[72px]" : "md:w-64"
-        )}
-      >
-        <div className="relative flex items-center justify-center px-5 py-6 md:group-data-[collapsed=true]/aside:px-2">
-          {/* eslint-disable-next-line @next/next/no-img-element -- SVG: next/image bloquea SVG local por defecto */}
-          <img
-            src="/logo-macchieraldo-villarruel-icon.svg"
-            alt="Macchieraldo Villarruel"
-            className="size-24 shrink-0 object-contain md:group-data-[collapsed=true]/aside:size-10"
-          />
-          <button
-            type="button"
-            onClick={() => setMobileOpen(false)}
-            aria-label="Cerrar menú"
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground md:hidden"
-          >
-            <X className="size-5" />
+    <div className="inmotrack-shell bg-background">
+      {mobileOpen ? <button type="button" className="inmotrack-scrim inmotrack-mobile-only"
+        aria-label="Cerrar menú lateral" onClick={() => setMobileOpen(false)} /> : null}
+      <aside className="inmotrack-sidebar flex flex-col" data-open={mobileOpen} data-collapsed={collapsed}>
+        <div className="sidebar-brand flex min-h-[104px] items-center gap-3 border-b border-border px-5">
+          {/* eslint-disable-next-line @next/next/no-img-element -- Identidad SVG local */}
+          <img src="/logo-macchieraldo-villarruel-icon.svg" alt="" className="size-12 shrink-0 object-contain" />
+          <div className="sidebar-brand-name min-w-0">
+            <p className="font-heading text-[13px] font-bold leading-tight text-foreground">Macchieraldo</p>
+            <p className="font-heading text-[13px] font-bold leading-tight text-foreground">Villarruel</p>
+            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[1px] text-muted-foreground">Inmobiliaria</p>
+          </div>
+          <button type="button" onClick={() => setMobileOpen(false)} className="inmotrack-mobile-only ml-auto text-muted-foreground" aria-label="Cerrar menú">
+            <X aria-hidden className="size-5" />
           </button>
         </div>
-
         <DashboardNav onNavigate={() => setMobileOpen(false)} showTestClock={showTestClock} />
-
-        <div className="space-y-3 border-t border-border p-4 md:group-data-[collapsed=true]/aside:px-2">
-          <div className="flex items-center justify-between gap-2 md:group-data-[collapsed=true]/aside:hidden">
-            <p className="truncate text-sm text-foreground/80">{email}</p>
-            {rol && (
-              <Badge variant="secondary" className="shrink-0 uppercase">
-                {rol}
-              </Badge>
-            )}
+        <div className="border-t border-border p-3">
+          <div className="sidebar-label mb-3 flex items-center gap-2 px-2 pt-2">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted font-heading text-xs font-bold">{initial}</span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[11px] font-semibold">{email}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[1px] text-muted-foreground">{rol}</p>
+            </div>
           </div>
           <form action={onLogout}>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full gap-2"
-              type="submit"
-              title="Cerrar sesión"
-            >
-              <LogOut className="size-4 shrink-0" />
-              <span className="md:group-data-[collapsed=true]/aside:hidden">
-                Cerrar sesión
-              </span>
+            <Button type="submit" variant="ghost" size="sm" title="Cerrar sesión" className="w-full justify-start gap-2 text-muted-foreground">
+              <LogOut aria-hidden className="size-4" />
+              <span className="sidebar-label">Cerrar sesión</span>
             </Button>
           </form>
-        </div>
-
-        <button
-          type="button"
-          onClick={toggleCollapsed}
-          aria-label={collapsed ? "Expandir barra lateral" : "Contraer barra lateral"}
-          className="mx-3 mb-4 hidden items-center justify-center gap-2 rounded-lg border border-border py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex"
-        >
-          {collapsed ? (
-            <PanelLeftOpen className="size-4" />
-          ) : (
-            <PanelLeftClose className="size-4" />
-          )}
-        </button>
-      </aside>
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="relative flex items-center justify-center border-b border-border px-4 py-3 md:hidden">
-          <button
-            type="button"
-            onClick={() => setMobileOpen(true)}
-            aria-label="Abrir menú"
-            className="absolute left-4 text-foreground"
-          >
-            <Menu className="size-5" />
+          <button type="button" onClick={toggleCollapsed}
+            aria-label={collapsed ? "Expandir barra lateral" : "Contraer barra lateral"}
+            className="inmotrack-desktop-only mt-2 flex w-full items-center justify-center gap-2 rounded-md border border-border py-2 text-[11px] text-muted-foreground hover:bg-muted">
+            {collapsed ? <PanelLeftOpen aria-hidden className="size-4" /> : <PanelLeftClose aria-hidden className="size-4" />}
+            {!collapsed && "Contraer"}
           </button>
-          {/* eslint-disable-next-line @next/next/no-img-element -- SVG: next/image bloquea SVG local por defecto */}
-          <img
-            src="/logo-macchieraldo-villarruel-icon.svg"
-            alt="Macchieraldo Villarruel"
-            className="size-11 shrink-0 object-contain"
-          />
+        </div>
+      </aside>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="inmotrack-topbar flex items-center justify-between gap-4 px-4 sm:px-8">
+          <div className="inmotrack-desktop-only min-w-0 items-center gap-2 text-[12px] text-muted-foreground sm:flex">
+            <span>InmoTrack</span><span aria-hidden>/</span><strong className="font-semibold text-foreground">{pageName}</strong>
+          </div>
+          <div className="inmotrack-mobile-only flex min-w-0 items-center gap-3">
+            <button type="button" onClick={() => setMobileOpen(true)} aria-label="Abrir menú" className="rounded-md p-2 text-foreground">
+              <Menu aria-hidden className="size-5" />
+            </button>
+            <span className="truncate font-heading text-[14px] font-bold">InmoTrack</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="inmotrack-desktop-only text-[10px] font-semibold uppercase tracking-[1px] text-muted-foreground">{rol}</span>
+            <span className="flex size-9 items-center justify-center rounded-full border border-border bg-muted font-heading text-[12px] font-bold" title={email} aria-label={email}>{initial}</span>
+          </div>
         </header>
-
-        <main className="flex-1 overflow-auto">
-          <div className="mx-auto max-w-6xl px-6 py-8 md:px-8 md:py-10">{children}</div>
+        <main id="contenido-principal" className="flex-1">
+          <div className="inmotrack-main">{children}</div>
         </main>
       </div>
+      <nav className="inmotrack-mobile-bottom" aria-label="Navegación inferior">
+        {NAV_ITEMS.filter((item) => MOBILE_HREFS.includes(item.href)).map(({ href, label, icon: Icon }) => {
+          const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+          return <Link key={href} href={href} aria-current={active ? "page" : undefined}
+            className={cn("flex min-w-0 flex-col items-center justify-center gap-1 px-1 py-2 text-[9px] font-semibold", active ? "text-primary" : "text-muted-foreground")}>
+            <Icon aria-hidden className="size-[19px]" strokeWidth={1.8} /><span className="truncate">{label}</span>
+          </Link>;
+        })}
+      </nav>
     </div>
   );
 }
