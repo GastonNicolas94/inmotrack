@@ -1,3 +1,4 @@
+import { ListadoTools } from "@/components/layout/ListadoTools";
 import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { ContratosService } from "@/services/contratos.service";
 import {
@@ -20,6 +21,7 @@ export async function TablaContratos() {
   const mostrarAcciones = user.rol !== "AUDITOR";
 
   return (
+    <ListadoTools filename="contratos.csv" columns={["Propiedad","Inquilino","Propietarios","Vigencia","Monto base","Estado"]} rows={contratos.map((c) => [c.propiedad.direccion, c.inquilino.nombre, c.propiedad.copropietarios.map((p) => p.propietario.nombre).join(" / "), `${formatFechaLocal(c.fecha_inicio)} - ${formatFechaLocal(c.fecha_fin)}`, formatMonto(c.monto_base.toString()), c.estado])}>
     <TableCard>
       <Table className="inmotrack-card-table" data-kind="contratos">
         <TableHeader>
@@ -109,5 +111,6 @@ export async function TablaContratos() {
         </TableBody>
       </Table>
     </TableCard>
+    </ListadoTools>
   );
 }

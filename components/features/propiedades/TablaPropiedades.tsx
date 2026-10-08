@@ -1,3 +1,4 @@
+import { ListadoTools } from "@/components/layout/ListadoTools";
 import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { PropiedadesService } from "@/services/propiedades.service";
 import { PropietariosService } from "@/services/propietarios.service";
@@ -27,6 +28,7 @@ export async function TablaPropiedades() {
   }));
 
   return (
+    <ListadoTools filename="propiedades.csv" columns={["Dirección","Propietarios","Tipo","Contratos"]} rows={propiedades.map((p) => [p.direccion, p.copropietarios.map((o) => `${o.propietario.nombre} (${Number(o.porcentaje).toFixed(2)}%)`).join(" / "), p.es_propia ? "Propia" : "Administrada", String(p._count.contratos)])}>
     <TableCard
       action={mostrarAcciones ? <DialogNuevaPropiedad propietarios={opcionesPropietarios} /> : undefined}
     >
@@ -95,5 +97,6 @@ export async function TablaPropiedades() {
         </TableBody>
       </Table>
     </TableCard>
+    </ListadoTools>
   );
 }

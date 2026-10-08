@@ -1,3 +1,4 @@
+import { ListadoTools } from "@/components/layout/ListadoTools";
 import { LiquidacionesService } from "@/services/liquidaciones.service";
 import { PropietariosService } from "@/services/propietarios.service";
 import { requireAuthenticatedUser } from "@/lib/auth-context";
@@ -27,6 +28,7 @@ export async function TablaLiquidaciones() {
   const mostrarAcciones = user.rol !== "AUDITOR";
 
   return (
+    <ListadoTools filename="liquidaciones.csv" columns={["Propietario","Fecha","Bruto","Retenciones","Neto","Estado"]} rows={liquidaciones.map((l) => [l.propietario.nombre, new Date(l.fecha_corrida).toLocaleDateString("es-AR"), formatMonto(l.monto_bruto.toString()), formatMonto(l.retenciones.toString()), formatMonto(l.monto_neto.toString()), l.estado])}>
     <TableCard action={mostrarAcciones ? <ModalGenerarLiquidacion propietarios={propietarios} /> : undefined}>
       <Table className="inmotrack-card-table" data-kind="liquidaciones">
         <TableHeader>
@@ -85,5 +87,6 @@ export async function TablaLiquidaciones() {
         </TableBody>
       </Table>
     </TableCard>
+    </ListadoTools>
   );
 }

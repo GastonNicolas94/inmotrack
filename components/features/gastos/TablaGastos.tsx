@@ -1,3 +1,4 @@
+import { ListadoTools } from "@/components/layout/ListadoTools";
 import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { GastosService } from "@/services/gastos.service";
 import {
@@ -31,6 +32,7 @@ export async function TablaGastos() {
   const mostrarAcciones = user.rol !== "AUDITOR";
 
   return (
+    <ListadoTools filename="gastos.csv" columns={["Concepto","Propiedad","Cargo a","Monto","Estado"]} rows={gastos.map((g) => [g.concepto, g.propiedad?.direccion ?? "Propio", g.cargo_a, formatMonto(g.monto.toString()), g.estado_pago])}>
     <TableCard action={mostrarAcciones ? <ModalCargarGasto triggerLabel="+ Nuevo gasto" /> : undefined}>
       <Table className="inmotrack-card-table" data-kind="gastos">
         <TableHeader>
@@ -80,5 +82,6 @@ export async function TablaGastos() {
         </TableBody>
       </Table>
     </TableCard>
+    </ListadoTools>
   );
 }

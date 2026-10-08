@@ -1,3 +1,4 @@
+import { ListadoTools } from "@/components/layout/ListadoTools";
 import { TransaccionesService } from "@/services/transacciones.service";
 import { requireAuthenticatedUser } from "@/lib/auth-context";
 import {
@@ -28,6 +29,7 @@ export async function TablaLibroDiario({
   const esAdmin = user.rol === "ADMIN";
 
   return (
+    <ListadoTools filename="libro-diario.csv" columns={["Fecha","Tipo","Caja","Monto","Usuario"]} rows={transacciones.map((t) => [new Date(t.fecha_transaccion).toLocaleString("es-AR"), t.tipo, t.caja_destino, formatMonto(t.monto.toString()), t.usuario_creador?.email ?? "Sistema"])}>
     <TableCard>
       <Table className="inmotrack-card-table" data-kind="transacciones">
         <TableHeader>
@@ -79,5 +81,6 @@ export async function TablaLibroDiario({
         </TableBody>
       </Table>
     </TableCard>
+    </ListadoTools>
   );
 }

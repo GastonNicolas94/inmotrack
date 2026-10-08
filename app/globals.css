@@ -240,6 +240,7 @@
   .inmotrack-mobile-bottom { z-index: 35; }
   .toaster[data-sonner-toaster] { bottom: calc(68px + env(safe-area-inset-bottom)) !important; }
 }
+[data-slot="table"] tr[hidden] { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }

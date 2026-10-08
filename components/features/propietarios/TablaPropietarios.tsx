@@ -1,3 +1,4 @@
+import { ListadoTools } from "@/components/layout/ListadoTools";
 import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { PropietariosService } from "@/services/propietarios.service";
 import {
@@ -23,6 +24,7 @@ export async function TablaPropietarios() {
   const puedeAdelantar = user.rol === "ADMIN";
 
   return (
+    <ListadoTools filename="propietarios.csv" columns={["Nombre","CBU","Propiedades"]} rows={propietarios.map((p) => [p.nombre, maskCbu(p.cbu), String(p._count.participaciones)])}>
     <TableCard action={puedeCrear ? <DialogNuevoPropietario /> : undefined}>
       <Table className="inmotrack-card-table" data-kind="propietarios">
         <TableHeader>
@@ -61,5 +63,6 @@ export async function TablaPropietarios() {
         </TableBody>
       </Table>
     </TableCard>
+    </ListadoTools>
   );
 }

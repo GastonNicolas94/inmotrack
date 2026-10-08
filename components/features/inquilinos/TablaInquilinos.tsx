@@ -1,3 +1,4 @@
+import { ListadoTools } from "@/components/layout/ListadoTools";
 import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { InquilinosService } from "@/services/inquilinos.service";
 import {
@@ -12,6 +13,7 @@ export async function TablaInquilinos() {
   const [user, inquilinos] = await Promise.all([requireAuthenticatedUser(), InquilinosService.listar()]);
 
   return (
+    <ListadoTools filename="inquilinos.csv" columns={["Nombre","DNI / CUIT","Email","Contratos"]} rows={inquilinos.map((i) => [i.nombre, i.dni_cuit, i.email ?? "", String(i._count.contratos)])}>
     <TableCard action={user.rol !== "AUDITOR" ? <DialogNuevoInquilino /> : undefined}>
       <Table className="inmotrack-card-table" data-kind="inquilinos">
         <TableHeader>
@@ -48,5 +50,6 @@ export async function TablaInquilinos() {
         </TableBody>
       </Table>
     </TableCard>
+    </ListadoTools>
   );
 }
