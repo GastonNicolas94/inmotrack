@@ -20,6 +20,7 @@ export const contratoSchema = z
     cobra_confeccion: z.boolean().optional(),
     estrategia_confeccion: z.enum(["UN_ALQUILER", "PORCENTAJE_5"]).optional(),
   })
+  .strict()
   .refine((d) => new Date(d.fecha_fin) > new Date(d.fecha_inicio), {
     message: "La fecha de fin debe ser posterior a la de inicio.",
     path: ["fecha_fin"],
