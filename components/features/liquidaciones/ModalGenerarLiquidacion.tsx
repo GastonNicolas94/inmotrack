@@ -53,11 +53,7 @@ export function ModalGenerarLiquidacion({ propietarios }: { propietarios: Propie
   const router = useRouter();
 
   useEffect(() => {
-    if (!idPropietario) {
-      setAdelantoPendiente(0);
-      setDescontarAdelantos("");
-      return;
-    }
+    if (!idPropietario) return;
     fetch(`/api/v1/propietarios/${idPropietario}/adelantos`)
       .then((r) => r.json())
       .then((data) => setAdelantoPendiente(Number(data.total)))
@@ -65,14 +61,9 @@ export function ModalGenerarLiquidacion({ propietarios }: { propietarios: Propie
   }, [idPropietario]);
 
   useEffect(() => {
-    if (!idPropietario || !hasta) {
-      setPendientes([]);
-      setSeleccionados(new Set());
-      return;
-    }
+    if (!idPropietario || !hasta) return;
 
     let cancelled = false;
-    setLoadingPendientes(true);
     fetch(
       `/api/v1/liquidaciones/pendientes?id_propietario=${idPropietario}&hasta=${encodeURIComponent(hasta)}`,
     )
@@ -167,7 +158,14 @@ export function ModalGenerarLiquidacion({ propietarios }: { propietarios: Propie
         <DialogContent className="max-h-[85dvh] w-[calc(100vw-32px)] max-w-2xl overflow-y-auto">
           <DialogHeader><DialogTitle>Generar liquidación</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <Select onValueChange={(v) => setIdPropietario(Number(v))}>
+            <Select onValueChange={(v) => {
+              setIdPropietario(Number(v));
+              setAdelantoPendiente(0);
+              setDescontarAdelantos("");
+              setPendientes([]);
+              setSeleccionados(new Set());
+              setLoadingPendientes(Boolean(v && hasta));
+            }}>
               <SelectTrigger><SelectValue placeholder="Seleccioná un propietario" /></SelectTrigger>
               <SelectContent>
                 {propietarios.map((p) => (
@@ -178,7 +176,13 @@ export function ModalGenerarLiquidacion({ propietarios }: { propietarios: Propie
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Hasta</label>
-              <Input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
+              <Input type="date" value={hasta} onChange={(e) => {
+                const next = e.target.value;
+                setHasta(next);
+                setPendientes([]);
+                setSeleccionados(new Set());
+                setLoadingPendientes(Boolean(idPropietario && next));
+              }} />
             </div>
 
             {idPropietario && (

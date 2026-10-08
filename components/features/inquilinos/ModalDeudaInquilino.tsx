@@ -73,7 +73,6 @@ export function ModalDeudaInquilino({
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
     fetch(`/api/v1/inquilinos/${inquilinoId}/saldo`)
       .then((r) => r.json())
       .then(setSaldo)
@@ -82,11 +81,11 @@ export function ModalDeudaInquilino({
 
   return (
     <>
-      <Button size="sm" variant="outline" className="text-xs" onClick={() => setOpen(true)}>
+      <Button size="sm" variant="outline" className="text-xs" onClick={() => { setLoading(true); setOpen(true); }}>
         Ver deuda
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(next) => { if (next) setLoading(true); setOpen(next); }}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Deuda total — {nombre}</DialogTitle>

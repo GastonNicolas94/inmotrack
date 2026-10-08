@@ -37,7 +37,6 @@ export function ModalCalcularIntereses({ contrato }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
     fetch(`/api/v1/contratos/${contrato.id}/cargos-pendientes`)
       .then((r) => r.json())
       .then((data: { cargos: CargoPendiente[] }) => {
@@ -88,11 +87,11 @@ export function ModalCalcularIntereses({ contrato }: Props) {
 
   return (
     <>
-      <Button size="sm" variant="outline" className="text-xs" onClick={() => setOpen(true)}>
+      <Button size="sm" variant="outline" className="text-xs" onClick={() => { setLoading(true); setOpen(true); }}>
         Calcular intereses
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(next) => { if (next) setLoading(true); setOpen(next); }}>
         <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Calcular intereses</DialogTitle>

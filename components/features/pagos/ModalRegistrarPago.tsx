@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Decimal } from "@prisma/client/runtime/client";
 import { pagoSchema, type PagoInput } from "@/schemas/pago.schema";
@@ -55,11 +55,10 @@ export function ModalRegistrarPago({ contrato }: Props) {
     },
   });
 
-  const montoIngresado = form.watch("monto_pagado");
+  const montoIngresado = useWatch({ control: form.control, name: "monto_pagado" }) ?? 0;
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
     fetch(`/api/v1/contratos/${contrato.id}/cargos-pendientes`)
       .then((r) => r.json())
       .then((data: { cargos: CargoPendiente[]; saldo_a_favor: string }) => {
@@ -117,10 +116,10 @@ export function ModalRegistrarPago({ contrato }: Props) {
 
   return (
     <>
-      <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+      <Button size="sm" variant="outline" onClick={() => { setLoading(true); setOpen(true); }}>
         Registrar pago
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(next) => { if (next) setLoading(true); setOpen(next); }}>
         <DialogContent className="w-[calc(100vw-32px)] max-h-[min(85dvh,720px)] overflow-y-auto sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle>Registrar pago</DialogTitle>
