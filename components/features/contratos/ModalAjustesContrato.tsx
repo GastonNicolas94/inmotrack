@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,9 @@ interface Props {
   contratoId: number;
   label: string;
   canWrite: boolean;
+  controlledOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
   ajustePendiente?: {
     id: number;
     periodo_efectivo: string;
@@ -44,8 +47,10 @@ function formatMonto(value: number | string) {
   return ars.format(Number(value));
 }
 
-export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendiente }: Props) {
-  const [open, setOpen] = useState(false);
+export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendiente, controlledOpen, onOpenChange, hideTrigger = false }: Props) {
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = onOpenChange ?? setLocalOpen;
   const [loading, setLoading] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [ajustes, setAjustes] = useState<AjusteContratoDto[]>([]);
@@ -106,16 +111,20 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
     }
   }
 
+  useEffect(() => {
+    if (controlledOpen) void cargar();
+  }, [controlledOpen, cargar]);
+
   return (
     <>
-      <Button
+      {!hideTrigger && <Button
         size="sm"
         variant={ajustePendiente && canWrite ? "default" : "outline"}
         className="text-xs"
         onClick={() => { setOpen(true); void cargar(); }}
       >
         {ajustePendiente && canWrite ? "Actualizar alquiler" : "Ajustes"}
-      </Button>
+      </Button>}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
