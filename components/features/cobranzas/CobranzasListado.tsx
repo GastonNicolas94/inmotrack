@@ -1,3 +1,4 @@
+import { PaginatedItems } from "@/components/layout/ListPagination";
 import Link from "next/link";
 import { Search, Download } from "lucide-react";
 import { CobranzasService } from "@/services/cobranzas.service";
@@ -54,7 +55,7 @@ export async function CobranzasListado({ filtro, q }: { filtro: FiltroCobranza; 
       <Button type="submit" variant="outline" className="h-10">Buscar</Button>
     </form>
     <p className="text-[11px] text-muted-foreground">{filtered.length} período{filtered.length === 1 ? "" : "s"} encontrado{filtered.length === 1 ? "" : "s"}. Los importes incluyen todos los cargos del período y sus aplicaciones.</p>
-    <TableCard>
+    <TableCard key={`${filtro}:${q}`}>
       <div className="inmotrack-desktop-only">
         <Table>
           <TableHeader><TableRow>
@@ -79,7 +80,7 @@ export async function CobranzasListado({ filtro, q }: { filtro: FiltroCobranza; 
       </div>
       <div className="inmotrack-mobile-only">
         {filtered.length === 0 ? <p className="p-8 text-center text-muted-foreground">No hay períodos para los filtros seleccionados.</p> :
-          <ul className="divide-y divide-border">
+          <PaginatedItems className="divide-y divide-border">
             {filtered.map((row) => <li key={row.id} className="space-y-3 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0"><p className="font-semibold">{row.inquilino}</p><p className="mt-1 text-[11px] text-muted-foreground">{row.propiedad}</p></div>
@@ -88,7 +89,7 @@ export async function CobranzasListado({ filtro, q }: { filtro: FiltroCobranza; 
               <div className="flex items-center justify-between gap-2"><EstadoCobranza estado={row.estado} /><span className="text-[11px] text-muted-foreground">{row.periodo} · vence {date(row.vencimiento)}</span></div>
               {canWrite && row.estado !== "COBRADO" ? <div className="[&_[data-slot=button]]:min-h-11 [&_[data-slot=button]]:w-full">{actions(row)}</div> : null}
             </li>)}
-          </ul>
+          </PaginatedItems>
         }
       </div>
     </TableCard>

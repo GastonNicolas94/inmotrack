@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Download, Search } from "lucide-react";
+import { ListSearchContext } from "./ListPagination";
 import { generarCsv } from "@/lib/csv";
 
 export function ListadoTools({
@@ -12,22 +13,7 @@ export function ListadoTools({
   columns: string[];
   rows: (string | number)[][];
 }) {
-  const root = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
-  const [visibleCount, setVisibleCount] = useState(rows.length);
-
-  function filter(value: string) {
-    setSearch(value);
-    const q = value.trim().toLocaleLowerCase("es");
-    let count = 0;
-    root.current?.querySelectorAll<HTMLTableRowElement>("tbody tr").forEach((row) => {
-      if (row.cells.length === 1 && row.cells[0]?.colSpan > 1) return;
-      const found = !q || (row.textContent ?? "").toLocaleLowerCase("es").includes(q);
-      row.hidden = !found;
-      if (found) count++;
-    });
-    setVisibleCount(count);
-  }
 
   function exportCsv() {
     const q = search.trim().toLocaleLowerCase("es");
@@ -50,7 +36,7 @@ export function ListadoTools({
       <label className="relative block w-full sm:max-w-[350px]">
         <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <span className="sr-only">Buscar en el listado</span>
-        <input type="search" value={search} onChange={(event) => filter(event.target.value)}
+        <input type="search" value={search} onChange={(event) => setSearch(event.target.value)}
           placeholder="Buscar en el listado"
           className="h-9 w-full rounded-md border border-input bg-card pl-9 pr-3 text-[12px] focus-visible:outline-2 focus-visible:outline-primary" />
       </label>
@@ -60,7 +46,7 @@ export function ListadoTools({
         <Download aria-hidden="true" className="size-4" />Exportar CSV
       </button>
     </div>
-    <div ref={root}>{children}</div>
-    {search ? <p role="status" className="text-[11px] text-muted-foreground">{visibleCount} resultado{visibleCount === 1 ? "" : "s"} para «{search}».</p> : null}
+    <ListSearchContext.Provider value={{ query: search, texts: rows.map((row) => row.join(" ")) }}>{children}</ListSearchContext.Provider>
+
   </div>;
 }

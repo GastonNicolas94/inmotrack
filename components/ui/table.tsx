@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePaginatedChildren } from "@/components/layout/ListPagination"
 
 import { cn } from "@/lib/utils"
 
@@ -29,13 +30,16 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   )
 }
 
-function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
+function TableBody({ className, children, ...props }: React.ComponentProps<"tbody">) {
+  const rows = usePaginatedChildren(children)
   return (
     <tbody
       data-slot="table-body"
       className={cn("[&_tr:last-child]:border-0", className)}
       {...props}
-    />
+    >
+      {rows}
+    </tbody>
   )
 }
 

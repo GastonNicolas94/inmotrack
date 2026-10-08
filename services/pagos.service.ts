@@ -192,7 +192,7 @@ export function createPagosService(deps: Dependencies) {
       );
     },
 
-    async listarRecientes(limit = 50) {
+    async listarRecientes(limit: number | null = 50) {
       const aplicaciones = await deps.prisma.aplicacionPago.findMany({
         where: { cargo: { tipo: "ALQUILER" } },
         select: {
@@ -217,7 +217,7 @@ export function createPagosService(deps: Dependencies) {
           },
         },
         orderBy: { transaccion: { fecha_transaccion: "desc" } },
-        take: limit,
+        ...(limit === null ? {} : { take: limit }),
       });
 
       return aplicaciones.map((a) => ({

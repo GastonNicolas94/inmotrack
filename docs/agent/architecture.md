@@ -1,7 +1,7 @@
 ---
 type: Architecture
-version: f67614b
-validated: 2026-10-07
+version: e715643
+validated: 2026-10-08
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
   - app
@@ -159,3 +159,9 @@ La creación de invitaciones es server-only: ADMIN invita por Supabase Auth y se
 | `components/ui/` | Componentes shadcn | Sin lógica de dominio |
 
 La confirmación acepta el TokenHash de plantillas propias en servidor y la sesión del correo predeterminado en `/auth/confirm/callback`. El navegador elimina el fragmento antes de crear el cliente, establece cookies SSR con `setSession` y valida la identidad con `getUser`; luego navega a la pantalla protegida de contraseña.
+
+## Paginación de listados (oct 2026)
+
+`TableCard` comparte `ListPagination` y `TableBody` monta solo la página activa (20 filas; selector 10/20/50). `PaginatedItems` sincroniza las tarjetas móviles de cobranzas y pagos con la tabla de escritorio. `ListadoTools` entrega texto de búsqueda por fila: se filtra el conjunto completo antes de paginar, y CSV exporta todos los resultados filtrados. Cambiar búsqueda, estado o tamaño vuelve a página 1; al reducirse las filas se ajusta la página al rango válido. Cada tabla de detalle mantiene su propia página. Totales y PDF se calculan sobre los datos completos.
+
+Esta paginación es de presentación: las consultas actuales siguen trayendo el conjunto completo y los Server Components siguen dentro de Suspense. No implica paginación SQL. El historial de pagos invoca `listarRecientes(null)` para quitar el límite de 50; los consumidores del dashboard conservan su límite explícito.

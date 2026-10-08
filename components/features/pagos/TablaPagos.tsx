@@ -1,3 +1,4 @@
+import { PaginatedItems } from "@/components/layout/ListPagination";
 import { PagosService } from "@/services/pagos.service";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TableCard } from "@/components/layout/TableCard";
@@ -12,7 +13,7 @@ function formatMonto(n: string) {
 }
 
 export async function TablaPagos() {
-  const pagos = await PagosService.listarRecientes();
+  const pagos = await PagosService.listarRecientes(null);
   return (
     <TableCard>
       <div className="inmotrack-desktop-only">
@@ -46,7 +47,7 @@ export async function TablaPagos() {
       <div className="inmotrack-mobile-only">
         {pagos.length === 0 ? (
           <p className="p-6 text-center text-muted-foreground">No hay pagos registrados todavía.</p>
-        ) : <ul className="divide-y divide-border">
+        ) : <PaginatedItems className="divide-y divide-border">
           {pagos.map((p) => <li key={p.id} className="flex items-start justify-between gap-3 px-4 py-4">
             <div className="min-w-0 flex-1">
               <p className="truncate font-semibold text-foreground">{p.inquilino ?? "—"}</p>
@@ -62,7 +63,7 @@ export async function TablaPagos() {
               <p className="mt-1 text-[10px] text-muted-foreground">Período: {p.periodo ?? "—"}</p>
             </div>
           </li>)}
-        </ul>}
+        </PaginatedItems>}
       </div>
     </TableCard>
   );
