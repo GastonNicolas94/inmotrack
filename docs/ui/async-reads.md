@@ -20,3 +20,27 @@
 ## Validación antes de integrar
 
 Comprobar que se ve el shell sin esperar datos de negocio, que los fallos de consulta no revelan datos, que el botón de escritura sigue esperando respuesta, y que filtros y detalles mantienen el resultado existente. Medir TTFB, tiempo al primer shell y tiempo al contenido cargado con herramientas de Vercel / trazas existentes; no afirmar mejoras de milisegundos sin medición.
+
+## Cobertura actual
+
+| Vista | GET no bloqueante | Componente |
+|---|---|---|
+| Dashboard | Filtros, cajas y KPI independientes | `DashboardFilterOptions`, `FinancialCashBalances`, `DashboardMetrics` |
+| Contratos | Tabla y opciones de alta separadas | `TablaContratos`, `ContratosWizardData` |
+| Propiedades | Tabla | `TablaPropiedades` |
+| Propietarios | Tabla | `TablaPropietarios` |
+| Inquilinos | Tabla | `TablaInquilinos` |
+| Cobros | Deuda y últimos pagos independientes | `CobranzasListado`, `TablaPagos` |
+| Gastos | Tabla | `TablaGastos` |
+| Liquidaciones | Tabla + detalle consultado aparte | `TablaLiquidaciones`, `LiquidacionDetalleContenido` |
+| Libro Diario | Tabla | `TablaLibroDiario` |
+| Libro Mayor contrato | Detalle consultado aparte | `MovimientosContratoContenido` |
+
+`npm run async:check` valida la presencia de los boundaries y los gates; la suite integral permanece en GitHub Actions.
+
+## Resultados esperados y límites
+
+- Se debe ver una estructura estable y un skeleton aun cuando un GET sea lento. No se afirma reducción del tiempo de ejecución del GET.
+- Autorización, validación de sesión, búsqueda del perfil y validaciones antes de mutaciones **sí pueden bloquear el acceso a datos protegidos**. Esto es intencional.
+- Las acciones con escritura no son optimistas. El botón y su confirmación quedan sujetos a la respuesta real del servidor.
+- El fallback visual se prueba con throttling en desktop/mobile; el comportamiento ante error y permisos se prueba con datos de prueba, sin modificar producción.

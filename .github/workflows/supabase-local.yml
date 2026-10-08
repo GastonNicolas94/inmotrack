@@ -45,6 +45,9 @@ jobs:
       - name: Lint Design System migration (existing unrelated lint debt tracked separately)
         run: npm run lint:design
 
+      - name: Validate async GET boundaries
+        run: npm run async:check
+
       - name: Start local Supabase
         run: npx --no-install supabase start
 
