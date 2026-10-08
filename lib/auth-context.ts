@@ -90,7 +90,8 @@ export async function getAuthenticatedUser(
   if (error || typeof subject !== "string" || subject.length === 0) return null;
 
   const profile = await findProfile(subject);
-  if (!profile) return null;
+  if (!profile || profile.auth_user_id !== subject || !Number.isSafeInteger(profile.id) || profile.id <= 0) return null;
+  if (profile.rol !== "ADMIN" && profile.rol !== "EMPLEADO" && profile.rol !== "AUDITOR") return null;
 
   return {
     id: profile.id,
