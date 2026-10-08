@@ -27,11 +27,13 @@ interface CargoPendiente {
 }
 
 
-export function ModalCalcularIntereses({ contrato }: Props) {
-  const [open, setOpen] = useState(false);
+export function ModalCalcularIntereses({ contrato, controlledOpen, onOpenChange, hideTrigger = false }: Props & { controlledOpen?: boolean; onOpenChange?: (open: boolean) => void; hideTrigger?: boolean }) {
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = onOpenChange ?? setLocalOpen;
   const [cargos, setCargos] = useState<CargoPendiente[]>([]);
   const [seleccionados, setSeleccionados] = useState<Set<number>>(new Set());
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(Boolean(controlledOpen));
   const [enviando, setEnviando] = useState(false);
   const router = useRouter();
 
@@ -87,9 +89,9 @@ export function ModalCalcularIntereses({ contrato }: Props) {
 
   return (
     <>
-      <Button size="sm" variant="outline" className="text-xs" onClick={() => { setLoading(true); setOpen(true); }}>
+      {!hideTrigger && <Button size="sm" variant="outline" className="text-xs" onClick={() => { setLoading(true); setOpen(true); }}>
         Calcular intereses
-      </Button>
+      </Button>}
 
       <Dialog open={open} onOpenChange={(next) => { if (next) setLoading(true); setOpen(next); }}>
         <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">

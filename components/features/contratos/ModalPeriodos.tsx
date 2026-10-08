@@ -18,12 +18,17 @@ interface Periodo {
 interface Props {
   contratoId: number;
   label: string; // "Av. Corrientes 1234 — García"
+  controlledOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
-export function ModalPeriodos({ contratoId, label }: Props) {
-  const [open, setOpen] = useState(false);
+export function ModalPeriodos({ contratoId, label, controlledOpen, onOpenChange, hideTrigger = false }: Props) {
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = onOpenChange ?? setLocalOpen;
   const [periodos, setPeriodos] = useState<Periodo[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(Boolean(controlledOpen));
   const router = useRouter();
 
   useEffect(() => {
@@ -42,9 +47,9 @@ export function ModalPeriodos({ contratoId, label }: Props) {
 
   return (
     <>
-      <Button size="sm" variant="outline" className="text-xs" onClick={() => setOpen(true)}>
+      {!hideTrigger && <Button size="sm" variant="outline" className="text-xs" onClick={() => setOpen(true)}>
         Períodos
-      </Button>
+      </Button>}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg">

@@ -24,10 +24,15 @@ interface Props {
   triggerLabel?: string;
   triggerVariant?: "default" | "outline" | "ghost";
   triggerSize?: "default" | "sm";
+  controlledOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }
 
-export function ModalCargarGasto({ id_propiedad, id_contrato, label, triggerLabel = "Cargar gasto", triggerVariant = "default", triggerSize = "default" }: Props) {
-  const [open, setOpen] = useState(false);
+export function ModalCargarGasto({ id_propiedad, id_contrato, label, triggerLabel = "Cargar gasto", triggerVariant = "default", triggerSize = "default", controlledOpen, onOpenChange, hideTrigger = false }: Props) {
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = onOpenChange ?? setLocalOpen;
   const [esPropio, setEsPropio] = useState(false);
   const router = useRouter();
   const contextoFijo = id_propiedad !== undefined;
@@ -79,9 +84,9 @@ export function ModalCargarGasto({ id_propiedad, id_contrato, label, triggerLabe
 
   return (
     <>
-      <Button size={triggerSize} variant={triggerVariant} onClick={() => setOpen(true)}>
+      {!hideTrigger && <Button size={triggerSize} variant={triggerVariant} onClick={() => setOpen(true)}>
         {triggerLabel}
-      </Button>
+      </Button>}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

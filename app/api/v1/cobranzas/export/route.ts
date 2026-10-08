@@ -1,4 +1,5 @@
 import { requireAuthenticatedUser } from "@/lib/auth-context";
+import { handleServiceError } from "@/lib/api-error-handler";
 import { CobranzasService } from "@/services/cobranzas.service";
 import { filtrarCobranzas, type FiltroCobranza } from "@/lib/cobranzas";
 
@@ -10,7 +11,8 @@ function cell(value: string) {
   return '"' + neutralized.replaceAll('"', '""') + '"';
 }
 export async function GET(request: Request) {
-  await requireAuthenticatedUser();
+  try {
+    await requireAuthenticatedUser();
   const url = new URL(request.url);
   const raw = url.searchParams.get("estado") ?? "todos";
   const filtro = allowed.has(raw as FiltroCobranza) ? raw as FiltroCobranza : "todos";
@@ -30,4 +32,7 @@ export async function GET(request: Request) {
       "Cache-Control": "private, no-store",
     },
   });
+  } catch (e) {
+    return handleServiceError(e);
+  }
 }

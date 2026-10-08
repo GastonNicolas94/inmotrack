@@ -34,3 +34,7 @@ Antes de tocar código, leer en este orden — es el contexto de agente mantenid
 **Componentes compartidos:** `components/ui` para primitivos, `components/layout` para shell/encabezados/tablas y `components/features/<dominio>` para UI propia. Reutilizar `PageHeader`, `TableCard`, `BadgeEstadoPeriodo` y `PeriodoResumenRow`. No clonar componentes por pantalla.
 
 Los cambios de frontend deben revisar tanto desktop como mobile y ejecutar `npm run design:check` y `npm run lint:design` además del lint integral (baseline con seis errores heredados en modales no modificados) y los tests pertinentes.
+
+## GET no bloqueantes (oct 2026)
+
+Consultar `docs/ui/async-reads.md`. Navegación rápida con shell autenticado y `Suspense` independiente por sección GET; skeletons `TableLoadingSkeleton` / `AsyncSectionSkeleton`; proteger con `requireDashboardUser`. No bloquear páginas por queries auxiliares (KPIs, menús, tablas). POST/PATCH/DELETE conservan confirmación real y no actualizaciones optimistas. Validación rápida `npm run async:check` antes de CI de integración; no confundir carga asíncrona con consultas más rápidas.

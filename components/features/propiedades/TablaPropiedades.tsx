@@ -76,7 +76,7 @@ export async function TablaPropiedades() {
                   <Badge variant="secondary">{p._count.contratos}</Badge>
                 </TableCell>
                 {mostrarAcciones ? (
-                  <TableCell className="text-right">
+                  <TableCell className="row-actions-cell text-right">
                     <DialogEditarPropiedad
                       propietarios={opcionesPropietarios}
                       propiedad={{

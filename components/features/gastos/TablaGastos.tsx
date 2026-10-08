@@ -73,7 +73,7 @@ export async function TablaGastos() {
                 <TableCell className="text-center">
                   <EstadoBadge valor={g.estado_pago} colores={COLORES_ESTADO_PAGO} />
                 </TableCell>
-                <TableCell>
+                <TableCell className="row-actions-cell">
                   {mostrarAcciones && g.estado_pago === "PENDIENTE" && <BotonMarcarPagado id={g.id} />}
                 </TableCell>
               </TableRow>

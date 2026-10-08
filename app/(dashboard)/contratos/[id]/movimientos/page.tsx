@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { TableLoadingSkeleton } from "@/components/layout/TableLoadingSkeleton";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ContratosService } from "@/services/contratos.service";
@@ -15,16 +17,30 @@ import { etiquetaTipoCargo } from "@/lib/cargos";
 
 
 export default async function MovimientosContratoPage({
-  params,
-  searchParams,
+  params, searchParams,
 }: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ desde?: string; hasta?: string }>;
 }) {
-  const { id } = await params;
-  const { desde, hasta } = await searchParams;
+  const [{ id }, { desde, hasta }] = await Promise.all([params, searchParams]);
+  const contratoId = Number(id);
+  if (!Number.isSafeInteger(contratoId) || contratoId <= 0) notFound();
+  return <Suspense fallback={<div>
+    <PageHeader eyebrow="Libro mayor del contrato" title="Movimientos del contrato"
+      description="Consultando cargos, cobros y saldos…"
+      action={<Link href="/contratos" className={buttonVariants({ variant: "outline", size: "sm" })}>
+        <ArrowLeft className="size-4" /> Volver a contratos
+      </Link>} />
+    <TableLoadingSkeleton />
+  </div>}>
+    <MovimientosContratoContenido id={contratoId} desde={desde} hasta={hasta} />
+  </Suspense>;
+}
 
-  const detalle = await ContratosService.obtenerMovimientosContrato(Number(id), {
+async function MovimientosContratoContenido({
+  id, desde, hasta,
+}: { id: number; desde?: string; hasta?: string }) {
+  const detalle = await ContratosService.obtenerMovimientosContrato(id, {
     desde: desde ? new Date(desde) : undefined,
     hasta: hasta ? new Date(hasta) : undefined,
   });
