@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { TableLoadingSkeleton } from "@/components/layout/TableLoadingSkeleton";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { LiquidacionesService } from "@/services/liquidaciones.service";
@@ -11,13 +13,20 @@ import { formatFechaLocal } from "@/lib/fecha";
 
 export default async function LiquidacionDetallePage({
   params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+}: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const idLiquidacion = Number(id);
-  if (!Number.isInteger(idLiquidacion) || idLiquidacion <= 0) notFound();
+  if (!Number.isSafeInteger(idLiquidacion) || idLiquidacion <= 0) notFound();
+  return <Suspense fallback={<div>
+    <PageHeader eyebrow={`Liquidación #${idLiquidacion}`} title="Detalle de liquidación"
+      description="Consultando el desglose de la liquidación…" />
+    <TableLoadingSkeleton />
+  </div>}>
+    <LiquidacionDetalleContenido idLiquidacion={idLiquidacion} />
+  </Suspense>;
+}
 
+async function LiquidacionDetalleContenido({ idLiquidacion }: { idLiquidacion: number }) {
   const liquidacion = await LiquidacionesService.obtenerDetalle(idLiquidacion);
   if (!liquidacion) notFound();
 
