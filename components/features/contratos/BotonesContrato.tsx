@@ -8,6 +8,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { contractRowActionPolicy } from "@/lib/row-action-policy";
 import { ModalRegistrarPago } from "@/components/features/pagos/ModalRegistrarPago";
 import { ModalCargarGasto } from "@/components/features/gastos/ModalCargarGasto";
 import { ModalCalcularIntereses } from "@/components/features/contratos/ModalCalcularIntereses";
@@ -46,8 +47,8 @@ export function BotonesContrato({
   const [activeDialog, setActiveDialog] = useState<DialogAction>(null);
   const [activating, setActivating] = useState(false);
   const label = contrato ? `${contrato.propiedad.direccion} — ${contrato.inquilino.nombre}` : `Contrato ${id}`;
-  const canCharge = ["ACTIVO", "MOROSO", "POR_VENCER", "VENCIDO"].includes(estado);
-  const canWriteForContract = mostrarAcciones && canCharge && Boolean(contrato);
+  const policy = contractRowActionPolicy(estado, mostrarAcciones, Boolean(contrato));
+  const canWriteForContract = policy.registerPayment;
 
   function closeDialog(next: boolean) {
     if (!next) setActiveDialog(null);
@@ -74,7 +75,7 @@ export function BotonesContrato({
 
   return (
     <div className="contract-row-actions flex min-w-0 items-center justify-end gap-2">
-      {estado === "BORRADOR" && mostrarAcciones ? (
+      {policy.activate ? (
         <Button size="sm" variant="outline" disabled={activating} className="contract-main-action h-9 rounded-md border-primary/20 bg-brand-soft px-3 font-semibold text-primary hover:bg-brand-soft/80"
           onClick={activar}>
           <Check aria-hidden className="size-4" />

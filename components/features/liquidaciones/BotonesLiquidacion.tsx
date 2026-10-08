@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Ellipsis, CheckCircle2, CircleCheckBig } from "lucide-react";
 import { toast } from "sonner";
+import { liquidationRowActionPolicy } from "@/lib/row-action-policy";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -23,8 +24,8 @@ export function BotonesLiquidacion({
 }) {
   const router = useRouter();
   const [working, setWorking] = useState(false);
-  const puedeProcesar = (estado === "PENDIENTE" && puedeAprobar)
-    || (estado === "APROBADA" && esAdmin);
+  const policy = liquidationRowActionPolicy(estado, puedeAprobar, esAdmin);
+  const puedeProcesar = policy.approve || policy.confirmPayment;
   const label = estado === "PENDIENTE" ? "Aprobar liquidación" : "Confirmar pago";
   const url = estado === "PENDIENTE" ? "aprobar" : "confirmar-pago";
 
