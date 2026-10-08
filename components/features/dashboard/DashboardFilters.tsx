@@ -45,7 +45,7 @@ export function DashboardFilters({
           <option value="terceros">Terceros</option>
         </select>
       </label>
-      <button type="submit" className="h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Aplicar</button>
+      <button type="submit" className="h-12 w-full rounded-md bg-primary sm:h-9 px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Aplicar</button>
     </form>
   );
 }

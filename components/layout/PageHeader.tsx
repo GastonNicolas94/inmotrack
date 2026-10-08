@@ -15,7 +15,7 @@ export function PageHeader({ eyebrow, title, description, action }: {
         </h1>
         {description ? <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-muted-foreground">{description}</p> : null}
       </div>
-      {action ? <div className="w-full shrink-0 [&_[data-slot=button]]:min-h-12 sm:w-auto sm:[&_[data-slot=button]]:min-h-0">{action}</div> : null}
+      {action ? <div className="w-full shrink-0 [&_[data-slot=button]]:min-h-12 [&_[data-slot=button]]:w-full sm:w-auto sm:[&_[data-slot=button]]:min-h-0 sm:[&_[data-slot=button]]:w-auto">{action}</div> : null}
     </header>
   );
 }
