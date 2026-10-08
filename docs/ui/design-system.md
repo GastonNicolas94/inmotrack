@@ -38,7 +38,7 @@ Declarados en `app/globals.css`, canónicos OKLCH:
 
 La barra lateral y el drawer móvil llevan **InmoTrack**, nunca imágenes o marcas específicas de una inmobiliaria. Branding textual con ícono lineal Lucide (`Building2`) y acento coral sobre `--brand-soft`. Nav agrupada en `GENERAL`, `GESTIÓN`, `FINANZAS` y, solo cuando corresponda, `HERRAMIENTAS`. Links compactos, 38px de altura, íconos de 17px, activo con línea coral a la izquierda y fondo coral pálido. Evitar listas largas de links de igual jerarquía, encabezados sobredimensionados y espaciados excesivos.
 
-Drawer móvil: ancho máximo 280px, marca en cabecera de 76px, desplazamiento exclusivo de la lista de navegación para mantener visible el pie con usuario y salida, scrim, cierre con Escape y navegación accesible mediante teclado. Sidebar escritorio de 242px y estado colapsado de 72px; las rutas reales siguen disponibles. Se mantiene la barra inferior de cinco accesos móvil.
+Drawer móvil: ancho máximo 280px, marca en cabecera de 76px, desplazamiento exclusivo de la lista de navegación para mantener visible el pie con usuario y salida, scrim, cierre con Escape y navegación accesible mediante teclado. Sidebar escritorio de 242px y estado colapsado de 72px; las rutas reales siguen disponibles. El ítem Cobros presenta el conteo real de períodos con saldo pendiente; si la consulta falla, se omite el contador sin bloquear la navegación. Se mantiene la barra inferior de cinco accesos móvil.
 
 ## Identidad de acceso
 

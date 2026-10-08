@@ -64,6 +64,8 @@ docs/archive/prisma-migrations/      → Historia heredada, solo referencia
 proxy.ts                             → Gate grueso de identidad; cron exceptuado por path
 ```
 
+El layout lee un conteo agregado para el badge de pendientes desde `MenuPendientesService`, sin cargar toda la deuda del portfolio y con fallback no bloqueante.
+
 ## Request / data flow
 
 ```text

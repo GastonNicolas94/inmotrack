@@ -13,12 +13,13 @@ const STORAGE_KEY = "inmotrack:sidebar-collapsed";
 const MOBILE_HREFS = ["/", "/contratos", "/pagos", "/propiedades", "/liquidaciones"];
 
 export function DashboardShell({
-  email, rol, onLogout, showTestClock, children,
+  email, rol, onLogout, showTestClock, pendingCollections, children,
 }: {
   email: string;
   rol: AuthenticatedUser["rol"];
   onLogout: (formData: FormData) => void | Promise<void>;
   showTestClock?: boolean;
+  pendingCollections?: number | null;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -134,7 +135,7 @@ export function DashboardShell({
           </button>
         </div>
 
-        <DashboardNav onNavigate={() => setMobileOpen(false)} showTestClock={showTestClock} />
+        <DashboardNav onNavigate={() => setMobileOpen(false)} showTestClock={showTestClock} pendingCollections={pendingCollections} />
 
         <div className="sidebar-footer shrink-0 border-t border-border px-3 py-3">
           <div className="sidebar-account flex items-center gap-2.5 rounded-md px-2 py-1">
