@@ -178,6 +178,63 @@
 @media (min-width: 761px) {
   .inmotrack-mobile-only { display: none !important; }
 }
+
+/* Desktop tables become accessible label/value cards at <=760px.
+ * Keep original <table> semantics in the DOM and hide only the header visually. */
+@media (max-width: 760px) {
+  .inmotrack-card-table { display: block; width: 100%; }
+  .inmotrack-card-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+  .inmotrack-card-table tbody { display: grid; gap: 12px; padding: 12px; background: var(--background); }
+  .inmotrack-card-table tbody tr { display: grid; width: 100%; min-width: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--card); overflow: hidden; }
+  .inmotrack-card-table tbody td { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px; min-width: 0; padding: 11px 12px; border-bottom: 1px solid var(--border); text-align: right; white-space: normal; overflow-wrap: anywhere; }
+  .inmotrack-card-table tbody td:first-child { display: block; padding: 14px 12px; text-align: left; font-weight: 700; }
+  .inmotrack-card-table tbody td:last-child { border-bottom: none; }
+  .inmotrack-card-table tbody td::before { content: ""; display: block; flex: 0 0 92px; text-align: left; color: var(--muted-foreground); font-family: var(--font-manrope),sans-serif; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; }
+  .inmotrack-card-table tbody td:first-child::before,
+  .inmotrack-card-table tbody td[colspan]::before { display: none; }
+  .inmotrack-card-table tbody td[colspan] { display: block; padding: 24px 12px; text-align: center; }
+  .inmotrack-card-table tbody td > div { min-width: 0; }
+  .inmotrack-card-table tbody td:last-child:not(:first-child) > div { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+  .inmotrack-card-table tbody td:last-child [data-slot="button"] { min-height: 38px; }
+  .inmotrack-card-table[data-kind="contratos"] td:nth-child(2)::before { content: "Inquilino"; }
+  .inmotrack-card-table[data-kind="contratos"] td:nth-child(3)::before { content: "Propietarios"; }
+  .inmotrack-card-table[data-kind="contratos"] td:nth-child(4)::before { content: "Vigencia"; }
+  .inmotrack-card-table[data-kind="contratos"] td:nth-child(5)::before { content: "Monto base"; }
+  .inmotrack-card-table[data-kind="contratos"] td:nth-child(6)::before { content: "Estado"; }
+  .inmotrack-card-table[data-kind="contratos"] td:nth-child(7)::before { content: "Acciones"; }
+  .inmotrack-card-table[data-kind="propiedades"] td:nth-child(2)::before { content: "Propietarios"; }
+  .inmotrack-card-table[data-kind="propiedades"] td:nth-child(3)::before { content: "Tipo"; }
+  .inmotrack-card-table[data-kind="propiedades"] td:nth-child(4)::before { content: "Contratos"; }
+  .inmotrack-card-table[data-kind="propiedades"] td:nth-child(5)::before { content: "Acciones"; }
+  .inmotrack-card-table[data-kind="propietarios"] td:nth-child(2)::before { content: "CBU"; }
+  .inmotrack-card-table[data-kind="propietarios"] td:nth-child(3)::before { content: "Propiedades"; }
+  .inmotrack-card-table[data-kind="propietarios"] td:nth-child(4)::before { content: "Acciones"; }
+  .inmotrack-card-table[data-kind="inquilinos"] td:nth-child(2)::before { content: "DNI / CUIT"; }
+  .inmotrack-card-table[data-kind="inquilinos"] td:nth-child(3)::before { content: "Email"; }
+  .inmotrack-card-table[data-kind="inquilinos"] td:nth-child(4)::before { content: "Contratos"; }
+  .inmotrack-card-table[data-kind="inquilinos"] td:nth-child(5)::before { content: "Acciones"; }
+  .inmotrack-card-table[data-kind="gastos"] td:nth-child(2)::before { content: "Propiedad"; }
+  .inmotrack-card-table[data-kind="gastos"] td:nth-child(3)::before { content: "Cargo a"; }
+  .inmotrack-card-table[data-kind="gastos"] td:nth-child(4)::before { content: "Monto"; }
+  .inmotrack-card-table[data-kind="gastos"] td:nth-child(5)::before { content: "Estado"; }
+  .inmotrack-card-table[data-kind="gastos"] td:nth-child(6)::before { content: "Acciones"; }
+  .inmotrack-card-table[data-kind="liquidaciones"] td:nth-child(2)::before { content: "Fecha"; }
+  .inmotrack-card-table[data-kind="liquidaciones"] td:nth-child(3)::before { content: "Bruto"; }
+  .inmotrack-card-table[data-kind="liquidaciones"] td:nth-child(4)::before { content: "Retenciones"; }
+  .inmotrack-card-table[data-kind="liquidaciones"] td:nth-child(5)::before { content: "Neto"; }
+  .inmotrack-card-table[data-kind="liquidaciones"] td:nth-child(6)::before { content: "Estado"; }
+  .inmotrack-card-table[data-kind="liquidaciones"] td:nth-child(7)::before { content: "Acciones"; }
+  .inmotrack-card-table[data-kind="transacciones"] td:nth-child(2)::before { content: "Tipo"; }
+  .inmotrack-card-table[data-kind="transacciones"] td:nth-child(3)::before { content: "Caja"; }
+  .inmotrack-card-table[data-kind="transacciones"] td:nth-child(4)::before { content: "Monto"; }
+  .inmotrack-card-table[data-kind="transacciones"] td:nth-child(5)::before { content: "Usuario"; }
+  .inmotrack-card-table[data-kind="transacciones"] td:nth-child(6)::before { content: "Acciones"; }
+  .inmotrack-card-table[data-kind="contratos"] tbody td:nth-child(7),
+  .inmotrack-card-table[data-kind="liquidaciones"] tbody td:nth-child(7) { align-items: stretch; }
+  .inmotrack-card-table[data-kind="contratos"] tbody td:nth-child(7) > div,
+  .inmotrack-card-table[data-kind="liquidaciones"] tbody td:nth-child(7) > div { flex-wrap: wrap; justify-content: flex-end; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }

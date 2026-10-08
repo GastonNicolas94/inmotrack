@@ -24,7 +24,7 @@ export async function TablaPropietarios() {
 
   return (
     <TableCard action={puedeCrear ? <DialogNuevoPropietario /> : undefined}>
-      <Table>
+      <Table className="inmotrack-card-table" data-kind="propietarios">
         <TableHeader>
           <TableRow>
             <TableHead>Nombre</TableHead>

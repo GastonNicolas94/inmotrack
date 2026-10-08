@@ -30,7 +30,7 @@ export async function TablaPropiedades() {
     <TableCard
       action={mostrarAcciones ? <DialogNuevaPropiedad propietarios={opcionesPropietarios} /> : undefined}
     >
-      <Table>
+      <Table className="inmotrack-card-table" data-kind="propiedades">
         <TableHeader>
           <TableRow>
             <TableHead>Dirección</TableHead>

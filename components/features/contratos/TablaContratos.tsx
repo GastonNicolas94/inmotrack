@@ -21,7 +21,7 @@ export async function TablaContratos() {
 
   return (
     <TableCard>
-      <Table>
+      <Table className="inmotrack-card-table" data-kind="contratos">
         <TableHeader>
           <TableRow>
             <TableHead>Propiedad</TableHead>

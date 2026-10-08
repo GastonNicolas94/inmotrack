@@ -29,7 +29,7 @@ export async function TablaLibroDiario({
 
   return (
     <TableCard>
-      <Table>
+      <Table className="inmotrack-card-table" data-kind="transacciones">
         <TableHeader>
           <TableRow>
             <TableHead>Fecha</TableHead>

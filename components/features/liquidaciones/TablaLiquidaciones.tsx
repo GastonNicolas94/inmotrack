@@ -28,7 +28,7 @@ export async function TablaLiquidaciones() {
 
   return (
     <TableCard action={mostrarAcciones ? <ModalGenerarLiquidacion propietarios={propietarios} /> : undefined}>
-      <Table>
+      <Table className="inmotrack-card-table" data-kind="liquidaciones">
         <TableHeader>
           <TableRow>
             <TableHead>Propietario</TableHead>

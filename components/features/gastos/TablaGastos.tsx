@@ -32,7 +32,7 @@ export async function TablaGastos() {
 
   return (
     <TableCard action={mostrarAcciones ? <ModalCargarGasto triggerLabel="+ Nuevo gasto" /> : undefined}>
-      <Table>
+      <Table className="inmotrack-card-table" data-kind="gastos">
         <TableHeader>
           <TableRow>
             <TableHead>Concepto</TableHead>

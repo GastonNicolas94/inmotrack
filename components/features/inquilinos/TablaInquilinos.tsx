@@ -13,7 +13,7 @@ export async function TablaInquilinos() {
 
   return (
     <TableCard action={user.rol !== "AUDITOR" ? <DialogNuevoInquilino /> : undefined}>
-      <Table>
+      <Table className="inmotrack-card-table" data-kind="inquilinos">
         <TableHeader>
           <TableRow>
             <TableHead>Nombre</TableHead>
