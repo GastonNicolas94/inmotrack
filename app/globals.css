@@ -241,6 +241,34 @@
   .toaster[data-sonner-toaster] { bottom: calc(68px + env(safe-area-inset-bottom)) !important; }
 }
 [data-slot="table"] tr[hidden] { display: none !important; }
+
+/* Etiquetas de las tablas de detalle móvil: saldos auditables sin scroll horizontal. */
+@media (max-width: 760px) {
+  .inmotrack-card-table[data-kind="movimientos-contrato"] td:nth-child(2)::before { content: "Período"; }
+  .inmotrack-card-table[data-kind="movimientos-contrato"] td:nth-child(3)::before { content: "Concepto"; }
+  .inmotrack-card-table[data-kind="movimientos-contrato"] td:nth-child(4)::before { content: "Debe"; }
+  .inmotrack-card-table[data-kind="movimientos-contrato"] td:nth-child(5)::before { content: "Haber"; }
+  .inmotrack-card-table[data-kind="movimientos-contrato"] td:nth-child(6)::before { content: "Saldo"; }
+  .inmotrack-card-table[data-kind="movimientos-contrato"] td:nth-child(7)::before { content: "Usuario"; }
+  .inmotrack-card-table[data-kind="liquidacion-alquileres"] td:nth-child(2)::before { content: "Período"; }
+  .inmotrack-card-table[data-kind="liquidacion-alquileres"] td:nth-child(3)::before { content: "Inquilino"; }
+  .inmotrack-card-table[data-kind="liquidacion-alquileres"] td:nth-child(4)::before { content: "Participación"; }
+  .inmotrack-card-table[data-kind="liquidacion-alquileres"] td:nth-child(5)::before { content: "Cargos y cobros"; }
+  .inmotrack-card-table[data-kind="liquidacion-alquileres"] td:nth-child(6)::before { content: "Bruto"; }
+  .inmotrack-card-table[data-kind="liquidacion-alquileres"] td:nth-child(7)::before { content: "Comisión"; }
+  .inmotrack-card-table[data-kind="liquidacion-alquileres"] td:nth-child(8)::before { content: "Neto"; }
+  .inmotrack-card-table[data-kind="liquidacion-gastos"] td:nth-child(2)::before { content: "Gasto"; }
+  .inmotrack-card-table[data-kind="liquidacion-gastos"] td:nth-child(3)::before { content: "Fecha"; }
+  .inmotrack-card-table[data-kind="liquidacion-gastos"] td:nth-child(4)::before { content: "Participación"; }
+  .inmotrack-card-table[data-kind="liquidacion-gastos"] td:nth-child(5)::before { content: "Estado"; }
+  .inmotrack-card-table[data-kind="liquidacion-gastos"] td:nth-child(6)::before { content: "Monto"; }
+  .inmotrack-card-table[data-kind="liquidacion-adelantos"] td:nth-child(2)::before { content: "Fecha original"; }
+  .inmotrack-card-table[data-kind="liquidacion-adelantos"] td:nth-child(3)::before { content: "Monto original"; }
+  .inmotrack-card-table[data-kind="liquidacion-adelantos"] td:nth-child(4)::before { content: "Descontado"; }
+  .inmotrack-card-table[data-kind="liquidacion-alquileres"] tbody td:nth-child(5) > div { width: 100%; text-align: left; }
+  .inmotrack-card-table[data-kind="liquidacion-alquileres"] tbody td:nth-child(5)::before { flex-basis: 100%; }
+  .inmotrack-card-table[data-kind="movimientos-contrato"] tbody td:last-child { overflow-wrap: anywhere; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }

@@ -77,7 +77,7 @@ export function DetalleLiquidacion({
       {!desglose.consistente && (
         <div
           role="alert"
-          className="rounded-xl bg-status-danger-bg px-4 py-3 text-sm text-status-danger"
+          className="rounded-lg bg-status-danger-bg px-4 py-3 text-sm text-status-danger"
         >
           El detalle no reconcilia con los totales guardados de la liquidación.
         </div>
@@ -85,7 +85,7 @@ export function DetalleLiquidacion({
 
       <section aria-labelledby="alquileres-liquidacion" className="space-y-4">
         <div>
-          <h2 id="alquileres-liquidacion" className="font-heading text-2xl font-semibold">
+          <h2 id="alquileres-liquidacion" className="font-heading text-[18px] font-bold">
             Alquileres cobrados
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -93,7 +93,7 @@ export function DetalleLiquidacion({
           </p>
         </div>
         <TableCard>
-          <Table>
+          <Table className="inmotrack-card-table" data-kind="liquidacion-alquileres">
             <TableHeader>
               <TableRow>
                 <TableHead>Propiedad</TableHead>
@@ -163,7 +163,7 @@ export function DetalleLiquidacion({
 
       <section aria-labelledby="gastos-liquidacion" className="space-y-4">
         <div>
-          <h2 id="gastos-liquidacion" className="font-heading text-2xl font-semibold">
+          <h2 id="gastos-liquidacion" className="font-heading text-[18px] font-bold">
             Gastos descontados
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -171,7 +171,7 @@ export function DetalleLiquidacion({
           </p>
         </div>
         <TableCard>
-          <Table>
+          <Table className="inmotrack-card-table" data-kind="liquidacion-gastos">
             <TableHeader>
               <TableRow>
                 <TableHead>Propiedad</TableHead>
@@ -222,7 +222,7 @@ export function DetalleLiquidacion({
 
       <section aria-labelledby="adelantos-liquidacion" className="space-y-4">
         <div>
-          <h2 id="adelantos-liquidacion" className="font-heading text-2xl font-semibold">
+          <h2 id="adelantos-liquidacion" className="font-heading text-[18px] font-bold">
             Adelantos descontados
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -230,7 +230,7 @@ export function DetalleLiquidacion({
           </p>
         </div>
         <TableCard>
-          <Table>
+          <Table className="inmotrack-card-table" data-kind="liquidacion-adelantos">
             <TableHeader>
               <TableRow>
                 <TableHead>Adelanto</TableHead>

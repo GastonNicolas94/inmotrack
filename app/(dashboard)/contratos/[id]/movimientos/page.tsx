@@ -44,12 +44,12 @@ export default async function MovimientosContratoPage({
         }
       />
 
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row">
         <FiltroRangoFecha />
       </div>
 
       <TableCard>
-        <Table>
+        <Table className="inmotrack-card-table" data-kind="movimientos-contrato">
           <TableHeader>
             <TableRow>
               <TableHead>Fecha</TableHead>
@@ -85,15 +85,15 @@ export default async function MovimientosContratoPage({
                       <BadgeTipoTransaccion tipo={m.tipo} />
                     )}
                   </TableCell>
-                  <TableCell className="text-right font-mono text-sm">
+                  <TableCell className="text-right font-heading tabular-nums text-sm">
                     {Number(m.debe) > 0 ? fmt(m.debe.toString()) : "—"}
                   </TableCell>
-                  <TableCell className="text-right font-mono text-sm text-status-success">
+                  <TableCell className="text-right font-heading tabular-nums text-sm text-foreground">
                     {Number(m.haber) !== 0 ? fmt(m.haber.toString()) : "—"}
                   </TableCell>
                   <TableCell
-                    className={`text-right font-mono text-sm font-semibold ${
-                      Number(m.saldo) > 0 ? "text-status-danger" : "text-status-success"
+                    className={`text-right font-heading tabular-nums text-sm font-semibold ${
+                      Number(m.saldo) > 0 ? "text-foreground" : "text-status-success"
                     }`}
                   >
                     {fmt(m.saldo.toString())}
