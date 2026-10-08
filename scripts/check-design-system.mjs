@@ -12,6 +12,8 @@ const checks = [
   ["components/layout/DashboardShell.tsx", /Gestión inmobiliaria/, "branding neutro InmoTrack"],
   ["components/layout/DashboardNav.tsx", /GESTIÓN[\s\S]*FINANZAS/, "navegación agrupada"],
   ["components/layout/DashboardShell.tsx", /keepFocusInsideDrawer/, "navegación mobile accesible"],
+  ["lib/supabase/login.ts", /router\.replace\("\/contratos"\)/, "redirección de login"],
+  ["app/(dashboard)/layout.tsx", /<Suspense fallback=\{null\}>[\s\S]*<PendingCollectionsBadge \/>/, "conteo no bloqueante del menú"],
   ["app/(auth)/login/page.tsx", /submissionInProgress\.current/, "bloqueo sincrónico de doble ingreso"],
   ["app/(auth)/login/page.tsx", /Acceso confirmado\. Cargando tus contratos/, "feedback durante navegación"],
   ["app/(auth)/login/page.tsx", /role="status" aria-live="polite"/, "estado accesible de login"],
@@ -29,4 +31,5 @@ for (const [file, pattern, description] of checks) {
 if (/logo-macchieraldo|<img\b|Macchieraldo|Villarruel/.test(read("components/layout/DashboardShell.tsx"))) {
   throw new Error("Design System: el shell no debe mostrar branding de una inmobiliaria");
 }
-console.log("Design System v1.0: 20 controles estáticos OK");
+if (/router\\.refresh\\(\\)/.test(read("lib/supabase/login.ts"))) { throw new Error("Evitar refresh redundante en login"); }
+console.log("Design System v1.0: 22 controles estáticos OK");

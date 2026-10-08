@@ -19,7 +19,7 @@ export function DashboardShell({
   rol: AuthenticatedUser["rol"];
   onLogout: (formData: FormData) => void | Promise<void>;
   showTestClock?: boolean;
-  pendingCollections?: number | null;
+  pendingCollections?: ReactNode;
   children: ReactNode;
 }) {
   const pathname = usePathname();

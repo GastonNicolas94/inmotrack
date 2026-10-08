@@ -35,7 +35,7 @@ test("loginAndRedirect navigates only after successful authentication", async ()
     async () => ({ error: null }),
   );
   assert.equal(loggedIn, true);
-  assert.deepEqual(calls, ["replace:/contratos", "refresh"]);
+  assert.deepEqual(calls, ["replace:/contratos"]);
 });
 
 test("loginAndRedirect does not navigate after an authentication error", async () => {
@@ -60,7 +60,7 @@ test("loginAndRedirect signals successful auth before starting navigation", asyn
     () => calls.push("authenticated"),
   );
   assert.equal(ok, true);
-  assert.deepEqual(calls, ["authenticated", "replace:/contratos", "refresh"]);
+  assert.deepEqual(calls, ["authenticated", "replace:/contratos"]);
 });
 
 test("loginAndRedirect never shows redirecting state for rejected credentials", async () => {
@@ -74,4 +74,16 @@ test("loginAndRedirect never shows redirecting state for rejected credentials", 
   );
   assert.equal(ok, false);
   assert.deepEqual(calls, []);
+});
+
+test("login success does not trigger an extra router refresh", async () => {
+  const calls: string[] = [];
+  const result = await loginAndRedirect(
+    "user@example.com",
+    "secret",
+    { replace: (path) => calls.push(path), refresh: () => calls.push("unnecessary-refresh") },
+    async () => ({ error: null }),
+  );
+  assert.equal(result, true);
+  assert.deepEqual(calls, ["/contratos"]);
 });

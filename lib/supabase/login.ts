@@ -37,7 +37,7 @@ export async function loginAndRedirect(
   const { error } = await attempt(email, password);
   if (error) return false;
   onAuthenticated?.();
+  // App Router fetches the new route automatically; refresh() can trigger redundant work.
   router.replace("/contratos");
-  router.refresh();
   return true;
 }

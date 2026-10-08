@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import {
   BookOpenText, Building2, Clock3, FileText, HandCoins, LayoutDashboard,
@@ -30,11 +31,11 @@ const GROUPS = [
 export function DashboardNav({
   onNavigate,
   showTestClock = false,
-  pendingCollections = null,
+  pendingCollections,
 }: {
   onNavigate?: () => void;
   showTestClock?: boolean;
-  pendingCollections?: number | null;
+  pendingCollections?: ReactNode;
 }) {
   const pathname = usePathname();
 
@@ -58,7 +59,7 @@ export function DashboardNav({
         {active && <span aria-hidden="true" className="absolute inset-y-[9px] left-0 w-[3px] rounded-r bg-primary" />}
         <Icon aria-hidden className={cn("size-[17px] shrink-0", active && "text-primary")} strokeWidth={1.8} />
         <span className="sidebar-label flex-1 whitespace-nowrap">{item.label}</span>
-        {item.href === "/pagos" && pendingCollections !== null && pendingCollections > 0 ? <span className="sidebar-label inline-flex min-w-5 items-center justify-center rounded bg-brand-soft px-1 py-0.5 text-[10px] font-bold tabular-nums text-primary" aria-label={`${pendingCollections} períodos pendientes`}>{pendingCollections > 99 ? "99+" : pendingCollections}</span> : null}
+        {item.href === "/pagos" ? pendingCollections : null}
         <NavLinkPendingIndicator />
       </Link>
     );
