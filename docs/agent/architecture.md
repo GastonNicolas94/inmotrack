@@ -1,6 +1,6 @@
 ---
 type: Architecture
-version: e4507ac
+version: f67614b
 validated: 2026-10-07
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
@@ -30,6 +30,8 @@ Next.js App Router monolito, con una separación de capas informal pero consiste
 | Servicios (lógica de negocio) | `services/*.ts` | Toda regla de negocio y toda llamada a Prisma vive acá. Exporta un objeto `XxxService` con métodos async. Operaciones multi-tabla van dentro de `prisma.$transaction`. |
 | Helpers puros | `lib/*.ts` | Funciones sin I/O (cálculos de fecha, saldos, prelación, punitorios, calendario de ajustes) o wrappers finos sobre un recurso externo (`lib/db.ts`, `lib/auth-context.ts`, `lib/supabase/*`). Se testean sin base de datos. |
 | UI | `components/**`, `app/(dashboard)/**`, `app/(auth)/**` | Server Components para listar (`TablaXxx.tsx`, fetch directo al service), Client Components (`"use client"`) para todo lo que tiene estado/submit (`ModalXxx.tsx`, `DialogXxx.tsx`, `WizardXxx.tsx`). |
+
+La pantalla de cobranza agrega `CobranzasService` (consulta de períodos/cargos/aplicaciones), `lib/cobranzas.ts` (saldo/estados/filtros puros), `CobranzasListado` y un CSV protegido en `/api/v1/cobranzas/export`. `ListadoTools` encapsula búsqueda en la tabla y exportación local; `DashboardBottomLists` consume servicios read-only de propietarios y pagos.
 
 ## Folder layout
 

@@ -46,6 +46,16 @@ El login presenta la **identidad de producto InmoTrack**, no la imagen ni el nom
 
 La autenticación y los flujos de confirmación de credenciales son independientes de este cambio visual.
 
+## Listados, búsqueda y cobranza
+
+`/pagos` incorpora cobranza por **período contractual**, no únicamente historial de aplicaciones: pestañas Todos, Pendientes (incluye vencidos), Vencidos y Cobrados; búsqueda por inquilino, propiedad, período o contrato; contadores y CSV con acceso autenticado. Los saldos se calculan a partir de cargos y aplicaciones (incluidos contra-asientos), con fecha de corte Argentina obtenida de `AppClock`. El modal de registro mantiene la prelación existente y expone visualmente el monto pendiente, la cobertura simulada y el saldo sobrante. El historial de cobros anterior sigue disponible al pie.
+
+Las tablas de módulos de negocio usan `inmotrack-card-table`: en mobile cada fila aparece como ficha etiquetada; las acciones se preservan. `ListadoTools` aporta búsqueda libre y exportación CSV local de los datos presentes en los listados. La búsqueda se realiza sobre el conjunto cargado y **no** equivale a búsquedas paginadas o filtros en base de datos. El Libro Diario continúa siendo de solo lectura salvo contra-asientos autorizados. Los CSV escapan fórmulas para impedir ejecución accidental en Excel.
+
+## Dashboard y composición
+
+Las cajas siguen separadas contablemente. El Dashboard operativo agrega listas inferiores de propietarios y actividad de pagos reales, solo en desktop. En mobile las dos vistas siguen disponibles mediante selector compacto (en lugar de pestañas), respetando la funcionalidad del proyecto. El contador junto a Cobros muestra períodos con saldo pendiente. El pie identifica el producto y su versión, no datos de ejemplo.
+
 ## Separación de UI y dominio
 
 Este documento describe diseño, **no** modifica autorizaciones ni contabilidad. Mantener roles reales ADMIN, EMPLEADO y AUDITOR (sin escritura), flujo de pagos actual y liquidaciones proporcionales. Saldos de cajas en Dashboard financiero: acumulado de `transacciones` agrupado por `caja_destino`, etiquetado **contable**: no representa conciliación bancaria ni un total disponible. Los filtros de período/cartera se aplican a los KPI de período; los saldos contables globales se etiquetan como globales.
