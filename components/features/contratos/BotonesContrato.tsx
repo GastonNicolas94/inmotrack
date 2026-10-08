@@ -121,18 +121,22 @@ export function BotonesContrato({
       </DropdownMenu>
 
       {/* Modals must stay mounted even after the menu unmounts its items. */}
-      <ModalPeriodos contratoId={id} label={label} hideTrigger
-        controlledOpen={activeDialog === "periodos"} onOpenChange={closeDialog} />
-      <ModalAjustesContrato contratoId={id} label={label} canWrite={mostrarAcciones}
-        ajustePendiente={ajustePendiente} hideTrigger
-        controlledOpen={activeDialog === "ajustes"} onOpenChange={closeDialog} />
-      {canWriteForContract && contrato ? (
-        <>
-          <ModalCalcularIntereses contrato={contrato} hideTrigger
-            controlledOpen={activeDialog === "intereses"} onOpenChange={closeDialog} />
-          <ModalCargarGasto id_propiedad={contrato.id_propiedad} id_contrato={contrato.id}
-            label={label} hideTrigger controlledOpen={activeDialog === "gasto"} onOpenChange={closeDialog} />
-        </>
+      {activeDialog === "periodos" ? (
+        <ModalPeriodos contratoId={id} label={label} hideTrigger
+          controlledOpen onOpenChange={closeDialog} />
+      ) : null}
+      {activeDialog === "ajustes" ? (
+        <ModalAjustesContrato contratoId={id} label={label} canWrite={mostrarAcciones}
+          ajustePendiente={ajustePendiente} hideTrigger
+          controlledOpen onOpenChange={closeDialog} />
+      ) : null}
+      {activeDialog === "intereses" && canWriteForContract && contrato ? (
+        <ModalCalcularIntereses contrato={contrato} hideTrigger
+          controlledOpen onOpenChange={closeDialog} />
+      ) : null}
+      {activeDialog === "gasto" && canWriteForContract && contrato ? (
+        <ModalCargarGasto id_propiedad={contrato.id_propiedad} id_contrato={contrato.id}
+          label={label} hideTrigger controlledOpen onOpenChange={closeDialog} />
       ) : null}
     </div>
   );

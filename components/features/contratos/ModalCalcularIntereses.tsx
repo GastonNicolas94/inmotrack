@@ -33,7 +33,7 @@ export function ModalCalcularIntereses({ contrato, controlledOpen, onOpenChange,
   const setOpen = onOpenChange ?? setLocalOpen;
   const [cargos, setCargos] = useState<CargoPendiente[]>([]);
   const [seleccionados, setSeleccionados] = useState<Set<number>>(new Set());
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(Boolean(controlledOpen));
   const [enviando, setEnviando] = useState(false);
   const router = useRouter();
 

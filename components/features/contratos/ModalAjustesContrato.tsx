@@ -51,7 +51,7 @@ export function ModalAjustesContrato({ contratoId, label, canWrite, ajustePendie
   const [localOpen, setLocalOpen] = useState(false);
   const open = controlledOpen ?? localOpen;
   const setOpen = onOpenChange ?? setLocalOpen;
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(Boolean(controlledOpen));
   const [enviando, setEnviando] = useState(false);
   const [ajustes, setAjustes] = useState<AjusteContratoDto[]>([]);
   const [montoNuevo, setMontoNuevo] = useState("");

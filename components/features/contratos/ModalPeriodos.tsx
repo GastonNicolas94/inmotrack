@@ -28,7 +28,7 @@ export function ModalPeriodos({ contratoId, label, controlledOpen, onOpenChange,
   const open = controlledOpen ?? localOpen;
   const setOpen = onOpenChange ?? setLocalOpen;
   const [periodos, setPeriodos] = useState<Periodo[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(Boolean(controlledOpen));
   const router = useRouter();
 
   useEffect(() => {
