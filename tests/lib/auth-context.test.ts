@@ -228,3 +228,15 @@ test("maps HttpError before generic service errors", async () => {
     message: "Acceso denegado.",
   });
 });
+
+
+test("rejects mismatched domain identity and unknown roles", async () => {
+  const claims = { data: { claims: { sub: "expected-sub" } }, error: null };
+  const valid = {
+    id: 10, auth_user_id: "expected-sub", email: "test@example.com",
+    rol: "ADMIN" as const, puede_aprobar_liquidaciones: false, id_propietario: null,
+  };
+  assert.equal(await getAuthenticatedUser(dependencies(claims, { ...valid, auth_user_id: "other-sub" })), null);
+  assert.equal(await getAuthenticatedUser(dependencies(claims, { ...valid, id: 0 })), null);
+  assert.equal(await getAuthenticatedUser(dependencies(claims, { ...valid, rol: "SUPERADMIN" as Profile["rol"] })), null);
+});
