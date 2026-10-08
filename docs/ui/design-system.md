@@ -67,3 +67,11 @@ Este documento describe diseño, **no** modifica autorizaciones ni contabilidad.
 - `components/ui` contiene Base UI/shadcn. `components/layout`: shell, navegación, encabezados y contenedores. `components/features`: módulos de dominio.
 - `PageHeader`, `TableCard`, `DashboardMetricCard`, `CashBalancesCards` son patrones reutilizables.
 - Comprobar: `npm run design:check`, `npm run lint:design`, `npm run lint` (este último posee seis errores heredados `react-hooks/set-state-in-effect` en modales previos a la migración), `npm run build`, roles, flujo de registro/consulta, desktop y viewport <=760px. La automatización de diseño es un control estático, no reemplaza la comprobación visual ni los tests de integración.
+
+## Acciones por registro — desktop y mobile
+
+- Listados con varias acciones: una sola CTA contextual visible y un menú de tres puntos accesible por teclado. Para **Contratos** la CTA es «Registrar pago» (o «Activar» en borradores), y el menú contiene Períodos, Ajustes, Calcular intereses y Registrar gasto según estado y permisos.
+- En **Liquidaciones** «Ver detalle» es la acción visible para todos los roles autorizados a ver el listado; Aprobar y Confirmar pago solo aparecen en menú para quienes tienen permisos. Las escrituras esperan respuesta efectiva del backend.
+- En listados con una única acción (Propiedades, Propietarios, Inquilinos, Gastos y Libro Diario) conservar el control sin un bloque visual «ACCIONES» de gran altura, dentro de un pie compacto en mobile.
+- Los diálogos se montan fuera del menú contextual; cerrar el menú jamás destruye el modal abierto. No introducir botones ocultos por CSS que salteen autorización.
+- En mobile los contratos presentan dirección y estado en el encabezado, inquilino/copropietarios, vigencia e importe, y un único pie de acciones. En escritorio el menú siempre queda al extremo derecho de la tabla.
