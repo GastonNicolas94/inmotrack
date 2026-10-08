@@ -53,7 +53,7 @@ export async function TablaPagos() {
               <p className="mt-1 truncate text-[11px] text-muted-foreground">{p.direccion ?? "—"}</p>
               <p className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground">
                 <span aria-hidden className="size-1.5 rounded-full bg-muted-foreground" />
-                Pagado
+                {Number(p.monto) < 0 ? "Ajuste negativo" : "Registrado"}
               </p>
             </div>
             <div className="shrink-0 text-right">

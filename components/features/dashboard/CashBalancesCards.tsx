@@ -20,7 +20,7 @@ export function CashBalancesCards({ balances }: { balances: CashBalances }) {
             <span className="flex size-9 items-center justify-center rounded-full bg-[var(--cash-icon-bg)]"><Landmark aria-hidden className="size-[18px]" /></span>
           </div>
           <div>
-            <p className="inmotrack-amount break-all text-[26px] font-bold leading-tight sm:text-[30px]">{money(balances.terceros)}</p>
+            <p className="inmotrack-amount break-words text-[26px] font-bold leading-tight sm:text-[30px]">{money(balances.terceros)}</p>
             <p className="mt-2 text-[11px] text-cash-dark-muted">Movimientos acumulados de terceros</p>
           </div>
         </div>

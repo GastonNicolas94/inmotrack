@@ -58,9 +58,7 @@ export async function TablaLibroDiario({
                 </TableCell>
                 <TableCell className="text-center text-xs text-muted-foreground">{t.caja_destino}</TableCell>
                 <TableCell
-                  className={`text-right font-heading tabular-nums text-sm ${
-                    Number(t.monto) < 0 ? "text-status-danger" : "text-status-success"
-                  }`}
+                  className="text-right font-heading tabular-nums text-sm text-foreground"
                 >
                   {formatMonto(t.monto.toString())}
                 </TableCell>
