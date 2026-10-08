@@ -34,6 +34,12 @@ Declarados en `app/globals.css`, canónicos OKLCH:
 - `prefers-reduced-motion` elimina animaciones. Filtros, foco y acciones deben ser operables por teclado.
 - Los datos visibles vienen de servicios reales. No imprimir «Datos de ejemplo» salvo que sean ficticios.
 
+## Identidad de acceso
+
+El login presenta la **identidad de producto InmoTrack**, no la imagen ni el nombre de una inmobiliaria concreta. Usa el icono lineal `Building2` de Lucide, la marca en Sora, el coral en el isotipo/eyebrow/botón y un formulario sobre blanco con borde de 1px. Desktop: dos columnas sin tarjetas anidadas; mobile: composición apilada con formulario accesible. No se incorporan fotos, ilustraciones decorativas, gradientes, glassmorphism, estadísticas ficticias ni sombras.
+
+La autenticación y los flujos de confirmación de credenciales son independientes de este cambio visual.
+
 ## Separación de UI y dominio
 
 Este documento describe diseño, **no** modifica autorizaciones ni contabilidad. Mantener roles reales ADMIN, EMPLEADO y AUDITOR (sin escritura), flujo de pagos actual y liquidaciones proporcionales. Saldos de cajas en Dashboard financiero: acumulado de `transacciones` agrupado por `caja_destino`, etiquetado **contable**: no representa conciliación bancaria ni un total disponible. Los filtros de período/cartera se aplican a los KPI de período; los saldos contables globales se etiquetan como globales.
