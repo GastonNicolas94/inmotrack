@@ -68,7 +68,7 @@ export async function TablaLibroDiario({
                   {t.usuario_creador?.email ?? "Sistema"}
                 </TableCell>
                 {esAdmin && (
-                  <TableCell>
+                  <TableCell className="row-actions-cell">
                     {t.tipo !== "CONTRA_ASIENTO" &&
                       !t.contra_asientos.some((c) => c.tipo === "CONTRA_ASIENTO") && (
                         <ModalContraAsiento idTxnOrigen={t.id} />

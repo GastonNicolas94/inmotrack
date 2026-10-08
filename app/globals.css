@@ -272,3 +272,116 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+
+/* Compact row actions — Cajas protagonistas. Consistent desktop and mobile. */
+.contract-row-actions { white-space: nowrap; }
+.contract-main-action { min-height: 36px; }
+.liquidation-main-action a {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--brand-soft);
+  padding-inline: 12px;
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 700;
+}
+.liquidation-main-action a:hover { background: var(--accent); }
+@media (max-width: 760px) {
+  .inmotrack-card-table tbody tr:not(:has(td[colspan])) > td.row-actions-cell {
+    display: block;
+    grid-column: 1 / -1;
+    padding: 9px 12px;
+    border-top: 1px solid var(--border);
+    border-bottom: 0;
+    background: var(--muted);
+    text-align: right;
+  }
+  .inmotrack-card-table tbody td.row-actions-cell::before { display: none; }
+  .inmotrack-card-table tbody td.row-actions-cell [data-slot="button"] { min-height: 38px; }
+  .contract-row-actions { width: 100%; flex-wrap: nowrap !important; }
+  .contract-row-actions > .contract-main-action,
+  .contract-row-actions > .liquidation-main-action { flex: 1; min-width: 0; }
+  .contract-row-actions > .contract-main-action,
+  .contract-row-actions > .liquidation-main-action a {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    min-height: 42px !important;
+  }
+  .contract-row-actions > [data-slot="dropdown-menu-trigger"] { width: 42px; height: 42px; }
+
+  /* Header + badge, denser contract data, one stable action footer. */
+  .inmotrack-card-table[data-kind="contratos"] tbody tr:not(:has(td[colspan])) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+  .inmotrack-card-table[data-kind="contratos"] tbody td:nth-child(1) {
+    grid-column: 1; grid-row: 1;
+    padding: 15px 8px 8px 14px;
+    border-bottom: none;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+  .inmotrack-card-table[data-kind="contratos"] tbody td:nth-child(6) {
+    grid-column: 2; grid-row: 1;
+    padding: 13px 12px 6px 2px;
+    border-bottom: none;
+    text-align: right;
+  }
+  .inmotrack-card-table[data-kind="contratos"] tbody td:nth-child(6)::before { display: none; }
+  .inmotrack-card-table[data-kind="contratos"] tbody td:nth-child(6) > div { align-items: flex-end; }
+  .inmotrack-card-table[data-kind="contratos"] tbody td:nth-child(2),
+  .inmotrack-card-table[data-kind="contratos"] tbody td:nth-child(3) {
+    grid-column: 1 / -1; border-bottom: none;
+    padding: 5px 14px;
+    gap: 8px; font-size: 12px;
+  }
+  .inmotrack-card-table[data-kind="contratos"] tbody td:nth-child(4) {
+    grid-column: 1 / -1; border-bottom: none;
+    padding: 10px 14px 4px;
+  }
+  .inmotrack-card-table[data-kind="contratos"] tbody td:nth-child(5) {
+    grid-column: 1 / -1; border-bottom: none;
+    padding: 4px 14px 14px;
+    font-size: 15px; font-weight: 700;
+  }
+  .inmotrack-card-table[data-kind="contratos"] tbody td:nth-child(7) {
+    grid-column: 1 / -1; padding: 9px 12px;
+    border-top: 1px solid var(--border);
+    background: var(--muted);
+  }
+  .inmotrack-card-table[data-kind="contratos"] tbody td:nth-child(7)::before { display: none; }
+  .inmotrack-card-table[data-kind="contratos"] tbody td:nth-child(7) > div { justify-content: flex-end; }
+
+  .inmotrack-card-table[data-kind="liquidaciones"] tbody tr:not(:has(td[colspan])) {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .inmotrack-card-table[data-kind="liquidaciones"] tbody td:nth-child(1) {
+    grid-column: 1; grid-row: 1;
+    padding: 14px 8px 9px 14px;
+    border-bottom: none;
+  }
+  .inmotrack-card-table[data-kind="liquidaciones"] tbody td:nth-child(6) {
+    grid-column: 2; grid-row: 1;
+    padding: 12px 12px 8px 0;
+    border-bottom: none;
+  }
+  .inmotrack-card-table[data-kind="liquidaciones"] tbody td:nth-child(6)::before { display: none; }
+  .inmotrack-card-table[data-kind="liquidaciones"] tbody td:nth-child(2),
+  .inmotrack-card-table[data-kind="liquidaciones"] tbody td:nth-child(3),
+  .inmotrack-card-table[data-kind="liquidaciones"] tbody td:nth-child(4),
+  .inmotrack-card-table[data-kind="liquidaciones"] tbody td:nth-child(5) {
+    grid-column: 1 / -1; padding: 7px 14px; font-size: 12px;
+  }
+  .inmotrack-card-table[data-kind="liquidaciones"] tbody td:nth-child(5) {
+    font-size: 15px; font-weight: 700; padding-bottom: 14px; border-bottom: 0;
+  }
+  .inmotrack-card-table[data-kind="liquidaciones"] tbody td:nth-child(7) {
+    grid-column: 1 / -1;
+  }
+}
