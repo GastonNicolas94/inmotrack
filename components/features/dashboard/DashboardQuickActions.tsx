@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { ArrowUpRight, FilePlus2, Receipt, Wallet } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,9 @@ const ACTIONS = [
   { href: "/contratos", label: "Nuevo contrato", icon: FilePlus2 },
 ] as const;
 
-export function DashboardQuickActions() {
+export async function DashboardQuickActions() {
+  const user = await requireAuthenticatedUser();
+  if (user.rol === "AUDITOR") return null;
   return (
     <Card>
       <CardHeader><CardTitle>Acciones rápidas</CardTitle></CardHeader>

@@ -1,3 +1,4 @@
+import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { PropietariosService } from "@/services/propietarios.service";
 import {
   Table,
@@ -17,23 +18,25 @@ function maskCbu(cbu: string) {
 }
 
 export async function TablaPropietarios() {
-  const propietarios = await PropietariosService.listar();
+  const [user, propietarios] = await Promise.all([requireAuthenticatedUser(), PropietariosService.listar()]);
+  const puedeCrear = user.rol !== "AUDITOR";
+  const puedeAdelantar = user.rol === "ADMIN";
 
   return (
-    <TableCard action={<DialogNuevoPropietario />}>
+    <TableCard action={puedeCrear ? <DialogNuevoPropietario /> : undefined}>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Nombre</TableHead>
             <TableHead>CBU</TableHead>
             <TableHead className="text-center">Propiedades</TableHead>
-            <TableHead />
+            {puedeAdelantar ? <TableHead /> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
           {propietarios.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={puedeAdelantar ? 4 : 3} className="text-center text-muted-foreground py-8">
                 No hay propietarios cargados.
               </TableCell>
             </TableRow>
@@ -47,9 +50,11 @@ export async function TablaPropietarios() {
                 <TableCell className="text-center">
                   <Badge variant="secondary">{p._count.participaciones}</Badge>
                 </TableCell>
-                <TableCell className="text-right">
-                  <ModalRegistrarAdelanto propietarioId={p.id} nombre={p.nombre} />
-                </TableCell>
+                {puedeAdelantar ? (
+                  <TableCell className="text-right">
+                    <ModalRegistrarAdelanto propietarioId={p.id} nombre={p.nombre} />
+                  </TableCell>
+                ) : null}
               </TableRow>
             ))
           )}

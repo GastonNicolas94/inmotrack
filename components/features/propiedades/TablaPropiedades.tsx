@@ -1,3 +1,4 @@
+import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { PropiedadesService } from "@/services/propiedades.service";
 import { PropietariosService } from "@/services/propietarios.service";
 import {
@@ -14,10 +15,12 @@ import { DialogEditarPropiedad } from "./DialogEditarPropiedad";
 import { TableCard } from "@/components/layout/TableCard";
 
 export async function TablaPropiedades() {
-  const [propiedades, propietarios] = await Promise.all([
+  const [user, propiedades, propietarios] = await Promise.all([
+    requireAuthenticatedUser(),
     PropiedadesService.listar(),
     PropietariosService.listar(),
   ]);
+  const mostrarAcciones = user.rol !== "AUDITOR";
   const opcionesPropietarios = propietarios.map((p) => ({
     id: p.id,
     nombre: p.nombre,
@@ -25,7 +28,7 @@ export async function TablaPropiedades() {
 
   return (
     <TableCard
-      action={<DialogNuevaPropiedad propietarios={opcionesPropietarios} />}
+      action={mostrarAcciones ? <DialogNuevaPropiedad propietarios={opcionesPropietarios} /> : undefined}
     >
       <Table>
         <TableHeader>
@@ -34,13 +37,13 @@ export async function TablaPropiedades() {
             <TableHead>Propietarios</TableHead>
             <TableHead className="text-center">Tipo</TableHead>
             <TableHead className="text-center">Contratos</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
+            {mostrarAcciones ? <TableHead className="text-right">Acciones</TableHead> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
           {propiedades.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={mostrarAcciones ? 5 : 4} className="text-center text-muted-foreground py-8">
                 No hay propiedades cargadas.
               </TableCell>
             </TableRow>
@@ -70,20 +73,22 @@ export async function TablaPropiedades() {
                 <TableCell className="text-center">
                   <Badge variant="secondary">{p._count.contratos}</Badge>
                 </TableCell>
-                <TableCell className="text-right">
-                  <DialogEditarPropiedad
-                    propietarios={opcionesPropietarios}
-                    propiedad={{
-                      id: p.id,
-                      direccion: p.direccion,
-                      es_propia: p.es_propia,
-                      participaciones: p.copropietarios.map((participacion) => ({
-                        id_propietario: participacion.id_propietario,
-                        porcentaje: Number(participacion.porcentaje),
-                      })),
-                    }}
-                  />
-                </TableCell>
+                {mostrarAcciones ? (
+                  <TableCell className="text-right">
+                    <DialogEditarPropiedad
+                      propietarios={opcionesPropietarios}
+                      propiedad={{
+                        id: p.id,
+                        direccion: p.direccion,
+                        es_propia: p.es_propia,
+                        participaciones: p.copropietarios.map((participacion) => ({
+                          id_propietario: participacion.id_propietario,
+                          porcentaje: Number(participacion.porcentaje),
+                        })),
+                      }}
+                    />
+                  </TableCell>
+                ) : null}
               </TableRow>
             ))
           )}

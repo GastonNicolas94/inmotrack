@@ -1,8 +1,11 @@
+import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { InquilinosService } from "@/services/inquilinos.service";
 import { PropiedadesService } from "@/services/propiedades.service";
 import { WizardContrato } from "@/components/features/contratos/WizardContrato";
 
 export async function ContratosWizardData() {
+  const user = await requireAuthenticatedUser();
+  if (user.rol === "AUDITOR") return null;
   const [propiedades, inquilinos] = await Promise.all([
     PropiedadesService.listarDisponibles(),
     InquilinosService.listar(),

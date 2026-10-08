@@ -1,3 +1,4 @@
+import { requireAuthenticatedUser } from "@/lib/auth-context";
 import { InquilinosService } from "@/services/inquilinos.service";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -8,10 +9,10 @@ import { ModalDeudaInquilino } from "./ModalDeudaInquilino";
 import { TableCard } from "@/components/layout/TableCard";
 
 export async function TablaInquilinos() {
-  const inquilinos = await InquilinosService.listar();
+  const [user, inquilinos] = await Promise.all([requireAuthenticatedUser(), InquilinosService.listar()]);
 
   return (
-    <TableCard action={<DialogNuevoInquilino />}>
+    <TableCard action={user.rol !== "AUDITOR" ? <DialogNuevoInquilino /> : undefined}>
       <Table>
         <TableHeader>
           <TableRow>
