@@ -136,8 +136,12 @@
 .inmotrack-amount { font-family: var(--font-sora), sans-serif; font-variant-numeric: tabular-nums; }
 .inmotrack-eyebrow { color: var(--primary); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.3px; }
 .inmotrack-shell { min-height: 100vh; display: flex; }
-.inmotrack-sidebar { position: sticky; top: 0; z-index: 30; width: 242px; height: 100vh; flex: none; overflow-y: auto; border-right: 1px solid var(--border); background: var(--sidebar); transition: width 180ms ease; }
+.inmotrack-sidebar { position: sticky; top: 0; z-index: 30; width: 242px; height: 100dvh; flex: none; border-right: 1px solid var(--border); background: var(--sidebar); transition: width 180ms ease; }
 .inmotrack-sidebar[data-collapsed="true"] { width: 72px; }
+.inmotrack-sidebar[data-collapsed="true"] .sidebar-nav-section + .sidebar-nav-section { margin-top: 10px; }
+.inmotrack-sidebar[data-collapsed="true"] .sidebar-brand { padding-inline: 10px; }
+.inmotrack-sidebar[data-collapsed="true"] .sidebar-account { justify-content: center; }
+.inmotrack-sidebar[data-collapsed="true"] .sidebar-logout { justify-content: center; }
 .inmotrack-sidebar[data-collapsed="true"] .sidebar-label,
 .inmotrack-sidebar[data-collapsed="true"] .sidebar-brand-name { display: none; }
 .inmotrack-sidebar[data-collapsed="true"] .sidebar-link { justify-content: center; padding-inline: 4px; }
@@ -153,9 +157,14 @@
   .inmotrack-main { padding: 28px 24px; }
 }
 @media (max-width: 760px) {
-  .inmotrack-sidebar { position: fixed; z-index: 45; width: min(290px, 85vw); transform: translateX(-100%); transition: transform 180ms ease; }
+  .inmotrack-sidebar { position: fixed; z-index: 45; width: min(280px, calc(100vw - 48px)); height: 100dvh; transform: translateX(-100%); transition: transform 180ms ease; }
+  .inmotrack-sidebar .sidebar-footer { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+  .inmotrack-sidebar[data-collapsed="true"] .sidebar-brand { padding-inline: 16px; }
+  .inmotrack-sidebar[data-collapsed="true"] .sidebar-nav-section + .sidebar-nav-section { margin-top: 16px; }
+  .inmotrack-sidebar[data-collapsed="true"] .sidebar-account { justify-content: flex-start; }
+  .inmotrack-sidebar[data-collapsed="true"] .sidebar-logout { justify-content: flex-start; }
   .inmotrack-sidebar[data-open="true"] { transform: translateX(0); }
-  .inmotrack-sidebar[data-collapsed="true"] { width: min(290px, 85vw); }
+  .inmotrack-sidebar[data-collapsed="true"] { width: min(280px, calc(100vw - 48px)); }
   .inmotrack-sidebar[data-collapsed="true"] .sidebar-label,
   .inmotrack-sidebar[data-collapsed="true"] .sidebar-brand-name { display: initial; }
   .inmotrack-sidebar[data-collapsed="true"] .sidebar-link { justify-content: flex-start; padding-inline: 12px; }

@@ -34,6 +34,12 @@ Declarados en `app/globals.css`, canónicos OKLCH:
 - `prefers-reduced-motion` elimina animaciones. Filtros, foco y acciones deben ser operables por teclado.
 - Los datos visibles vienen de servicios reales. No imprimir «Datos de ejemplo» salvo que sean ficticios.
 
+## Navegación de producto
+
+La barra lateral y el drawer móvil llevan **InmoTrack**, nunca imágenes o marcas específicas de una inmobiliaria. Branding textual con ícono lineal Lucide (`Building2`) y acento coral sobre `--brand-soft`. Nav agrupada en `GENERAL`, `GESTIÓN`, `FINANZAS` y, solo cuando corresponda, `HERRAMIENTAS`. Links compactos, 38px de altura, íconos de 17px, activo con línea coral a la izquierda y fondo coral pálido. Evitar listas largas de links de igual jerarquía, encabezados sobredimensionados y espaciados excesivos.
+
+Drawer móvil: ancho máximo 280px, marca en cabecera de 76px, desplazamiento exclusivo de la lista de navegación para mantener visible el pie con usuario y salida, scrim, cierre con Escape y navegación accesible mediante teclado. Sidebar escritorio de 242px y estado colapsado de 72px; las rutas reales siguen disponibles. Se mantiene la barra inferior de cinco accesos móvil.
+
 ## Identidad de acceso
 
 El login presenta la **identidad de producto InmoTrack**, no la imagen ni el nombre de una inmobiliaria concreta. Usa el icono lineal `Building2` de Lucide, la marca en Sora, el coral en el isotipo/eyebrow/botón y un formulario sobre blanco con borde de 1px. Desktop: dos columnas sin tarjetas anidadas; mobile: composición apilada con formulario accesible. No se incorporan fotos, ilustraciones decorativas, gradientes, glassmorphism, estadísticas ficticias ni sombras.

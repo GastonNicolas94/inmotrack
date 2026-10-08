@@ -9,10 +9,16 @@ const checks = [
   ["app/layout.tsx", /Sora.*\n|Sora\(/, "tipografía Sora"],
   ["app/layout.tsx", /Manrope.*\n|Manrope\(/, "tipografía Manrope"],
   ["components/layout/DashboardShell.tsx", /inmotrack-mobile-bottom/, "navegación mobile"],
+  ["components/layout/DashboardShell.tsx", /Gestión inmobiliaria/, "branding neutro InmoTrack"],
+  ["components/layout/DashboardNav.tsx", /GESTIÓN[\s\S]*FINANZAS/, "navegación agrupada"],
+  ["components/layout/DashboardShell.tsx", /keepFocusInsideDrawer/, "navegación mobile accesible"],
   ["components/features/dashboard/CashBalancesCards.tsx", /Caja 1.*Recaudadora de terceros/, "Caja 1"],
   ["components/features/dashboard/CashBalancesCards.tsx", /Caja 2.*Operativa/, "Caja 2"],
 ];
 for (const [file, pattern, description] of checks) {
   if (!pattern.test(read(file))) throw new Error(`Design System: falta ${description} en ${file}`);
 }
-console.log("Design System v1.0: 8 controles estáticos OK");
+if (/logo-macchieraldo|<img\b|Macchieraldo|Villarruel/.test(read("components/layout/DashboardShell.tsx"))) {
+  throw new Error("Design System: el shell no debe mostrar branding de una inmobiliaria");
+}
+console.log("Design System v1.0: 12 controles estáticos OK");

@@ -1,6 +1,6 @@
 ---
 type: Architecture
-version: 1e08c07
+version: e4507ac
 validated: 2026-10-07
 update_when: New layers added, folder layout restructured, or the request/data flow changes
 scope:
@@ -19,7 +19,7 @@ scope:
 
 El login en `app/(auth)/login/` se identifica como **InmoTrack** (no muestra el logo de la inmobiliaria) y utiliza iconografía lineal Lucide + tokens semánticos. Conserva el cliente de autenticación Supabase actual y `PasswordEmailLanding`.
 
-El frontend usa el Design System «Cajas protagonistas» documentado en `docs/ui/design-system.md`. La implementación adapta los tokens del prototipo a Tailwind v4 / Next.js 16 sin importar sus rutas TanStack; `components/layout/DashboardShell.tsx` provee drawer y navegación inferior, `app/globals.css` contiene tokens OKLCH y `app/layout.tsx` carga Sora/Manrope. El dashboard financiero presenta saldos contables por caja mediante el servicio read-only `services/cajas-dashboard.service.ts` y el helper puro `lib/dashboard/cajas.ts`, sin presentar reconciliación bancaria ni sumar cajas entre sí.
+El frontend usa el Design System «Cajas protagonistas» documentado en `docs/ui/design-system.md`. La implementación adapta los tokens del prototipo a Tailwind v4 / Next.js 16 sin importar sus rutas TanStack; `components/layout/DashboardShell.tsx` provee drawer y navegación inferior, y `DashboardNav.tsx` agrupa destinos por General/Gestión/Finanzas/Herramientas sin marca particular, `app/globals.css` contiene tokens OKLCH y `app/layout.tsx` carga Sora/Manrope. El dashboard financiero presenta saldos contables por caja mediante el servicio read-only `services/cajas-dashboard.service.ts` y el helper puro `lib/dashboard/cajas.ts`, sin presentar reconciliación bancaria ni sumar cajas entre sí.
 
 Next.js App Router monolito, con una separación de capas informal pero consistente en todo el repo — no es hexagonal ni tiene lint de arquitectura que la fuerce, es una convención seguida a mano:
 
